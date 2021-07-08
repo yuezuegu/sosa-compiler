@@ -1,4 +1,6 @@
 import os
+from collections import OrderedDict
+
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
@@ -37,21 +39,22 @@ def split_mat(x_size, w_size, array_size, partition_size=None):
     no_row_tile = int( np.ceil (dim2 / partition_size[1]) )
     no_col_tile = int( np.ceil (dim3 / partition_size[2]) )
 
-    w_tile_dim = {}
+    w_tile_dim = {i:{} for i in range(no_row_tile)}
     for j in range(no_col_tile):
         for i in range(no_row_tile):
             tile_dim1 = min((i+1)*partition_size[1], dim2) - i*partition_size[1]
             tile_dim2 = min((j+1)*partition_size[2], dim3) - j*partition_size[2]
-            w_tile_dim[(i,j)] = [tile_dim1,tile_dim2]
+            w_tile_dim[i][j] = [tile_dim1,tile_dim2]
 
-    x_tile_dim = {}
+    
     no_batch_tile = int( np.ceil (dim1 / partition_size[0]) )
+    x_tile_dim = {i:{} for i in range(no_batch_tile)}
 
     for j in range(no_row_tile):
         for i in range(no_batch_tile):
             tile_dim1 = min((i+1)*partition_size[0], dim1) - i*partition_size[0]
             tile_dim2 = min((j+1)*partition_size[1], dim2) - j*partition_size[1]
-            x_tile_dim[(i,j)] = [tile_dim1, tile_dim2]
+            x_tile_dim[i][j] = [tile_dim1, tile_dim2]
 
     return x_tile_dim, w_tile_dim, no_batch_tile, no_row_tile, no_col_tile
 
@@ -75,10 +78,8 @@ def partition_layer(layer_node, array_size, partition_size):
 
         return gemm_info
     else:
-        print("No GEMM operation found at layer {} of type {}.".format(layer_node.layer_name, layer_node.layer_type))
+        logging.info("No GEMM operation found at layer {} of type {}.".format(layer_node.layer_name, layer_node.layer_type))
         return None
-    
-
 
 def all_dependencies_scheduled(layer_name, graph, layer_schedules):
     node = graph.get_node(layer_name)
@@ -92,11 +93,11 @@ def all_dependencies_scheduled(layer_name, graph, layer_schedules):
 def precompile_model(model, array_size=[512,512], partition_size=None):
     graph = convert_keras_to_graph(model)
 
-    gemm_ops = []
+    gemm_ops = OrderedDict()
     for layer_name in graph.get_layer_names():
         layer_node = graph.get_node(layer_name)
         gemm = partition_layer(layer_node, array_size, partition_size)
-        gemm_ops.append(gemm)
+        gemm_ops[layer_name] = gemm
     return gemm_ops
 
 def main():
@@ -131,6 +132,8 @@ def main():
 
     with open(out_dir+"/precompiled_model.json", "w") as outfile:  
         json.dump(gemm_ops, outfile)
+
+    print("precompiled model is saved at: {}".format(out_dir))
 
 if __name__ == "__main__":
     main()

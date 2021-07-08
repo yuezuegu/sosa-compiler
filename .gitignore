@@ -1,2 +1,7 @@
 **/__pycache__/
+experiments/**
 
+.vscode/launch.json
+logger.out
+log.out
+benchmarks.pickle.lock
