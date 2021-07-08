@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "/Users/yuezuegu/miniconda3/envs/menv3-7/lib/python3.7/site-packages/keras/__init__.py", line 3, in <module>
+    from tensorflow.keras.layers.experimental.preprocessing import RandomRotation
+ModuleNotFoundError: No module named 'tensorflow.keras.layers.experimental.preprocessing'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "precompiler/precompile.py", line 17, in <module>
+    from benchmarks import benchmark, get_benchmarks
+  File "/Users/yuezuegu/Desktop/workspace/sosa-compiler/precompiler/benchmarks.py", line 10, in <module>
+    from keras_bert.bert import get_model,compile_model
+  File "/Users/yuezuegu/Desktop/workspace/sosa-compiler/precompiler/keras_bert/__init__.py", line 1, in <module>
+    from .bert import *
+  File "/Users/yuezuegu/Desktop/workspace/sosa-compiler/precompiler/keras_bert/bert.py", line 2, in <module>
+    from keras_pos_embd import PositionEmbedding
+  File "/Users/yuezuegu/miniconda3/envs/menv3-7/lib/python3.7/site-packages/keras_pos_embd/__init__.py", line 1, in <module>
+    from .pos_embd import PositionEmbedding
+  File "/Users/yuezuegu/miniconda3/envs/menv3-7/lib/python3.7/site-packages/keras_pos_embd/pos_embd.py", line 1, in <module>
+    from .backend import keras
+  File "/Users/yuezuegu/miniconda3/envs/menv3-7/lib/python3.7/site-packages/keras_pos_embd/backend.py", line 16, in <module>
+    import keras
+  File "/Users/yuezuegu/miniconda3/envs/menv3-7/lib/python3.7/site-packages/keras/__init__.py", line 6, in <module>
+    'Keras requires TensorFlow 2.2 or higher. '
+ImportError: Keras requires TensorFlow 2.2 or higher. Install TensorFlow via `pip install tensorflow`
