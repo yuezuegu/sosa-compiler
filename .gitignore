@@ -5,3 +5,6 @@ experiments/**
 logger.out
 log.out
 benchmarks.pickle.lock
+.vscode/configurationCache.log
+.vscode/dryrun.log
+.vscode/targets.log

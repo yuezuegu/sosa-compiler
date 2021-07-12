@@ -1,4 +1,9 @@
 
+CC = g++
+CFLAGS = -std=c++11 -g
 
-all: compiler/main.cpp compiler/nlohmann/json.hpp
-	g++ -std=c++11 compiler/main.cpp -o compiler/sosa_compiler
+SRC_FILES = compiler/main.cpp compiler/layer.cpp
+HDR_FILES = compiler/nlohmann/json.hpp compiler/layer.hpp
+TARGET_EXEC = compiler/main
+all:
+	${CC} ${CFLAGS} ${SRC_FILES} -o ${TARGET_EXEC} -Wall

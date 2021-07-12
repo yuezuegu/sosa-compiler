@@ -1,0 +1,17 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/yuezuegu/sosa-compiler/compiler",
+            "binaryPath": "/home/yuezuegu/sosa-compiler/compiler/sosa_compiler",
+            "binaryArgs": []
+        }
+    ],
+    "files.associations": {
+        "iosfwd": "cpp",
+        "ostream": "cpp",
+        "iostream": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "string": "cpp"
+    }
+}
