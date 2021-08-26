@@ -21,15 +21,29 @@ void Bank::alloc_tile(Tile* tile){
 Banks::Banks(int no_banks, int size){
     this->no_banks = no_banks;
     for(int i = 0; i < no_banks; i++){
-        this->x_banks.push_back(Bank(i, data_type::X, size));
+        this->x_banks.push_back(new Bank(i, data_type::X, size));
     }
     for(int i = 0; i < no_banks; i++){
-        this->w_banks.push_back(Bank(i, data_type::W, size));
+        this->w_banks.push_back(new Bank(i, data_type::W, size));
     }
     for(int i = 0; i < no_banks; i++){
-        this->p_banks.push_back(Bank(i, data_type::P, size));
+        this->p_banks.push_back(new Bank(i, data_type::P, size));
     }
 };
+
+list<Bank*> Banks::get_x_banks(){
+    return this->x_banks;
+};
+
+list<Bank*> Banks::get_w_banks(){
+    return this->w_banks;
+};
+
+list<Bank*> Banks::get_p_banks(){
+    return this->p_banks;
+};
+
+
 
 Bank* Banks::get_bank_by_id(int id, data_type type){
     if (type == data_type::X){
@@ -39,7 +53,7 @@ Bank* Banks::get_bank_by_id(int id, data_type type){
             it++;
         }
 
-        return &(*it);
+        return *it;
     }
     else if (type == data_type::W){
         auto it = this->w_banks.begin();
@@ -48,7 +62,7 @@ Bank* Banks::get_bank_by_id(int id, data_type type){
             it++;
         }
 
-        return &(*it);
+        return *it;
     }
     else{
         auto it = this->p_banks.begin();
@@ -57,9 +71,6 @@ Bank* Banks::get_bank_by_id(int id, data_type type){
             it++;
         }
 
-        return &(*it);
+        return *it;
     }
-    
-    
-
 }

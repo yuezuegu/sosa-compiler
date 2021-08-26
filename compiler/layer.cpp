@@ -73,11 +73,12 @@ void Layer::create_main_ops(){
         for (int j = 0; j < get<1>(this->no_tiles); j++){
             for (int k = 0; k < get<2>(this->no_tiles); k++){
                 tuple<int, int, int> op_ind = {i,j,k};
-                Tile* x_tile = new Tile(this->layer_name, data_type::X, {i,j}, this->x_tile_dims[{i, j}]);
-                Tile* w_tile = new Tile(this->layer_name, data_type::W, {j,k}, this->w_tile_dims[{j, k}]);
+                X_Tile* x_tile = new X_Tile(this->layer_name, {i,j}, this->x_tile_dims[{i, j}]);
+                W_Tile* w_tile = new W_Tile(this->layer_name, {j,k}, this->w_tile_dims[{j, k}]);
+                P_Tile* pout_tile = new P_Tile(this->layer_name, {i,j,k}, {get<0>(this->x_tile_dims[{i, j}]), get<1>(this->w_tile_dims[{j, k}])});
 
-                MultOp op(this->layer_name, op_ind, x_tile, w_tile);
-                this->main_ops.push_back(op);
+                MultOp* op = new MultOp(this->layer_name, op_ind, x_tile, w_tile, pout_tile);
+                this->main_ops[{i,j,k}] = op;
             }
         }
     }
@@ -86,13 +87,13 @@ void Layer::create_main_ops(){
 void Layer::init_banks(Banks* banks){
     int bank_cnt = 0;
     for (auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
-        it->x_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::X));
+        it->second->x_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::X));
         bank_cnt = (bank_cnt+1) % banks->no_banks;
     }
 
     bank_cnt = 0;
     for (auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
-        it->w_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::W));
+        it->second->w_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::W));
         bank_cnt = (bank_cnt+1) % banks->no_banks;
     }
 }
@@ -108,3 +109,7 @@ void Layers::create_main_ops(){
         it->create_main_ops();
     }
 }
+
+MultOp* Layer::get_mainop_by_index(tuple<int, int, int> index){
+    return this->main_ops[index];
+};

@@ -31,13 +31,17 @@ class Bank{
 class Banks{
     public:
         int no_banks;
-        list<Bank> x_banks;
-        list<Bank> w_banks;
-        list<Bank> p_banks;
 
         Banks(int no_banks, int size);
         Bank* get_bank_by_id(int id, data_type type);
+        list<Bank*> get_x_banks();
+        list<Bank*> get_w_banks();
+        list<Bank*> get_p_banks();
     private:
+        list<Bank*> x_banks;
+        list<Bank*> w_banks;
+        list<Bank*> p_banks;
+
 };
 
-#endif
+#endif /* BANK_HPP */

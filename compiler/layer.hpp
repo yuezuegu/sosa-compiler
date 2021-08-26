@@ -27,17 +27,22 @@ class Layer {
         tuple<int, int, int> no_tiles;
         tuple<int, int> input_size;
         tuple<int, int> weight_size;
-        list<MultOp> main_ops;
+        
 
         Layer(string, tile_dim_map, tile_dim_map, tuple<int, int, int>, tuple<int, int>, tuple<int, int>);
         void create_main_ops();
         void init_banks(Banks* banks);
+        map<tuple<int, int, int>, MultOp*> main_ops;
+
+        MultOp* get_mainop_by_index(tuple<int, int, int> index);
+    private:
+        
 };
 
 class Layers{
     public:
-        std::list<Layer>::iterator begin() noexcept { return layer_list.begin(); }
-        std::list<Layer>::iterator end() { return layer_list.end(); }
+        list<Layer>::iterator begin() noexcept { return layer_list.begin(); }
+        list<Layer>::iterator end() { return layer_list.end(); }
 
 
         Layers(string fname);
@@ -47,4 +52,4 @@ class Layers{
         list<Layer> layer_list;
 };
 
-#endif
+#endif /* LAYER_HPP */
