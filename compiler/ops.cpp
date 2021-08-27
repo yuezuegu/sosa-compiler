@@ -22,7 +22,7 @@ void MultOp::assign_pin(MultOp* pin_op){
     pin_op->aggregated_to = this;
 };
 
-void Op::assign_to_array(int r, Array* array){
+void MultOp::assign_to_array(int r, Array* array){
     this->array_placed = array;
     this->round_placed = r;
     this->is_placed_ = true;
@@ -33,17 +33,43 @@ bool Op::is_placed(){
 }
 
 
-AggrOp::AggrOp(string layer_name, Op* operand1, Op* operand2){
+AggrOp::AggrOp(string layer_name, Op* operand1, Op* operand2, bool flip){
     this->layer_name = layer_name;
     this->operand1 = operand1;
     this->operand2 = operand2;
     this->pin1_tile = operand1->pout_tile;
     this->pin2_tile = operand2->pout_tile;
+    this->flip = flip;
+    this->pp_placed = nullptr;
+    this->round_placed = -1;
 
     assert((this->pin1_tile->dims == this->pin2_tile->dims && "Input dimensions do not match!"));
     this->pout_tile = new P_Tile(layer_name, {-1, -1, -1}, this->pin1_tile->dims);
 };
 
+Op* AggrOp::get_op1(){
+    if (this->flip){
+        return this->operand2;
+    }
+    else{
+        return this->operand1;
+    }
+}
+
+Op* AggrOp::get_op2(){
+    if (this->flip){
+        return this->operand1;
+    }
+    else{
+        return this->operand2;
+    }
+}
+
+void AggrOp::assign_to_pp(int r, PostProcessor* pp){
+    this->pp_placed = pp;
+    this->round_placed = r;
+    this->is_placed_ = true;
+};
 
 
 

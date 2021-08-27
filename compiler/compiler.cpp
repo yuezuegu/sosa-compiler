@@ -6,10 +6,11 @@
 using namespace std;
 
 
-Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects){
+Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, PostProcessors* post_processors){
     this->arrays = arrays;
     this->banks = banks;
     this->interconnects = interconnects;
+    this->post_processors = post_processors;
 }
 
 void Compiler::compile(Layers* layers){
@@ -70,11 +71,50 @@ void Compiler::compile_layer(Layer* layer, int init_round){
 
                     op2->assign_pin(op1);
                     unconsumed_ops.remove(op1);
+                    break;
+                }
+            }
+
+            list<AggrOp*>* post_op_list = &layer->post_ops[{i,k}];
+
+            map<Op*, Op*> post_pairs;
+            while (unconsumed_ops.size()/2 >= 1){
+                Op* op1 = unconsumed_ops.front();
+                unconsumed_ops.pop_front();
+
+                Op* op2 = unconsumed_ops.front();
+                unconsumed_ops.pop_front();
+
+                AggrOp* aggr_op1 = new AggrOp(layer->layer_name, op1, op2, 0);
+                unconsumed_ops.push_back(aggr_op1);
+                post_op_list->push_back(aggr_op1);
+
+                AggrOp* aggr_op2 = new AggrOp(layer->layer_name, op1, op2, 1);
+                post_op_list->push_back(aggr_op2);
+
+                post_pairs[op1] = op2;
+                post_pairs[op2] = op1;
+            }
+
+            for (auto it = post_op_list->begin(); it != post_op_list->end(); it++){
+                AggrOp* post_op = *it;
+                AggrOp* op1 = (AggrOp*)post_op->operand1;
+                AggrOp* op2 = (AggrOp*)post_op->operand2;
+
+                int r1 = op1->round_placed;
+                int r2 = op2->round_placed;
+
+                int r = (r1>r2) ? r1+1 : r2+1;
+
+                while(!post_op->is_placed()){
+                    this->post_op_placement(r, post_op);
+                    r++;
                 }
 
 
-            }
 
+
+            }
 
 
         }
@@ -82,6 +122,66 @@ void Compiler::compile_layer(Layer* layer, int init_round){
 
 
 }
+
+void Compiler::post_op_placement(int r, AggrOp* op){
+    Op* in_op1 = op->get_op1();
+    Op* in_op2 = op->get_op2();
+
+    list<PostProcessor*> avail_pps = this->post_processors->available_pps(r);
+    if (avail_pps.empty()){
+        return;
+    }
+
+    map<Bank*, PostProcessor*> pin1_permute = this->post_processors->get_pin1_permute(r);
+    if(this->post_processors->check_pin1_bank_conflict(r, in_op1->pout_tile)){
+        return;
+    }
+
+    map<Bank*, PostProcessor*> pin2_permute = this->post_processors->get_pin2_permute(r);
+    if(this->post_processors->check_pin2_bank_conflict(r, in_op2->pout_tile)){
+        return;
+    }
+
+    map<Bank*, PostProcessor*> pout_permute = this->post_processors->get_pout_permute(r);
+    list<Bank*> avail_pout_banks;
+    if (op->pout_tile->bank != nullptr){
+        if(this->post_processors->check_pout_bank_conflict(r, op->pout_tile)){
+            return;
+        }
+        avail_pout_banks.push_back(op->pout_tile->bank);
+    }
+    else{
+        avail_pout_banks = this->banks->get_p_banks();
+        for (auto it = pout_permute.begin(); it != pout_permute.end(); it++){
+            avail_pout_banks.remove(it->first);
+        }
+    }
+    if(avail_pout_banks.empty()) return;
+
+    this->interconnects->pp_in1_interconnect->apply_permute(pin1_permute);
+    this->interconnects->pp_in2_interconnect->apply_permute(pin2_permute);
+    this->interconnects->pp_out_interconnect->apply_permute(pout_permute);
+
+    for (auto pp_it = avail_pps.begin(); pp_it != avail_pps.end(); pp_it++){
+        if (!this->interconnects->pp_in1_interconnect->is_route_free(in_op1->pout_tile->bank, *pp_it)){
+            continue;
+        }
+        if (!this->interconnects->pp_in2_interconnect->is_route_free(in_op2->pout_tile->bank, *pp_it)){
+            continue;
+        }
+
+        for (auto pout_it = avail_pout_banks.begin(); pout_it != avail_pout_banks.end(); pout_it++){
+            if (!this->interconnects->pp_out_interconnect->is_route_free(*pout_it, *pp_it)){
+                continue;
+            }
+
+            op->pout_tile->assign_bank(*pout_it);
+            (*pp_it)->assign_op(r, op);
+            return;
+        }
+    }
+}
+
 
 void Compiler::op_placement(int r, MultOp* op){
     list<Array*> avail_arrays = this->arrays->available_arrays(r);

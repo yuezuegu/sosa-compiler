@@ -33,6 +33,7 @@ class Layer {
         void create_main_ops();
         void init_banks(Banks* banks);
         map<tuple<int, int, int>, MultOp*> main_ops;
+        map<tuple<int, int>, list<AggrOp*>> post_ops;
 
         MultOp* get_mainop_by_index(tuple<int, int, int> index);
     private:

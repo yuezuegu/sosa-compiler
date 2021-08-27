@@ -162,7 +162,7 @@ bool Arrays::check_pin_bank_conflict(int r, P_Tile* p_tile){
     list<MultOp*> schedule = this->get_schedule(r);
     for (auto it = schedule.begin(); it != schedule.end(); it++){
         if ((*it) != nullptr){
-            if ((*it)->pout_tile != nullptr){
+            if ((*it)->pin_op != nullptr){
                 if (p_tile->bank == (*it)->pin_op->pout_tile->bank){
                     return true;
                 }

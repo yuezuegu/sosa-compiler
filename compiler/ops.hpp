@@ -7,20 +7,22 @@
 #include <cassert>
 
 #include "tiles.hpp"
+#include "post_processor.hpp"
 
 using namespace std;
 
 class Array;
+class PostProcessor;
 
 class Op{
     public:
         string layer_name;
-        Array* array_placed;
+        
         int round_placed;
 
         P_Tile* pout_tile;
 
-        void assign_to_array(int r, Array* array);
+        
         bool is_placed();
 
     protected:
@@ -35,9 +37,11 @@ class MultOp: public Op{
         P_Tile* pout_tile;
         MultOp* pin_op;
         MultOp* aggregated_to;
-        
+        Array* array_placed;
+
         MultOp(string layer_name, tuple<int, int, int> op_ind, X_Tile* x_tile, W_Tile* w_tile, P_Tile* pout_tile);
         void assign_pin(MultOp* pin_op);
+        void assign_to_array(int r, Array* array);
 };
 
 class AggrOp: public Op{
@@ -49,7 +53,14 @@ class AggrOp: public Op{
         Op* operand1;
         Op* operand2;
 
-        AggrOp(string layer_name, Op* operand1, Op* operand2);
+        PostProcessor* pp_placed;
+
+        bool flip; //this allows distinguishing same pairs of operations.
+
+        AggrOp(string layer_name, Op* operand1, Op* operand2, bool flip);
+        void assign_to_pp(int r, PostProcessor* pp);
+        Op* get_op1();
+        Op* get_op2();
 };
 
 #endif /* OPS_HPP */
