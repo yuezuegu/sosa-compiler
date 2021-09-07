@@ -16,15 +16,15 @@ class PostProcessor;
 
 class Op{
     public:
+        // Op(string layer_name);
+
         string layer_name;
         
         int round_placed;
 
         P_Tile* pout_tile;
 
-        
         bool is_placed();
-
     protected:
         bool is_placed_;
 };
@@ -34,7 +34,7 @@ class MultOp: public Op{
         tuple<int, int, int> op_ind;
         X_Tile* x_tile;
         W_Tile* w_tile;
-        P_Tile* pout_tile;
+        // P_Tile* pout_tile;
         MultOp* pin_op;
         MultOp* aggregated_to;
         Array* array_placed;
@@ -48,7 +48,7 @@ class AggrOp: public Op{
     public:
         P_Tile* pin1_tile;
         P_Tile* pin2_tile;
-        P_Tile* pout_tile;
+        // P_Tile* pout_tile;
         
         Op* operand1;
         Op* operand2;

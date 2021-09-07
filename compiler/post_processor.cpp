@@ -13,11 +13,13 @@ void PostProcessor::assign_op(int r, AggrOp* op){
     if (sch == this->schedule.end()){
         this->schedule[r] = op;
         op->assign_to_pp(r, this);
+        return;
     }
     
     if (sch->second == nullptr){
         this->schedule[r] = op;
         op->assign_to_pp(r, this);
+        return;
     }
 
     throw runtime_error("Cannot assign op to array");
@@ -112,10 +114,11 @@ bool PostProcessors::check_pout_bank_conflict(int r, P_Tile* p_tile){
 map<Bank*, PostProcessor*> PostProcessors::get_pin1_permute(int r){
     map<Bank*, PostProcessor*> pin_permute; //key: bank_id, value: array_id
     for (auto it = this->pp_map.begin(); it != this->pp_map.end(); it++){
-        Op* op = it->second->get_op(r)->get_op1();
+        AggrOp* op = it->second->get_op(r);
         if(op == nullptr) continue;
-        if(op->pout_tile == nullptr) continue;
-        pin_permute[op->pout_tile->bank] = it->second;
+        if(op->get_op1() == nullptr) continue;
+        if(op->get_op1()->pout_tile == nullptr) continue;
+        pin_permute[op->get_op1()->pout_tile->bank] = it->second;
     }
     return pin_permute;
 };
@@ -123,10 +126,11 @@ map<Bank*, PostProcessor*> PostProcessors::get_pin1_permute(int r){
 map<Bank*, PostProcessor*> PostProcessors::get_pin2_permute(int r){
     map<Bank*, PostProcessor*> pin_permute; //key: bank_id, value: array_id
     for (auto it = this->pp_map.begin(); it != this->pp_map.end(); it++){
-        Op* op = it->second->get_op(r)->get_op2();
+        AggrOp* op = it->second->get_op(r);
         if(op == nullptr) continue;
-        if(op->pout_tile == nullptr) continue;
-        pin_permute[op->pout_tile->bank] = it->second;
+        if(op->get_op2() == nullptr) continue;
+        if(op->get_op2()->pout_tile == nullptr) continue;
+        pin_permute[op->get_op2()->pout_tile->bank] = it->second;
     }
     return pin_permute;
 };
