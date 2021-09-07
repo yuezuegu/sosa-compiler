@@ -23,7 +23,7 @@
                 }
             ],
             "preLaunchTask": "build",
-            "miDebuggerPath": "/usr/bin/gdb",
+            "miDebuggerPath": "/opt/rh/devtoolset-8/root/usr/bin/gdb",
             "stopAtEntry": false
         }
     ]

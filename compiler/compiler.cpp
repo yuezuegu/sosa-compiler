@@ -41,15 +41,15 @@ void Compiler::compile_layer(Layer* layer, int init_round){
             
             list<Op*> unconsumed_ops;
             for (int j = 0; j < get<1>(layer->no_tiles); j++){
-                unconsumed_ops.push_back(layer->get_mainop_by_index({i,j,k}));
+                unconsumed_ops.push_back(layer->get_mainop_by_index(make_tuple(i,j,k)));
             }
 
             for (int j1 = 0; j1 < get<1>(layer->no_tiles); j1++){
-                MultOp* op1 = layer->get_mainop_by_index({i,j1,k});
+                MultOp* op1 = layer->get_mainop_by_index(make_tuple(i,j1,k));
                 int r1 = op1->round_placed;
 
                 for (int j2 = 0; j2 < get<1>(layer->no_tiles); j2++){
-                    MultOp* op2 = layer->get_mainop_by_index({i,j2,k});
+                    MultOp* op2 = layer->get_mainop_by_index(make_tuple(i,j2,k));
 
                     if (op2->pin_op != nullptr){
                         continue;
@@ -75,7 +75,7 @@ void Compiler::compile_layer(Layer* layer, int init_round){
                 }
             }
 
-            list<AggrOp*>* post_op_list = &layer->post_ops[{i,k}];
+            list<AggrOp*>* post_op_list = &layer->post_ops[make_tuple(i,k)];
 
             map<Op*, Op*> post_pairs;
             while (unconsumed_ops.size()/2 >= 1){

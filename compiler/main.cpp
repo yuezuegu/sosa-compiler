@@ -14,7 +14,7 @@
 using namespace std;
 
 int main(){
-    string fname = "/home/yuezuegu/sosa-compiler/experiments/run-2021_07_08-16_03_48/90ac8b8d4f96b11014dd755a32c4f5d5/precompiled_model.json";
+    string fname = "/home/yuezuegu/sosa-compiler/experiments/tmp/precompiled_model.json";
 
     int no_array = 4;
     int no_rows = 8;

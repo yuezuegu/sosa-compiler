@@ -130,6 +130,7 @@ def main():
 
     gemm_ops = precompile_model(model, array_size=array_size, partition_size=partition_size)
 
+    os.makedirs(out_dir)
     with open(out_dir+"/precompiled_model.json", "w") as outfile:  
         json.dump(gemm_ops, outfile)
 

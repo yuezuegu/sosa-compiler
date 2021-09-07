@@ -44,7 +44,7 @@ AggrOp::AggrOp(string layer_name, Op* operand1, Op* operand2, bool flip){
     this->round_placed = -1;
 
     assert((this->pin1_tile->dims == this->pin2_tile->dims && "Input dimensions do not match!"));
-    this->pout_tile = new P_Tile(layer_name, {-1, -1, -1}, this->pin1_tile->dims);
+    this->pout_tile = new P_Tile(layer_name, make_tuple(-1, -1, -1), this->pin1_tile->dims);
 };
 
 Op* AggrOp::get_op1(){
