@@ -17,63 +17,12 @@ Layer::Layer(string layer_name,
     this->input_size = input_size;
     this->weight_size = weight_size;
     this->is_scheduled = false;
+    this->start_round = -1;
+    this->end_round = -1;
     this->dependencies = dependencies;
+
 };
 
-
-int Layer::start_round(){
-    int start_round = -1;
-
-    if (!this->is_scheduled) return start_round;
-
-    for(auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
-        if(!it->second->is_placed()){
-            throw runtime_error("There is an unscheduled op");        
-        }
-
-        if (start_round == -1){
-            start_round = it->second->round_placed;
-        }
-        else{
-            if (it->second->round_placed < start_round){
-                start_round = it->second->round_placed;
-            }
-        }
-    }
-
-    return start_round;
-}
-
-int Layer::end_round(){
-    int end_round = -1;
-
-    if (!this->is_scheduled) return end_round;
-
-    for(auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
-        if(!it->second->is_placed()){
-            throw runtime_error("There is an unscheduled op");        
-        }
-
-        if (it->second->round_placed > end_round){
-            end_round = it->second->round_placed;
-        }
-    }
-
-    for(auto it = this->post_ops.begin(); it != this->post_ops.end(); it++){
-        for(auto it2 = it->second.begin(); it2 != it->second.end(); it2++){
-            if(!(*it2)->is_placed()){
-                throw runtime_error("There is an unscheduled op");        
-            }
-
-            if ((*it2)->round_placed > end_round){
-                end_round = (*it2)->round_placed;
-            }
-
-        }
-    }    
-
-    return end_round;
-}
 
 Layers::Layers(string fname){
     this->import_layers(fname);
@@ -91,10 +40,10 @@ void Layers::import_layers(string fname){
     input_file >> j;
     input_file.close();
 
-    for (json::iterator it = j.begin(); it != j.end(); ++it) {
-        string layer_name = it.key();
-        auto deps = it.value()["deps"];
-        auto gemm_op = it.value()["gemm_op"];
+    for (json::iterator it = j["order"].begin(); it != j["order"].end(); ++it) {
+        string layer_name = it.value();
+        auto deps = j["layers"][layer_name]["deps"];
+        auto gemm_op = j["layers"][layer_name]["gemm_op"];
 
         map<tuple<int, int>, tuple<int, int>> x_tile_dim;
         map<tuple<int, int>, tuple<int, int>> w_tile_dim;
@@ -128,14 +77,15 @@ void Layers::import_layers(string fname){
         }
 
         list<Layer*> dependencies;
-        for(auto it = deps.begin(); it != deps.end(); it++){
-            string dep_name = it->get<string>(); // remove 
+        for(auto it_dep = deps.begin(); it_dep != deps.end(); it_dep++){
+            string dep_name = it_dep->get<string>(); // remove 
             Layer* dep_layer = this->get_layer_by_name(dep_name);
             if (dep_layer != nullptr){
                 dependencies.push_back(dep_layer);
             }   
         }
 
+        cout << layer_name << endl;
         Layer layer(layer_name, x_tile_dim, w_tile_dim, no_tiles, input_size, weight_size, dependencies);
         this->layer_list.push_back(layer);
     }

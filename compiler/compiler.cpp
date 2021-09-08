@@ -14,12 +14,27 @@ Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, P
 }
 
 void Compiler::compile(Layers* layers){
-    int init_round = 0;
-
     while (!layers->all_layers_scheduled()){
         for(auto it = layers->begin(); it != layers->end(); it++){
             if (it->is_scheduled) continue;
+
+            bool all_deps_scheduled = true;
+            int init_round = 0;
+            for(auto it_dep = it->dependencies.begin(); it_dep != it->dependencies.end(); it_dep++){
+                if (!(*it_dep)->is_scheduled){
+                    all_deps_scheduled = false;
+                    break;
+                }
+
+                if ((*it_dep)->end_round >= init_round){
+                    init_round = (*it_dep)->end_round+1;
+                }
+            }
+
+            if (!all_deps_scheduled) continue;
+
             compile_layer(&(*it), init_round);
+            cout << it->layer_name << ": start round: " << it->start_round << " end round: " << it->end_round << endl;
         }
     }
 }
@@ -28,14 +43,31 @@ void Compiler::compile_layer(Layer* layer, int init_round){
     layer->create_main_ops();
     layer->init_banks(this->banks);
 
+    layer->start_round = -1;
+    layer->end_round = -1;
     for (auto it = layer->main_ops.begin(); it != layer->main_ops.end(); it++){
         MultOp* op = it->second;
 
         int r = init_round;
-        while (!op->is_placed()){
+        while (true){
             this->op_placement(r, op);
 
-            r++;
+            if (op->is_placed()){
+                if (layer->start_round == -1){
+                    layer->start_round = r;
+                }
+                else{
+                    if (r < layer->start_round){
+                        layer->start_round = r;
+                    }
+                }
+                if (r > layer->end_round) layer->end_round = r;
+                break;
+            }
+            else{
+                r++;
+            }
+            
         }
     }
 
@@ -50,14 +82,27 @@ void Compiler::compile_layer(Layer* layer, int init_round){
                 AggrOp* post_op = *it;
 
                 int r = post_op->max_round()+1;
-                while(!post_op->is_placed()){
+                while(true){
                     this->post_op_placement(r, post_op);
-                    r++;
+
+                    if (post_op->is_placed()){
+                        if (r < layer->start_round){
+                            throw "Something is wrong, r cannot be smaller than start round";
+                        }
+                        if (r > layer->end_round) layer->end_round = r;
+                        break;
+                    }
+                    else{
+                        r++;
+                    }
+                    
                 }
             }
         }
     }
 
+    if (layer->start_round == -1) layer->start_round = init_round;
+    if (layer->end_round == -1) layer->end_round = init_round - 1;
     layer->is_scheduled = true;
 }
 

@@ -30,6 +30,8 @@ class Layer {
         tuple<int, int> input_size;
         tuple<int, int> weight_size;
         bool is_scheduled;
+        int start_round;
+        int end_round;
         list<Layer*> dependencies;
 
         Layer(string, tile_dim_map, tile_dim_map, tuple<int, int, int>, tuple<int, int>, tuple<int, int>, list<Layer*>);
@@ -41,8 +43,7 @@ class Layer {
 
         MultOp* get_mainop_by_index(tuple<int, int, int> index);
 
-        int start_round();
-        int end_round();
+
         
     private:
         

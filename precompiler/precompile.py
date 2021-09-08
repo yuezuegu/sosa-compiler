@@ -133,7 +133,7 @@ def main():
 
     os.makedirs(out_dir, exist_ok=True)
     with open(out_dir+"/precompiled_model.json", "w") as outfile:  
-        json.dump(layers, outfile)
+        json.dump({"order":list(layers.keys()), "layers":layers}, outfile)
 
     print("precompiled model is saved at: {}".format(out_dir))
 
