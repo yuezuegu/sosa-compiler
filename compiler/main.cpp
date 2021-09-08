@@ -16,9 +16,9 @@ using namespace std;
 int main(){
     string fname = "/home/yuezuegu/sosa-compiler/experiments/tmp/precompiled_model.json";
 
-    int no_array = 4;
-    int no_rows = 8;
-    int no_cols = 8;
+    int no_array = 32;
+    int no_rows = 32;
+    int no_cols = 32;
     int bank_size = 1 >> 20; //1 MB
 
     Layers* layers = new Layers(fname);
@@ -32,5 +32,7 @@ int main(){
     compiler->compile(layers);
 
     cout << "Finished succesfully" << endl;
+    cout << "# of main rounds: " << compiler->no_main_rounds() << endl;
+    cout << "# of post rounds: " << compiler->no_post_rounds() << endl;
     return 0;
 }

@@ -6,6 +6,7 @@
 
 PostProcessor::PostProcessor(int id){
     this->id = id;
+    this->last_no_round = 0;
 }
 
 void PostProcessor::assign_op(int r, AggrOp* op){
@@ -13,6 +14,9 @@ void PostProcessor::assign_op(int r, AggrOp* op){
     if (sch == this->schedule.end()){
         this->schedule[r] = op;
         op->assign_to_pp(r, this);
+        if (r > this->last_no_round){
+            this->last_no_round = r;
+        }
         return;
     }
     

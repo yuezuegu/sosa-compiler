@@ -78,6 +78,16 @@ void AggrOp::assign_to_pp(int r, PostProcessor* pp){
 };
 
 
+int AggrOp::max_round(){
+    AggrOp* op1 = (AggrOp*)this->operand1;
+    AggrOp* op2 = (AggrOp*)this->operand2;
+
+    int r1 = op1->round_placed;
+    int r2 = op2->round_placed;
+
+    return (r1>r2) ? r1 : r2;    
+}
+
 
 
 

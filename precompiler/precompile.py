@@ -93,12 +93,13 @@ def all_dependencies_scheduled(layer_name, graph, layer_schedules):
 def precompile_model(model, array_size=[512,512], partition_size=None):
     graph = convert_keras_to_graph(model)
 
-    gemm_ops = OrderedDict()
+    layers = OrderedDict()
     for layer_name in graph.get_layer_names():
         layer_node = graph.get_node(layer_name)
-        gemm = partition_layer(layer_node, array_size, partition_size)
-        gemm_ops[layer_name] = gemm
-    return gemm_ops
+        gemm_op = partition_layer(layer_node, array_size, partition_size)
+        dependencies = [s.layer_name for s in layer_node.src]
+        layers[layer_name] = {"gemm_op": gemm_op, "deps": dependencies}
+    return layers
 
 def main():
     parser = argparse.ArgumentParser()
@@ -128,11 +129,11 @@ def main():
     else:
         model = bm.get_keras_model() 
 
-    gemm_ops = precompile_model(model, array_size=array_size, partition_size=partition_size)
+    layers = precompile_model(model, array_size=array_size, partition_size=partition_size)
 
-    os.makedirs(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
     with open(out_dir+"/precompiled_model.json", "w") as outfile:  
-        json.dump(gemm_ops, outfile)
+        json.dump(layers, outfile)
 
     print("precompiled model is saved at: {}".format(out_dir))
 

@@ -53,6 +53,8 @@ class AggrOp: public Op{
         Op* operand1;
         Op* operand2;
 
+        int max_round();
+
         PostProcessor* pp_placed;
 
         bool flip; //this allows distinguishing same pairs of operations.

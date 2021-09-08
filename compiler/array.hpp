@@ -13,6 +13,8 @@ class Array{
         int id;
         int no_rows, no_cols;
         
+        int last_no_round;
+
         Array(int id, int no_rows, int no_cols);
         void assign_op(int r, MultOp* op);
         MultOp* get_op(int r);
@@ -37,9 +39,11 @@ class Arrays{
         bool check_pout_bank_conflict(int r, P_Tile* p_tile);
         bool check_pin_bank_conflict(int r, P_Tile* p_tile);
         list<Array*> available_arrays(int r);
+
+        map<int, Array*> array_map;
     private:
     
-        map<int, Array*> array_map;
+        
 };
 
 

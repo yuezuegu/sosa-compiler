@@ -13,6 +13,7 @@ class AggrOp;
 class PostProcessor{
     public:
         int id;
+        int last_no_round;
 
         PostProcessor(int id);
 
@@ -38,9 +39,12 @@ class PostProcessors{
         map<Bank*, PostProcessor*> get_pin1_permute(int r);
         map<Bank*, PostProcessor*> get_pin2_permute(int r);
         map<Bank*, PostProcessor*> get_pout_permute(int r);
+        
+        map<int, PostProcessor*> pp_map;
+
     private:
 
-        map<int, PostProcessor*> pp_map;
+        
 };
 
 

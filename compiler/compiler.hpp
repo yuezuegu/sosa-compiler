@@ -24,7 +24,8 @@ class Compiler{
         void compile_layer(Layer* layer, int init_round);
         void op_placement(int r, MultOp* op);
         void post_op_placement(int r, AggrOp* op);
-
+        int no_main_rounds();
+        int no_post_rounds();
     private:
 };
 

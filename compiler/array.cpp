@@ -4,6 +4,7 @@ Array::Array(int id, int no_rows, int no_cols){
     this->id = id;
     this->no_rows = no_rows;
     this->no_cols = no_cols;
+    this->last_no_round = 0;
 }
 
 bool Array::is_idle(int r){
@@ -33,11 +34,16 @@ void Array::assign_op(int r, MultOp* op){
     if (sch == this->schedule.end()){
         this->schedule[r] = op;
         op->assign_to_array(r, this);
+        if (r > this->last_no_round){
+            this->last_no_round = r;
+        }
+        return;
     }
     
     if (sch->second == nullptr){
         this->schedule[r] = op;
         op->assign_to_array(r, this);
+        return;
     }
 
     throw runtime_error("Cannot assign op to array");

@@ -15,10 +15,13 @@ Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, P
 
 void Compiler::compile(Layers* layers){
     int init_round = 0;
-    for(auto it = layers->begin(); it != layers->end(); it++){
-        compile_layer(&(*it), init_round);
-    }
 
+    while (!layers->all_layers_scheduled()){
+        for(auto it = layers->begin(); it != layers->end(); it++){
+            if (it->is_scheduled) continue;
+            compile_layer(&(*it), init_round);
+        }
+    }
 }
 
 void Compiler::compile_layer(Layer* layer, int init_round){
@@ -36,91 +39,26 @@ void Compiler::compile_layer(Layer* layer, int init_round){
         }
     }
 
+    layer->create_post_ops(this->arrays, this->interconnects);
+
     for (int i = 0; i < get<0>(layer->no_tiles); i++){
         for (int k = 0; k < get<2>(layer->no_tiles); k++){
             
-            list<Op*> unconsumed_ops;
-            for (int j = 0; j < get<1>(layer->no_tiles); j++){
-                unconsumed_ops.push_back(layer->get_mainop_by_index(make_tuple(i,j,k)));
-            }
-
-            for (int j1 = 0; j1 < get<1>(layer->no_tiles); j1++){
-                MultOp* op1 = layer->get_mainop_by_index(make_tuple(i,j1,k));
-                int r1 = op1->round_placed;
-
-                for (int j2 = 0; j2 < get<1>(layer->no_tiles); j2++){
-                    MultOp* op2 = layer->get_mainop_by_index(make_tuple(i,j2,k));
-
-                    if (op2->pin_op != nullptr){
-                        continue;
-                    }
-
-                    int r2 = op2->round_placed;
-                    if (r2 <= r1){
-                        continue;
-                    }
-
-                    if(this->arrays->check_pin_bank_conflict(r2, op1->pout_tile)){
-                        continue;
-                    }
-
-                    this->interconnects->pin_interconnect->apply_permute(this->arrays->get_pin_permute(r2));
-                    if(!this->interconnects->pin_interconnect->is_route_free(op1->pout_tile->bank, op2->array_placed)){
-                        continue;
-                    }
-
-                    op2->assign_pin(op1);
-                    unconsumed_ops.remove(op1);
-                    break;
-                }
-            }
-
             list<AggrOp*>* post_op_list = &layer->post_ops[make_tuple(i,k)];
-
-            map<Op*, Op*> post_pairs;
-            while (unconsumed_ops.size()/2 >= 1){
-                Op* op1 = unconsumed_ops.front();
-                unconsumed_ops.pop_front();
-
-                Op* op2 = unconsumed_ops.front();
-                unconsumed_ops.pop_front();
-
-                AggrOp* aggr_op1 = new AggrOp(layer->layer_name, op1, op2, 0);
-                unconsumed_ops.push_back(aggr_op1);
-                post_op_list->push_back(aggr_op1);
-
-                AggrOp* aggr_op2 = new AggrOp(layer->layer_name, op1, op2, 1);
-                post_op_list->push_back(aggr_op2);
-
-                post_pairs[op1] = op2;
-                post_pairs[op2] = op1;
-            }
 
             for (auto it = post_op_list->begin(); it != post_op_list->end(); it++){
                 AggrOp* post_op = *it;
-                AggrOp* op1 = (AggrOp*)post_op->operand1;
-                AggrOp* op2 = (AggrOp*)post_op->operand2;
 
-                int r1 = op1->round_placed;
-                int r2 = op2->round_placed;
-
-                int r = (r1>r2) ? r1+1 : r2+1;
-
+                int r = post_op->max_round()+1;
                 while(!post_op->is_placed()){
                     this->post_op_placement(r, post_op);
                     r++;
                 }
-
-
-
-
             }
-
-
         }
     }
 
-
+    layer->is_scheduled = true;
 }
 
 void Compiler::post_op_placement(int r, AggrOp* op){
@@ -263,7 +201,7 @@ void Compiler::op_placement(int r, MultOp* op){
                     op->x_tile->assign_bank(*x_bank_it);
                     op->w_tile->assign_bank(*w_bank_it);
                     op->pout_tile->assign_bank(*p_bank_it);
-                    op->assign_to_array(r, *sa_it);
+                    (*sa_it)->assign_op(r, op);
                     return;
 
                 }
@@ -271,4 +209,25 @@ void Compiler::op_placement(int r, MultOp* op){
         }
     }
 
+}
+
+
+int Compiler::no_main_rounds(){
+    int max_rounds = 0;
+    for(auto it = this->arrays->array_map.begin(); it != this->arrays->array_map.end(); it++ ){
+        if (it->second->last_no_round > max_rounds){
+            max_rounds = it->second->last_no_round;
+        }
+    }
+    return max_rounds;
+}
+
+int Compiler::no_post_rounds(){
+    int max_rounds = 0;
+    for(auto it = this->post_processors->pp_map.begin(); it != this->post_processors->pp_map.end(); it++ ){
+        if (it->second->last_no_round > max_rounds){
+            max_rounds = it->second->last_no_round;
+        }
+    }
+    return max_rounds;
 }
