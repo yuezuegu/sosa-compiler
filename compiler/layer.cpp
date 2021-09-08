@@ -20,6 +20,61 @@ Layer::Layer(string layer_name,
     this->dependencies = dependencies;
 };
 
+
+int Layer::start_round(){
+    int start_round = -1;
+
+    if (!this->is_scheduled) return start_round;
+
+    for(auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
+        if(!it->second->is_placed()){
+            throw runtime_error("There is an unscheduled op");        
+        }
+
+        if (start_round == -1){
+            start_round = it->second->round_placed;
+        }
+        else{
+            if (it->second->round_placed < start_round){
+                start_round = it->second->round_placed;
+            }
+        }
+    }
+
+    return start_round;
+}
+
+int Layer::end_round(){
+    int end_round = -1;
+
+    if (!this->is_scheduled) return end_round;
+
+    for(auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
+        if(!it->second->is_placed()){
+            throw runtime_error("There is an unscheduled op");        
+        }
+
+        if (it->second->round_placed > end_round){
+            end_round = it->second->round_placed;
+        }
+    }
+
+    for(auto it = this->post_ops.begin(); it != this->post_ops.end(); it++){
+        for(auto it2 = it->second.begin(); it2 != it->second.end(); it2++){
+            if(!(*it2)->is_placed()){
+                throw runtime_error("There is an unscheduled op");        
+            }
+
+            if ((*it2)->round_placed > end_round){
+                end_round = (*it2)->round_placed;
+            }
+
+        }
+    }    
+
+    return end_round;
+}
+
 Layers::Layers(string fname){
     this->import_layers(fname);
 };

@@ -41,6 +41,8 @@ class Layer {
 
         MultOp* get_mainop_by_index(tuple<int, int, int> index);
 
+        int start_round();
+        int end_round();
         
     private:
         
