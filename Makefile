@@ -1,10 +1,26 @@
+define \newline
 
-CC = g++
-CFLAGS = -std=c++11 -g
 
-SRC_FILES = compiler/main.cpp compiler/layer.cpp compiler/ops.cpp compiler/compiler.cpp compiler/tiles.cpp compiler/bank.cpp compiler/array.cpp compiler/interconnect.cpp compiler/post_processor.cpp
-HDR_FILES = compiler/nlohmann/json.hpp compiler/layer.hpp compiler/ops.hpp compiler/compiler.hpp compiler/tiles.hpp compiler/bank.hpp compiler/array.hpp compiler/interconnect.hpp compiler/post_processor.hpp 
-TARGET_EXEC = compiler/main
+endef
 
-all:
-	${CC} ${CFLAGS} ${SRC_FILES} -o ${TARGET_EXEC} -Wall
+CFLAGS = -std=c++11 -g -Wall
+LDFLAGS = -DBOOST_LOG_DYN_LINK -lpthread -lboost_log -lboost_thread -lboost_system
+
+PROG = main
+SRC = main layer ops compiler tiles bank array interconnect post_processor
+HDR = nlohmann/json logger_setup layer ops compiler tiles bank array interconnect post_processor
+
+INC = /home/yuezuegu/boost_1_61_0
+LIB = /home/yuezuegu/boost_1_61_0/stage/lib
+
+
+
+CMD = g++ ${CFLAGS}  ${LDFLAGS} $(INC:%=-I%) -c compiler/*.cpp -o compiler/*.o ${\newline}
+
+all: 
+	$(foreach i,${SRC},${subst *,$i,${CMD}})
+	g++ $(LIB:%=-L%) ${LDFLAGS} -o ${PROG} ${SRC:%=compiler/%.o} 
+
+clean:
+	rm main ${SRC:%=compiler/%.o}
+

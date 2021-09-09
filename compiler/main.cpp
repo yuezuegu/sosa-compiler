@@ -10,16 +10,23 @@
 #include "array.hpp"
 #include "interconnect.hpp"
 #include "post_processor.hpp"
+#include "logger_setup.hpp"
+
+#include <boost/log/trivial.hpp>
 
 using namespace std;
 
 int main(){
+    logger_setup();
+
     string fname = "/home/yuezuegu/sosa-compiler/experiments/tmp/precompiled_model.json";
 
     int no_array = 32;
     int no_rows = 32;
     int no_cols = 32;
     int bank_size = 1 >> 20; //1 MB
+
+    BOOST_LOG_TRIVIAL(info) << "Reading model info from: " << fname;
 
     Layers* layers = new Layers(fname);
     Arrays* arrays = new Arrays(no_array, no_rows, no_cols);

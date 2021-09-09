@@ -95,7 +95,6 @@ void Compiler::compile_layer(Layer* layer, int init_round){
                     else{
                         r++;
                     }
-                    
                 }
             }
         }
