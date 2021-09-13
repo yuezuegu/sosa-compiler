@@ -7,3 +7,4 @@ benchmarks.pickle.lock
 .vscode/configurationCache.log
 .vscode/dryrun.log
 .vscode/targets.log
+*.o

@@ -13,8 +13,6 @@ HDR = nlohmann/json logger_setup layer ops compiler tiles bank array interconnec
 INC = /home/yuezuegu/boost_1_61_0
 LIB = /home/yuezuegu/boost_1_61_0/stage/lib
 
-
-
 CMD = g++ ${CFLAGS}  ${LDFLAGS} $(INC:%=-I%) -c compiler/*.cpp -o compiler/*.o ${\newline}
 
 all: 

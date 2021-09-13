@@ -11,6 +11,10 @@ Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, P
     this->banks = banks;
     this->interconnects = interconnects;
     this->post_processors = post_processors;
+
+    // random_device rd;
+    // this->random_generator = new mt19937(rd()); 
+    // this->random_generator->seed(0);
 }
 
 void Compiler::compile(Layers* layers){
@@ -45,29 +49,34 @@ void Compiler::compile_layer(Layer* layer, int init_round){
 
     layer->start_round = -1;
     layer->end_round = -1;
-    for (auto it = layer->main_ops.begin(); it != layer->main_ops.end(); it++){
-        MultOp* op = it->second;
 
-        int r = init_round;
-        while (true){
-            this->op_placement(r, op);
+    for (int j = 0; j < get<1>(layer->no_tiles); j++){
+        for (int i = 0; i < get<0>(layer->no_tiles); i++){
+            for (int k = 0; k < get<2>(layer->no_tiles); k++){
+                MultOp* op = layer->get_mainop_by_index(make_tuple(i,j,k));
 
-            if (op->is_placed()){
-                if (layer->start_round == -1){
-                    layer->start_round = r;
-                }
-                else{
-                    if (r < layer->start_round){
-                        layer->start_round = r;
+                int r = init_round;
+                while (true){
+                    this->op_placement(r, op);
+
+                    if (op->is_placed()){
+                        if (layer->start_round == -1){
+                            layer->start_round = r;
+                        }
+                        else{
+                            if (r < layer->start_round){
+                                layer->start_round = r;
+                            }
+                        }
+                        if (r > layer->end_round) layer->end_round = r;
+                        break;
                     }
+                    else{
+                        r++;
+                    }
+                    
                 }
-                if (r > layer->end_round) layer->end_round = r;
-                break;
             }
-            else{
-                r++;
-            }
-            
         }
     }
 
@@ -87,7 +96,7 @@ void Compiler::compile_layer(Layer* layer, int init_round){
 
                     if (post_op->is_placed()){
                         if (r < layer->start_round){
-                            throw "Something is wrong, r cannot be smaller than start round";
+                            throw runtime_error("Something is wrong, r cannot be smaller than start round");
                         }
                         if (r > layer->end_round) layer->end_round = r;
                         break;
@@ -226,6 +235,7 @@ void Compiler::op_placement(int r, MultOp* op){
     this->interconnects->x_interconnect->apply_permute(x_permute);    
     this->interconnects->w_interconnect->apply_permute(w_permute);    
 
+    //random_shuffle(avail_arrays.begin(), avail_arrays.end(), *this->random_generator);
     for(auto sa_it = avail_arrays.begin(); sa_it != avail_arrays.end(); sa_it++){
         for(auto x_bank_it = avail_x_banks.begin(); x_bank_it != avail_x_banks.end(); x_bank_it++){
             if (!this->interconnects->x_interconnect->is_route_free(*x_bank_it, *sa_it)){
@@ -246,8 +256,10 @@ void Compiler::op_placement(int r, MultOp* op){
                     op->w_tile->assign_bank(*w_bank_it);
                     op->pout_tile->assign_bank(*p_bank_it);
                     (*sa_it)->assign_op(r, op);
-                    return;
 
+                    BOOST_LOG_TRIVIAL(info) <<"Op placed: layer_name: " << op->layer_name << "\tind: " <<  get<0>(op->op_ind) << "-" << get<1>(op->op_ind) << "-" << get<2>(op->op_ind) << "\tround: " << r << "\tsa: " << (*sa_it)->id;
+
+                    return;
                 }
             }
         }

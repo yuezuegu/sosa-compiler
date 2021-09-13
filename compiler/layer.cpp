@@ -92,8 +92,8 @@ void Layers::import_layers(string fname){
 }
 
 void Layer::create_main_ops(){
-    for (int i = 0; i < get<0>(this->no_tiles); i++){
-        for (int j = 0; j < get<1>(this->no_tiles); j++){
+    for (int j = 0; j < get<1>(this->no_tiles); j++){
+        for (int i = 0; i < get<0>(this->no_tiles); i++){
             for (int k = 0; k < get<2>(this->no_tiles); k++){
                 tuple<int, int, int> op_ind = make_tuple(i,j,k);
                 X_Tile* x_tile = new X_Tile(this->layer_name, make_tuple(i,j), this->x_tile_dims[make_tuple(i, j)]);
@@ -176,16 +176,38 @@ void Layer::create_post_ops(Arrays* arrays, Interconnects* interconnects){
 
 void Layer::init_banks(Banks* banks){
     int bank_cnt = 0;
-    for (auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
-        it->second->x_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::X));
-        bank_cnt = (bank_cnt+1) % banks->no_banks;
+
+    for (int j = 0; j < get<1>(this->no_tiles); j++){
+        for (int i = 0; i < get<0>(this->no_tiles); i++){
+            for (int k = 0; k < get<2>(this->no_tiles); k++){
+                MultOp* op = this->get_mainop_by_index(make_tuple(i,j,k));
+                op->x_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::X));
+                bank_cnt = (bank_cnt+1) % banks->no_banks;
+            }
+        }
     }
 
     bank_cnt = 0;
-    for (auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
-        it->second->w_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::W));
-        bank_cnt = (bank_cnt+1) % banks->no_banks;
+    for (int j = 0; j < get<1>(this->no_tiles); j++){
+        for (int i = 0; i < get<0>(this->no_tiles); i++){
+            for (int k = 0; k < get<2>(this->no_tiles); k++){
+                MultOp* op = this->get_mainop_by_index(make_tuple(i,j,k));
+                op->w_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::W));
+                bank_cnt = (bank_cnt+1) % banks->no_banks;
+            }
+        }
     }
+
+    // for (auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
+    //     it->second->x_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::X));
+    //     bank_cnt = (bank_cnt+1) % banks->no_banks;
+    // }
+
+    // bank_cnt = 0;
+    // for (auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
+    //     it->second->w_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::W));
+    //     bank_cnt = (bank_cnt+1) % banks->no_banks;
+    // }
 }
 
 
@@ -207,7 +229,7 @@ bool Layers::all_layers_scheduled(){
 
 Layer* Layers::get_layer_by_name(string layer_name){
     for (auto it = this->begin(); it != this->end(); it++){
-        if (it->layer_name.compare(layer_name) != 0){
+        if (it->layer_name.compare(layer_name) == 0){
             return &(*it);
         }
     }

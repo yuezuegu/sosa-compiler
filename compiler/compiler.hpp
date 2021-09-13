@@ -4,11 +4,15 @@
 
 #include <list>
 #include <iostream>
+// #include <random>
+// #include <algorithm>
 
 #include "layer.hpp"
 #include "array.hpp"
 #include "interconnect.hpp"
 #include "post_processor.hpp"
+
+#include <boost/log/trivial.hpp>
 
 using namespace std;
 
@@ -18,6 +22,8 @@ class Compiler{
         Banks* banks;
         Interconnects* interconnects;
         PostProcessors* post_processors;
+        // mt19937* random_generator;
+
 
         Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, PostProcessors* post_processors);
         void compile(Layers* layers);

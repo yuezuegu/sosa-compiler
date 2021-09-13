@@ -20,7 +20,7 @@ namespace sinks = boost::log::sinks;
 namespace keywords = boost::log::keywords;
 
 void logger_setup(){
-    logging::add_file_log("sample.log");
+    logging::add_file_log("cpp.log");
     logging::core::get()->set_filter
     (
         logging::trivial::severity >= logging::trivial::debug
