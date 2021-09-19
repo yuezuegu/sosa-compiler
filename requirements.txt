@@ -1,4 +1,4 @@
-tensorflow==2.5.0
-keras==2.4.3
 keras-transformer==0.39.0
 keras-bert==0.88.0
+filelock==3.0.12
+pydot==1.4.2

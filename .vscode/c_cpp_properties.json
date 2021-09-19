@@ -4,12 +4,13 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/yuezuegu/boost_1_61_0"
+                "/home/yuezuegu/boost"
             ],
             "defines": [],
             "compilerPath": "/opt/rh/devtoolset-8/root/usr/bin/gcc",
             "cStandard": "gnu17",
-            "intelliSenseMode": "linux-gcc-x64"
+            "intelliSenseMode": "linux-gcc-x64",
+            "configurationProvider": "ms-vscode.makefile-tools"
         }
     ],
     "version": 4

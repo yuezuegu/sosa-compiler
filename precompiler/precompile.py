@@ -25,7 +25,6 @@ logging.basicConfig(filename='logger.out', filemode='w', level=logging.INFO)
 
 import json 
 
-
 def split_mat(x_size, w_size, array_size, partition_size=None):
     no_row, no_col = array_size
 

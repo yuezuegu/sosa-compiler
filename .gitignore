@@ -8,3 +8,4 @@ benchmarks.pickle.lock
 .vscode/dryrun.log
 .vscode/targets.log
 *.o
+cpp.log
