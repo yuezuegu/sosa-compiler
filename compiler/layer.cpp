@@ -160,12 +160,16 @@ void Layer::create_post_ops(Arrays* arrays, Interconnects* interconnects){
                 Op* op2 = unconsumed_ops.front();
                 unconsumed_ops.pop_front();
 
-                AggrOp* aggr_op1 = new AggrOp(this->layer_name, op1, op2, 0);
+                P_Tile* pout_tile = new P_Tile(layer_name, make_tuple(-1, -1, -1), op1->pout_tile->dims);
+
+                AggrOp* aggr_op1 = new AggrOp(this->layer_name, op1, op2, pout_tile, 0);
                 unconsumed_ops.push_back(aggr_op1);
                 post_op_list->push_back(aggr_op1);
 
-                AggrOp* aggr_op2 = new AggrOp(this->layer_name, op1, op2, 1);
+                AggrOp* aggr_op2 = new AggrOp(this->layer_name, op1, op2, pout_tile, 1);
                 post_op_list->push_back(aggr_op2);
+
+                aggr_op1->set_pair(aggr_op2);
             }
         }
     }

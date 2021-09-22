@@ -2,3 +2,4 @@ keras-transformer==0.39.0
 keras-bert==0.88.0
 filelock==3.0.12
 pydot==1.4.2
+matplotlib==3.4.3

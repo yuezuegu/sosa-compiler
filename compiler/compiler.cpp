@@ -168,6 +168,10 @@ void Compiler::post_op_placement(int r, AggrOp* op){
 
             op->pout_tile->assign_bank(*pout_it);
             (*pp_it)->assign_op(r, op);
+            
+            BOOST_LOG_TRIVIAL(info) <<"Post-op placed: layer_name: " << op->layer_name << "\tround: " << r << "\tsa: " << (*pp_it)->id << "\tpout_bank: " << (*pout_it)->id;
+
+            
             return;
         }
     }

@@ -27,8 +27,6 @@ fi
 conda env create -f conda.yml
 conda activate $CONDA_ENV
 
-exit
-
 WORK_DIR=~
 cd $WORK_DIR
 
@@ -43,7 +41,7 @@ rm ${WORK_DIR}/boost_${VER//./_}.tar.gz
 
 if [[ ${LD_LIBRARY_PATH} != *${WORK_DIR}/boost/lib* ]]; then
     echo \# Auto-added by sosa-compiler/setup.sh >> ${PROF_FILE}
-    echo export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:\${WORK_DIR}/boost/lib >> ${PROF_FILE}
+    echo export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:${WORK_DIR}/boost/lib >> ${PROF_FILE}
 fi
 
 cd $CURR_DIR

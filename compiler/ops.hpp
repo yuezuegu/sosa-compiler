@@ -23,6 +23,7 @@ class Op{
         int round_placed;
 
         P_Tile* pout_tile;
+        Op* pair_op;
 
         bool is_placed();
     protected:
@@ -59,10 +60,11 @@ class AggrOp: public Op{
 
         bool flip; //this allows distinguishing same pairs of operations.
 
-        AggrOp(string layer_name, Op* operand1, Op* operand2, bool flip);
+        AggrOp(string layer_name, Op* operand1, Op* operand2, P_Tile* pout_tile, bool flip);
         void assign_to_pp(int r, PostProcessor* pp);
         Op* get_op1();
         Op* get_op2();
+        void set_pair(AggrOp* pair);
 };
 
 #endif /* OPS_HPP */
