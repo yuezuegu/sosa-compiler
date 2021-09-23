@@ -3,12 +3,6 @@
 #include "array.hpp"
 
 
-// Op::Op(string layer_name){
-//     this->layer_name = layer_name;
-
-//     this->pout_tile = new P_Tile();
-// }
-
 MultOp::MultOp(string layer_name, tuple<int, int, int> op_ind, X_Tile* x_tile, W_Tile* w_tile, P_Tile* pout_tile){
     this->layer_name = layer_name;
     this->op_ind = op_ind;

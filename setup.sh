@@ -35,7 +35,7 @@ wget https://boostorg.jfrog.io/artifactory/main/release/${VER}/source/boost_${VE
 tar -xvf ${WORK_DIR}/boost_${VER//./_}.tar.gz
 mv boost_${VER//./_} boost 
 cd boost 
-./bootstrap.sh --prefix=${WORK_DIR}/boost --with-libraries=log,system
+./bootstrap.sh --prefix=${WORK_DIR}/boost --with-libraries=log,system,program_options
 ./b2 install
 rm ${WORK_DIR}/boost_${VER//./_}.tar.gz
 

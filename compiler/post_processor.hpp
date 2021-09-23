@@ -30,17 +30,18 @@ class PostProcessors{
         int no_pps;
 
         PostProcessors(int no_pps);
-
-        list<AggrOp*> get_schedule(int r);
-        list<PostProcessor*> available_pps(int r);
+        ~PostProcessors();
+        
+        list<AggrOp*>* get_schedule(int r);
+        list<PostProcessor*>* available_pps(int r);
         bool check_pin1_bank_conflict(int r, P_Tile* p_tile);
         bool check_pin2_bank_conflict(int r, P_Tile* p_tile);
         bool check_pout_bank_conflict(int r, P_Tile* p_tile);
-        map<Bank*, PostProcessor*> get_pin1_permute(int r);
-        map<Bank*, PostProcessor*> get_pin2_permute(int r);
-        map<Bank*, PostProcessor*> get_pout_permute(int r);
+        map<Bank*, PostProcessor*>* get_pin1_permute(int r);
+        map<Bank*, PostProcessor*>* get_pin2_permute(int r);
+        map<Bank*, PostProcessor*>* get_pout_permute(int r);
         
-        map<int, PostProcessor*> pp_map;
+        map<int, PostProcessor*>* pp_map;
 
     private:
 

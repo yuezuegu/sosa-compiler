@@ -15,12 +15,13 @@ class Tile;
 
 class Bank{
     public:
-        int size; //in bytes
         int id;
         data_type type;
         map<Tile*, int> allocated_tiles;
 
-        Bank(int id, data_type type, int size);
+        Bank(int id, data_type type);
+        ~Bank();
+        
         void alloc_tile(Tile* tile);
         int get_next_virt_addr();
     private:
@@ -32,15 +33,17 @@ class Banks{
     public:
         int no_banks;
 
-        Banks(int no_banks, int size);
+        Banks(int no_banks);
+        ~Banks();
+
         Bank* get_bank_by_id(int id, data_type type);
-        list<Bank*> get_x_banks();
-        list<Bank*> get_w_banks();
-        list<Bank*> get_p_banks();
+        list<Bank*>* get_x_banks();
+        list<Bank*>* get_w_banks();
+        list<Bank*>* get_p_banks();
     private:
-        list<Bank*> x_banks;
-        list<Bank*> w_banks;
-        list<Bank*> p_banks;
+        list<Bank*>* x_banks;
+        list<Bank*>* w_banks;
+        list<Bank*>* p_banks;
 
 };
 

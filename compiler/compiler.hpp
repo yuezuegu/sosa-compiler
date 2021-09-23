@@ -4,8 +4,8 @@
 
 #include <list>
 #include <iostream>
-// #include <random>
-// #include <algorithm>
+#include <algorithm>
+#include <memory>
 
 #include "layer.hpp"
 #include "array.hpp"

@@ -16,8 +16,6 @@ class PostProcessor;
 
 class Op{
     public:
-        // Op(string layer_name);
-
         string layer_name;
         
         int round_placed;
@@ -35,7 +33,7 @@ class MultOp: public Op{
         tuple<int, int, int> op_ind;
         X_Tile* x_tile;
         W_Tile* w_tile;
-        // P_Tile* pout_tile;
+
         MultOp* pin_op;
         MultOp* aggregated_to;
         Array* array_placed;

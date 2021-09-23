@@ -15,7 +15,7 @@ class Interconnect{
         int no_arrays;
 
         Interconnect(int no_arrays);
-        void apply_permute(map<Bank*, T*> permute);
+        void apply_permute(map<Bank*, T*>* permute);
         bool is_route_free(Bank* bank, T* array);
     private:
 

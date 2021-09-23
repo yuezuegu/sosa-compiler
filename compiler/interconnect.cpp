@@ -6,7 +6,7 @@ Interconnect<T>::Interconnect(int no_arrays){
     this->no_arrays = no_arrays;
 }
 template<class T>
-void Interconnect<T>::apply_permute(map<Bank*, T*> permute){
+void Interconnect<T>::apply_permute(map<Bank*, T*>* permute){
     //TODO: Complete this
     return;
 };
