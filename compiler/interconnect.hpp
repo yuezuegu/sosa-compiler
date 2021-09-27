@@ -12,9 +12,12 @@ using namespace std;
 template<class T>
 class Interconnect{
     public:
-        int no_arrays;
+        int no_array;
+        int data_req_latency;
+        int data_read_latency;
+        int data_write_latency;
 
-        Interconnect(int no_arrays);
+        Interconnect(int no_array);
         void apply_permute(map<Bank*, T*>* permute);
         bool is_route_free(Bank* bank, T* array);
     private:

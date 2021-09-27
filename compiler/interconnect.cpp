@@ -2,8 +2,13 @@
 #include "interconnect.hpp"
 
 template<class T>
-Interconnect<T>::Interconnect(int no_arrays){
-    this->no_arrays = no_arrays;
+Interconnect<T>::Interconnect(int no_array){
+    this->no_array = no_array;
+
+    //TODO: Calculate these values for each type of interconnect
+    this->data_req_latency = 1;
+    this->data_read_latency = 1;
+    this->data_write_latency = 1;
 }
 template<class T>
 void Interconnect<T>::apply_permute(map<Bank*, T*>* permute){

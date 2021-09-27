@@ -273,6 +273,15 @@ void Compiler::op_placement(int r, MultOp* op){
 
 }
 
+int Compiler::get_cycles(){
+    int cycles = 0;
+
+    cycles += this->interconnects->x_interconnect->data_req_latency + this->interconnects->x_interconnect->data_read_latency;
+
+
+
+}
+
 
 int Compiler::no_main_rounds(){
     int max_rounds = 0;

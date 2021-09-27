@@ -32,6 +32,7 @@ class Compiler{
         void post_op_placement(int r, AggrOp* op);
         int no_main_rounds();
         int no_post_rounds();
+        int get_cycles();
     private:
 };
 
