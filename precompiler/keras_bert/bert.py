@@ -7,7 +7,7 @@ from .backend import keras
 from .activations import gelu
 from .layers import get_inputs, get_embedding, TokenEmbedding, EmbeddingSimilarity, Masked, Extract, TaskEmbedding
 from .optimizers import AdamWarmup
-from keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam
 
 __all__ = [
     'TOKEN_PAD', 'TOKEN_UNK', 'TOKEN_CLS', 'TOKEN_SEP', 'TOKEN_MASK',
