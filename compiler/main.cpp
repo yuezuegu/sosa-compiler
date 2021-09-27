@@ -51,7 +51,9 @@ int main(int ac, char* av[]){
     Arrays* arrays = new Arrays(no_array, no_rows, no_cols);
     PostProcessors* post_processors = new PostProcessors(no_array);
     Banks* banks = new Banks(no_array);
-    Interconnects* interconnects = new Interconnects(no_array);
+    // TODO initialize interconnects here
+    Interconnects* interconnects = nullptr;
+    assert(interconnects != nullptr && "Interconnectleri initialize ettin mi mumin kardesim");
 
     Compiler* compiler = new Compiler(arrays, banks, interconnects, post_processors);
 
