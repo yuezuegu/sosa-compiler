@@ -51,7 +51,12 @@ int main(int ac, char* av[]){
     Arrays* arrays = new Arrays(no_array, no_rows, no_cols);
     PostProcessors* post_processors = new PostProcessors(no_array);
     Banks* banks = new Banks(no_array);
+
     // TODO initialize interconnects here
+    auto example_benes = new Benes(3); // generates benes of 8 ports
+    auto example_banyan = new Banyan(6); // generates banyan of 64 ports
+    example_banyan->expansion = 1; // now, this is a banyan of 32 ports and with an expansion of 2
+    
     Interconnects* interconnects = nullptr;
     assert(interconnects != nullptr && "Interconnectleri initialize ettin mi mumin kardesim");
 
