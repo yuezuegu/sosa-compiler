@@ -22,13 +22,15 @@ namespace po = boost::program_options;
 int main(int ac, char* av[]){
     logger_setup();
 
-    int opt;
+    int no_array, no_rows, no_cols;
+    InterconnectType interconnect_type;
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "show options")
-        ("r", po::value<int>(&opt)->default_value(32), "number of rows in a systolic array")
-        ("c", po::value<int>(&opt)->default_value(32), "number of columns in a systolic array")
-        ("N", po::value<int>(&opt)->default_value(32), "number of systolic arrays")
+        ("no_rows,r", po::value<int>(&no_rows)->default_value(32), "number of rows in a systolic array")
+        ("no_cols,c", po::value<int>(&no_cols)->default_value(32), "number of columns in a systolic array")
+        ("no_array,N", po::value<int>(&no_array)->default_value(32), "number of systolic arrays")
+        ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::banyan_exp_1), "interconnect type (see enum members)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(ac, av, desc), vm);
@@ -39,9 +41,14 @@ int main(int ac, char* av[]){
         return 1;
     }
 
-    int no_array = vm["r"].as<int>();
-    int no_rows = vm["c"].as<int>();
-    int no_cols = vm["N"].as<int>();
+    std::cout << (unsigned) interconnect_type << "\n";
+
+    std::cout << "Running with: " <<
+        "no_array = " << no_array << " " <<
+        "no_rows = " << no_rows << " " <<
+        "no_cols = " << no_cols << " " <<
+        "interconnect_type = " << interconnect_type <<
+        "\n";
 
     string fname = "experiments/tmp/precompiled_model.json";
 
@@ -52,13 +59,7 @@ int main(int ac, char* av[]){
     PostProcessors* post_processors = new PostProcessors(no_array);
     Banks* banks = new Banks(no_array);
 
-    // TODO initialize interconnects here
-    auto example_benes = new Benes(3); // generates benes of 8 ports
-    auto example_banyan = new Banyan(6); // generates banyan of 64 ports
-    example_banyan->expansion = 1; // now, this is a banyan of 32 ports and with an expansion of 2
-    
-    Interconnects* interconnects = nullptr;
-    assert(interconnects != nullptr && "Interconnectleri initialize ettin mi mumin kardesim");
+    Interconnects* interconnects = new Interconnects(no_array, interconnect_type);
 
     Compiler* compiler = new Compiler(arrays, banks, interconnects, post_processors);
 
