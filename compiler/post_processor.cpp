@@ -27,7 +27,7 @@ void PostProcessor::assign_op(int r, AggrOp* op){
     }
 
     throw runtime_error("Cannot assign op to array");
-};
+}
 
 bool PostProcessor::is_idle(int r){
     auto sch = this->schedule.find(r);
@@ -100,7 +100,7 @@ bool PostProcessors::check_pin1_bank_conflict(int r, P_Tile* p_tile){
 
     delete schedule;
     return false;
-};
+}
 
 bool PostProcessors::check_pin2_bank_conflict(int r, P_Tile* p_tile){
     list<AggrOp*>* schedule = this->get_schedule(r);
@@ -114,7 +114,7 @@ bool PostProcessors::check_pin2_bank_conflict(int r, P_Tile* p_tile){
 
     delete schedule;
     return false;
-};
+}
 
 bool PostProcessors::check_pout_bank_conflict(int r, P_Tile* p_tile){
     list<AggrOp*>* schedule = this->get_schedule(r);
@@ -140,7 +140,7 @@ map<Bank*, PostProcessor*>* PostProcessors::get_pin1_permute(int r){
         (*pin_permute)[op->get_op1()->pout_tile->bank] = it->second;
     }
     return pin_permute;
-};
+}
 
 map<Bank*, PostProcessor*>* PostProcessors::get_pin2_permute(int r){
     map<Bank*, PostProcessor*>* pin_permute = new map<Bank*, PostProcessor*>(); //key: bank_id, value: array_id
@@ -152,7 +152,7 @@ map<Bank*, PostProcessor*>* PostProcessors::get_pin2_permute(int r){
         (*pin_permute)[op->get_op2()->pout_tile->bank] = it->second;
     }
     return pin_permute;
-};
+}
 
 map<Bank*, PostProcessor*>* PostProcessors::get_pout_permute(int r){
     map<Bank*, PostProcessor*>* pout_permute = new map<Bank*, PostProcessor*>(); //key: bank_id, value: pp_id
@@ -164,4 +164,4 @@ map<Bank*, PostProcessor*>* PostProcessors::get_pout_permute(int r){
         (*pout_permute)[op->pout_tile->bank] = it->second;
     }
     return pout_permute;    
-};
+}

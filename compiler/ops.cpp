@@ -25,13 +25,13 @@ void MultOp::assign_pin(MultOp* pin_op){
     this->pin_op = pin_op;
     this->pin_op->pout_tile->input_of->push_back(this);
     pin_op->aggregated_to = this;
-};
+}
 
 void MultOp::assign_to_array(int r, Array* array){
     this->array_placed = array;
     this->round_placed = r;
     this->is_placed_ = true;
-};
+}
 
 bool Op::is_placed(){
     return this->is_placed_;
@@ -57,7 +57,7 @@ AggrOp::AggrOp(string layer_name, Op* operand1, Op* operand2, P_Tile* pout_tile,
     else{
         this->pout_tile = pout_tile;
     }
-};
+}
 
 Op* AggrOp::get_op1(){
     if (this->flip){
@@ -81,7 +81,7 @@ void AggrOp::assign_to_pp(int r, PostProcessor* pp){
     this->pp_placed = pp;
     this->round_placed = r;
     this->is_placed_ = true;
-};
+}
 
 void AggrOp::set_pair(AggrOp* pair_op){
     this->pair_op = pair_op;

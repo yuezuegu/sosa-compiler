@@ -307,6 +307,7 @@ int Compiler::get_cycles(){
         cycle++;
     }
 
+    // FIXME no return statements
 }
 
 

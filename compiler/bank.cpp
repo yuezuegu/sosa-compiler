@@ -6,7 +6,7 @@
 Bank::Bank(int id, data_type type){
     this->id = id;
     this->type = type;
-};
+}
 
 Bank::~Bank(){
     
@@ -34,7 +34,7 @@ Banks::Banks(int no_banks){
     for(int i = 0; i < no_banks; i++){
         this->p_banks->push_back(new Bank(i, data_type::P));
     }
-};
+}
 
 Banks::~Banks(){
     for (auto it = this->x_banks->begin(); it != this->x_banks->end(); it++){
@@ -55,15 +55,15 @@ Banks::~Banks(){
 
 list<Bank*>* Banks::get_x_banks(){
     return this->x_banks;
-};
+}
 
 list<Bank*>* Banks::get_w_banks(){
     return this->w_banks;
-};
+}
 
 list<Bank*>* Banks::get_p_banks(){
     return this->p_banks;
-};
+}
 
 
 

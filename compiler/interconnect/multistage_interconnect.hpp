@@ -51,7 +51,7 @@ struct SwitchState {
   }
 
   bool check_path(UnsignedInt src_id, Int src_port, Int dest_port) const {
-    if (src_id == -1) // to disable the check temporarily
+    if (src_id == (UnsignedInt)(-1)) // to disable the check temporarily
       return true;
 
     // TODO revert by commenting the next line

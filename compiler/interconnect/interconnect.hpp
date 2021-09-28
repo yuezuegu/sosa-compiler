@@ -15,7 +15,7 @@ inline void propagate_impl(Interconnect &interconnect, Int const *packets,
   auto N = 1 << interconnect.n();
   std::vector<Int> packets_vector(packets, packets + N);
   auto &&propagated = interconnect.propagate(packets_vector, invalid);
-  for (std::size_t i = 0; i < N; ++i) {
+  for (UnsignedInt i = 0; i < (UnsignedInt) N; ++i) {
     output[i] = propagated[i];
   }
 }
@@ -150,11 +150,11 @@ struct BenesWithCopy : InterconnectBase {
 
   void reset() override {}
 
-  void propagate(Int const *packets, Int *output, Int invalid) const override {}
+  void propagate(Int const *, Int *, Int) const override {}
 
-  bool do_apply_permute(Int const *inverse_mapping) override { return true; }
+  bool do_apply_permute(Int const *) override { return true; }
 
-  bool do_is_route_free(UnsignedInt src, UnsignedInt dest) override {
+  bool do_is_route_free(UnsignedInt, UnsignedInt) override {
     return true;
   }
 

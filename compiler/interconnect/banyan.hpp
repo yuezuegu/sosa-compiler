@@ -103,7 +103,7 @@ struct Banyan {
   }
 
   bool bit_follow(Int const *inverse_mapping, bool msb_to_lsb = true) {
-    for (UnsignedInt i = 0; i < (1 << n_); ++i) {
+    for (UnsignedInt i = 0; i < (1u << n_); ++i) {
       if (inverse_mapping[i] == -1) {
         continue;
       }
@@ -116,7 +116,7 @@ struct Banyan {
   }
 
   bool bit_follow_expansion(Int const *inverse_mapping, UnsignedInt exp) {
-    for (UnsignedInt i = 0; i < (1 << n_); ++i) {
+    for (UnsignedInt i = 0; i < (1u << n_); ++i) {
       if (inverse_mapping[i] == -1) {
         continue;
       }
@@ -137,7 +137,7 @@ struct Banyan {
         MIN_REQUIRE_MSG(
             x.first <= x.second,
             "for each interval, MIN must be less than or equal to MAX");
-        MIN_REQUIRE_MSG(x.second < (1 << n_), "invalid port for given n");
+        MIN_REQUIRE_MSG(x.second < (1u << n_), "invalid port for given n");
 
         if (y != packets.end()) {
           MIN_REQUIRE_MSG(x.second < y->first,
@@ -175,7 +175,7 @@ private:
     auto &first = interstages.front();
     auto &last = interstages.back();
 
-    for (UnsignedInt j = 0; j < (1 << (n_ - 1)); ++j) {
+    for (UnsignedInt j = 0; j < (1u << (n_ - 1)); ++j) {
       first.mapping[j] = j << 1;
       first.mapping[j + (1 << (n_ - 1))] = (j << 1) + 1;
       last.mapping[(j << 1)] = (j << 1);
@@ -189,7 +189,7 @@ private:
 
     auto &pattern = interstages[n_ - i + 1];
 
-    for (UnsignedInt j = 0; j < (1 << (i - 2)); ++j) {
+    for (UnsignedInt j = 0; j < (1u << (i - 2)); ++j) {
       // upper ports of the upper switches shall be connected to
       // the upper network
       pattern.mapping[offset + (j << 1)] = offset + (j << 1);

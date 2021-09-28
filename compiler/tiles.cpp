@@ -16,7 +16,7 @@ X_Tile::X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims){
     this->phys_bank_addr = -1;
     this->bank = nullptr;
     this->input_of = new list<Op*>();
-};
+}
 
 W_Tile::W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims){
     this->layer_name = layer_name;
@@ -29,7 +29,7 @@ W_Tile::W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims){
     this->phys_bank_addr = -1;
     this->bank = nullptr;
     this->input_of = new list<Op*>();
-};
+}
 
 P_Tile::P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims){
     this->layer_name = layer_name;
@@ -42,7 +42,7 @@ P_Tile::P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims)
     this->phys_bank_addr = -1;
     this->bank = nullptr;
     this->input_of = new list<Op*>();
-};
+}
 
 void Tile::assign_bank(Bank* bank){
     assert((this->type == bank->type && "Tile type and bank type do not match!"));
@@ -51,7 +51,7 @@ void Tile::assign_bank(Bank* bank){
     this->virt_bank_addr = bank->alloc_tile(this);
 
     
-};
+}
 
 
 int Tile::get_mem_height(){

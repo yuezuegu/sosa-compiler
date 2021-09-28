@@ -53,7 +53,7 @@ struct Benes {
 
   Benes &looping(std::vector<UnsignedInt> const &permutation) {
 #ifndef MIN_NO_SIMPLE_CHECKS
-    MIN_REQUIRE(permutation.size() == (1 << n_))
+    MIN_REQUIRE(permutation.size() == (1u << n_))
 #endif
 
 #ifndef MIN_NO_LONG_CHECKS
@@ -160,7 +160,7 @@ struct Benes {
   }
 
   bool raghavendra(Int const *inverse_mapping) {
-    for (UnsignedInt i = 0; i < (1 << n_); ++i) {
+    for (UnsignedInt i = 0; i < (1u << n_); ++i) {
       if (inverse_mapping[i] == -1) {
         continue;
       }
@@ -173,7 +173,7 @@ struct Benes {
   }
 
   bool dummy(Int const *inverse_mapping) {
-    for (UnsignedInt i = 0; i < (1 << n_); ++i) {
+    for (UnsignedInt i = 0; i < (1u << n_); ++i) {
       if (inverse_mapping[i] == -1) {
         continue;
       }
@@ -281,7 +281,7 @@ struct Benes {
     UnsignedInt counter = 0;
     do {
       // early termination
-      if (k >= 0 && counter == k)
+      if (k >= 0 && counter == (UnsignedInt) k)
         break;
 
       // random shuffle the input ports
@@ -367,7 +367,7 @@ private:
     {
       auto &pattern = interstages[n_ - i];
 
-      for (UnsignedInt j = 0; j < (1 << (i - 1)); ++j) {
+      for (UnsignedInt j = 0; j < (1u << (i - 1)); ++j) {
         pattern.mapping[offset + (j << 1)] = offset + j;
         pattern.mapping[offset + (j << 1) + 1] = offset + (1 << (i - 1)) + j;
       }
@@ -404,7 +404,7 @@ private:
         }
       }
 
-      const auto sz = (1 << i);
+      const auto sz = (1u << i);
 
       std::vector<UnsignedInt> upper_perm(sz >> 1, 0), lower_perm(sz >> 1, 0);
 

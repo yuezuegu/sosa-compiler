@@ -23,7 +23,7 @@ Layer::Layer(string layer_name,
     this->x_tiles = new map<tuple<int, int>, X_Tile*>();
     this->w_tiles = new map<tuple<int, int>, W_Tile*>();
     this->p_tiles = new map<tuple<int, int, int>, P_Tile*>();
-};
+}
 
 Layer::~Layer(){
     // delete this->x_tiles;
@@ -33,7 +33,7 @@ Layer::~Layer(){
 
 Layers::Layers(){
     this->layer_list = new list<Layer>();
-};
+}
 
 Layers::~Layers(){
     delete this->layer_list;
@@ -250,7 +250,7 @@ void Layer::init_banks(Banks* banks){
 
 MultOp* Layer::get_mainop_by_index(tuple<int, int, int> index){
     return this->main_ops[index];
-};
+}
 
 
 bool Layers::all_layers_scheduled(){

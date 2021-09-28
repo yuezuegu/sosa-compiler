@@ -22,6 +22,7 @@ Array::~Array(){
 void Array::update(){
     if (this->buf_state == BUF_STATE::buffering) {
         if (this->buf_cnt < get<0>(this->next_w_tile->dims)){
+            // FIXME This statement has no effect?
             this->buf_cnt;
         }
         else{
@@ -45,6 +46,7 @@ void Array::init_weight_buffering(int r){
 }
 
 bool Array::is_weight_buffered(int r){
+    // FIXME Did you mean: return true
     if (this->get_op(r) == nullptr) true;
 
     if ( this->buf_state == BUF_STATE::buffered){
@@ -121,7 +123,7 @@ list<MultOp*>* Arrays::get_schedule(int r){
         schedule->push_back(it->second->get_op(r));
     }
     return schedule;
-};
+}
 
 list<Array*>* Arrays::available_arrays(int r){
     list<Array*>* avail_arrays = new list<Array*>();
@@ -131,7 +133,7 @@ list<Array*>* Arrays::available_arrays(int r){
         }
     }
     return avail_arrays;
-};
+}
 
 map<Bank*, Array*>* Arrays::get_x_permute(int r){
     map<Bank*, Array*>* x_permute = new map<Bank*, Array*>(); //key: bank_id, value: array_id
@@ -143,7 +145,7 @@ map<Bank*, Array*>* Arrays::get_x_permute(int r){
         (*x_permute)[op->x_tile->bank] = it->second;
     }
     return x_permute;
-};
+}
 
 map<Bank*, Array*>* Arrays::get_w_permute(int r){
     map<Bank*, Array*>* w_permute = new map<Bank*, Array*>(); //key: bank_id, value: array_id
@@ -155,7 +157,7 @@ map<Bank*, Array*>* Arrays::get_w_permute(int r){
         (*w_permute)[op->w_tile->bank] = it->second;
     }
     return w_permute;
-};
+}
 
 map<Bank*, Array*>* Arrays::get_pout_permute(int r){
     map<Bank*, Array*>* pout_permute = new map<Bank*, Array*>(); //key: bank_id, value: array_id
@@ -167,7 +169,7 @@ map<Bank*, Array*>* Arrays::get_pout_permute(int r){
         (*pout_permute)[op->pout_tile->bank] = it->second;
     }
     return pout_permute;
-};
+}
 
 map<Bank*, Array*>* Arrays::get_pin_permute(int r){
     map<Bank*, Array*>* pin_permute = new map<Bank*, Array*>(); //key: bank_id, value: array_id
@@ -178,7 +180,7 @@ map<Bank*, Array*>* Arrays::get_pin_permute(int r){
         (*pin_permute)[op->pin_op->pout_tile->bank] = it->second;
     }
     return pin_permute;
-};
+}
 
 bool Arrays::check_x_bank_conflict(int r, X_Tile* x_tile){
     unique_ptr< list<MultOp*> > schedule (this->get_schedule(r));
@@ -190,7 +192,7 @@ bool Arrays::check_x_bank_conflict(int r, X_Tile* x_tile){
         return true;
     }
     return false;
-};
+}
 
 bool Arrays::check_w_bank_conflict(int r, W_Tile* w_tile){
     unique_ptr< list<MultOp*> > schedule (this->get_schedule(r));
@@ -202,7 +204,7 @@ bool Arrays::check_w_bank_conflict(int r, W_Tile* w_tile){
         return true;
     }
     return false;
-};
+}
 
 bool Arrays::check_pout_bank_conflict(int r, P_Tile* p_tile){
     list<MultOp*>* schedule = this->get_schedule(r);
@@ -217,7 +219,7 @@ bool Arrays::check_pout_bank_conflict(int r, P_Tile* p_tile){
     }
     delete schedule;
     return false;
-};
+}
 
 bool Arrays::check_pin_bank_conflict(int r, P_Tile* p_tile){
     list<MultOp*>* schedule = this->get_schedule(r);
@@ -232,7 +234,7 @@ bool Arrays::check_pin_bank_conflict(int r, P_Tile* p_tile){
     }
     delete schedule;
     return false;
-};
+}
 
 
 bool Arrays::is_weights_buffered(int r){
