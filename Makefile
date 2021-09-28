@@ -12,8 +12,8 @@ HDR = nlohmann/json logger_setup layer ops compiler tiles bank array interconnec
 INC = /home/yuezuegu/boost/include
 LIB = /home/yuezuegu/boost/lib
 
-CMD_DEBUG = g++ -std=c++11 -g -Wall  ${LDFLAGS} $(INC:%=-I%) -c compiler/*.cpp -o compiler/*.o ${\newline}
-CMD_FINAL = g++ -std=c++11 -O3 -Wall  ${LDFLAGS} $(INC:%=-I%) -c compiler/*.cpp -o compiler/*.o ${\newline}
+CMD_DEBUG = g++ -std=c++17 -g -Wall  ${LDFLAGS} $(INC:%=-I%) -c compiler/*.cpp -o compiler/*.o ${\newline}
+CMD_FINAL = g++ -std=c++17 -O3 -Wall  ${LDFLAGS} $(INC:%=-I%) -c compiler/*.cpp -o compiler/*.o ${\newline}
 
 all: 
 	$(foreach i,${SRC},${subst *,$i,${CMD_DEBUG}})

@@ -10,6 +10,17 @@
 
 using namespace std;
 
+enum InterconnectType : unsigned {
+    crossbar = 1 << 4,
+    benes_copy = 2 << 4,
+    benes_vanilla = 3 << 4,
+    banyan_exp_1 = 4 << 4 | 1,
+    banyan = banyan_exp_1,
+    banyan_exp_2 = 4 << 4 | 2,
+    banyan_exp_3 = 4 << 4 | 3,
+    banyan_exp_4 = 4 << 4 | 4
+};
+
 class Interconnects{
     public:
         InterconnectBase * x_interconnect;
@@ -20,6 +31,7 @@ class Interconnects{
         InterconnectBase * pp_in2_interconnect;
         InterconnectBase * pp_out_interconnect;
         
+        Interconnects(int N, InterconnectType interconnect_type);
     private:
 
 

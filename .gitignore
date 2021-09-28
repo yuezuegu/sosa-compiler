@@ -8,3 +8,4 @@ benchmarks.pickle.lock
 *.o
 cpp.log
 build
+main
