@@ -2,7 +2,7 @@
 #define INTERCONNECT_HPP
 
 #include <map>
-#include <interconnect/interconnect.hpp>
+#include "interconnect/interconnect.hpp"
 
 #include "bank.hpp"
 #include "array.hpp"
