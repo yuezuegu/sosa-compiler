@@ -58,6 +58,6 @@
         "valarray": "cpp",
         "*.ipp": "cpp",
         "rope": "cpp",
-        "unordered_set": "cpp"
+        "thread": "cpp"
     }
 }

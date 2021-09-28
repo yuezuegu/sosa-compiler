@@ -9,3 +9,4 @@ benchmarks.pickle.lock
 .vscode/targets.log
 *.o
 cpp.log
+build
