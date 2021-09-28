@@ -29,6 +29,11 @@ class Layer {
         tuple<int, int, int> no_tiles;
         tuple<int, int> input_size;
         tuple<int, int> weight_size;
+
+        map<tuple<int, int>, X_Tile*>* x_tiles;
+        map<tuple<int, int>, W_Tile*>* w_tiles;
+        map<tuple<int, int, int>, P_Tile*>* p_tiles;
+
         bool is_scheduled;
         int start_round;
         int end_round;

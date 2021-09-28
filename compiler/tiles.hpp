@@ -3,9 +3,12 @@
 
 #include <string>
 #include <tuple>
+#include <list>
+
 #include "helper.hpp"
 
 class Bank;
+class Op;
 
 using namespace std;
 
@@ -15,7 +18,8 @@ class Tile{
         data_type type;
 
         tuple<int, int> dims;
-        
+        list<Op*>* input_of;
+
         int bank_id;
         int virt_bank_addr;
         int phys_bank_addr;
@@ -27,7 +31,7 @@ class Tile{
         int get_mem_width();
         int get_mem_height();
     protected:
-        bool is_allocated_;
+        bool is_allocated_on_sram;
 };
 
 class X_Tile: public Tile{
@@ -40,7 +44,7 @@ class X_Tile: public Tile{
 class W_Tile: public Tile{
     public:
         tuple<int, int> id;
-        
+
         W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims);
 };
 

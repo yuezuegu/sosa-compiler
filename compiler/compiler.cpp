@@ -278,7 +278,34 @@ int Compiler::get_cycles(){
 
     cycles += this->interconnects->x_interconnect->data_req_latency + this->interconnects->x_interconnect->data_read_latency;
 
+    int main_rounds = this->no_main_rounds();
+    int post_rounds = this->no_post_rounds();
+    int max_rounds = main_rounds > post_rounds ? main_rounds : post_rounds;
 
+    
+    int r = 0;
+    int cycle = 0;
+
+    if(!this->arrays->is_weights_buffered(r)){
+        this->arrays->init_weight_buffering(r);
+    }
+
+    while (!this->arrays->is_weights_buffered(r)){
+        this->arrays->update();
+        cycle++;
+    }
+
+    while(r < max_rounds){
+
+        
+
+        if(!this->arrays->is_weights_buffered(r)){
+            this->arrays->init_weight_buffering(r);
+        }
+
+        this->arrays->update();
+        cycle++;
+    }
 
 }
 

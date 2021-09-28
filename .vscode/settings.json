@@ -57,6 +57,7 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "*.ipp": "cpp",
-        "rope": "cpp"
+        "rope": "cpp",
+        "unordered_set": "cpp"
     }
 }

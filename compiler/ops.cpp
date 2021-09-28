@@ -7,7 +7,9 @@ MultOp::MultOp(string layer_name, tuple<int, int, int> op_ind, X_Tile* x_tile, W
     this->layer_name = layer_name;
     this->op_ind = op_ind;
     this->x_tile = x_tile;
+    this->x_tile->input_of->push_back(this);
     this->w_tile = w_tile;
+    this->w_tile->input_of->push_back(this);
     this->pout_tile = pout_tile;
     this->pin_op = nullptr;
     this->array_placed = nullptr;
@@ -15,11 +17,13 @@ MultOp::MultOp(string layer_name, tuple<int, int, int> op_ind, X_Tile* x_tile, W
     this->round_placed = -1;
     this->is_placed_ = false;
     this->pair_op = nullptr;
-
+    this->exec_cycles = get<0>(x_tile->dims);
+    this->weight_buffer_cycles = get<0>(w_tile->dims);
 }
 
 void MultOp::assign_pin(MultOp* pin_op){
     this->pin_op = pin_op;
+    this->pin_op->pout_tile->input_of->push_back(this);
     pin_op->aggregated_to = this;
 };
 

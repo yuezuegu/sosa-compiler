@@ -160,7 +160,7 @@ map<Bank*, PostProcessor*>* PostProcessors::get_pout_permute(int r){
         AggrOp* op = it->second->get_op(r);
         if(op == nullptr) continue;
         if(op->pout_tile == nullptr) continue;
-        if(!op->pout_tile->is_allocated()) continue;
+        if(op->pout_tile->bank == nullptr) continue;
         (*pout_permute)[op->pout_tile->bank] = it->second;
     }
     return pout_permute;    

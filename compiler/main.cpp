@@ -28,7 +28,7 @@ int main(int ac, char* av[]){
         ("help", "show options")
         ("r", po::value<int>(&opt)->default_value(32), "number of rows in a systolic array")
         ("c", po::value<int>(&opt)->default_value(32), "number of columns in a systolic array")
-        ("N", po::value<int>(&opt)->default_value(4), "number of systolic arrays")
+        ("N", po::value<int>(&opt)->default_value(32), "number of systolic arrays")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(ac, av, desc), vm);

@@ -3,16 +3,31 @@
 
 #include <map>
 #include <list>
+#include <memory>
 
 #include "ops.hpp"
 
 using namespace std;
+
+enum BUF_STATE{
+    empty,
+    buffering,
+    buffered
+};
+
 
 class Array{
     public:
         int id;
         int no_rows, no_cols;
         
+        int pipeline_cycles;
+
+        BUF_STATE buf_state;
+        W_Tile* curr_w_tile;
+        W_Tile* next_w_tile;
+        int buf_cnt;
+
         int last_no_round;
 
         Array(int id, int no_rows, int no_cols);
@@ -21,6 +36,10 @@ class Array{
         void assign_op(int r, MultOp* op);
         MultOp* get_op(int r);
         bool is_idle(int r);
+        void init_weight_buffering(int r);
+        bool is_weight_buffered(int r);
+
+        void update();
     private:
         map<int, MultOp*> schedule;
 };
@@ -33,6 +52,7 @@ class Arrays{
         ~Arrays();
 
         list<MultOp*>* get_schedule(int r);
+        list<int>* get_exec_cycles(int r);
         map<Bank*, Array*>* get_x_permute(int r);
         map<Bank*, Array*>* get_w_permute(int r);
         map<Bank*, Array*>* get_pout_permute(int r);
@@ -42,7 +62,11 @@ class Arrays{
         bool check_pout_bank_conflict(int r, P_Tile* p_tile);
         bool check_pin_bank_conflict(int r, P_Tile* p_tile);
         list<Array*>* available_arrays(int r);
+        bool is_weights_buffered(int r);
 
+        void init_weight_buffering(int r);
+
+        void update();
         map<int, Array*>* array_map;
     private:
     

@@ -20,10 +20,15 @@ Layer::Layer(string layer_name,
     this->start_round = -1;
     this->end_round = -1;
     this->dependencies = dependencies;
+    this->x_tiles = new map<tuple<int, int>, X_Tile*>();
+    this->w_tiles = new map<tuple<int, int>, W_Tile*>();
+    this->p_tiles = new map<tuple<int, int, int>, P_Tile*>();
 };
 
 Layer::~Layer(){
-
+    // delete this->x_tiles;
+    // delete this->w_tiles;
+    // delete this->p_tiles;
 }
 
 Layers::Layers(){
@@ -79,7 +84,6 @@ void Layers::import_layers(string fname){
             no_tiles = make_tuple(gemm_op["no_tiles"][0].get<int>(), gemm_op["no_tiles"][1].get<int>(), gemm_op["no_tiles"][2].get<int>());
             input_size = make_tuple(gemm_op["input_size"][0].get<int>(), gemm_op["input_size"][1].get<int>());
             weight_size = make_tuple(gemm_op["weight_size"][0].get<int>(), gemm_op["weight_size"][1].get<int>());
-
         }
 
         list<Layer*>* dependencies = new list<Layer*>();
@@ -100,14 +104,37 @@ void Layers::import_layers(string fname){
 void Layer::create_main_ops(){
     for (int j = 0; j < get<1>(this->no_tiles); j++){
         for (int i = 0; i < get<0>(this->no_tiles); i++){
+            X_Tile* x_tile = new X_Tile(this->layer_name, make_tuple(i,j), (*this->x_tile_dims)[make_tuple(i, j)]);
+            (*this->x_tiles)[make_tuple(i,j)] = x_tile;
+        }
+    }
+
+    for (int j = 0; j < get<1>(this->no_tiles); j++){
+        for (int k = 0; k < get<2>(this->no_tiles); k++){
+            W_Tile* w_tile = new W_Tile(this->layer_name, make_tuple(j,k), (*this->w_tile_dims)[make_tuple(j, k)]);
+            (*this->w_tiles)[make_tuple(j,k)] = w_tile;
+        }
+    }
+
+    for (int j = 0; j < get<1>(this->no_tiles); j++){
+        for (int i = 0; i < get<0>(this->no_tiles); i++){
             for (int k = 0; k < get<2>(this->no_tiles); k++){
-                tuple<int, int, int> op_ind = make_tuple(i,j,k);
-                X_Tile* x_tile = new X_Tile(this->layer_name, make_tuple(i,j), (*this->x_tile_dims)[make_tuple(i, j)]);
-                W_Tile* w_tile = new W_Tile(this->layer_name, make_tuple(j,k), (*this->w_tile_dims)[make_tuple(j, k)]);
                 P_Tile* pout_tile = new P_Tile(this->layer_name, 
                                                 make_tuple(i,j,k), 
                                                 make_tuple(get<0>((*this->x_tile_dims)[make_tuple(i, j)]), 
                                                             get<1>((*this->w_tile_dims)[make_tuple(j, k)])));
+                (*this->p_tiles)[make_tuple(i,j,k)] = pout_tile;
+            }
+        }
+    }
+
+    for (int j = 0; j < get<1>(this->no_tiles); j++){
+        for (int i = 0; i < get<0>(this->no_tiles); i++){
+            for (int k = 0; k < get<2>(this->no_tiles); k++){
+                tuple<int, int, int> op_ind = make_tuple(i,j,k);
+                X_Tile* x_tile = (*this->x_tiles)[make_tuple(i,j)];
+                W_Tile* w_tile = (*this->w_tiles)[make_tuple(j,k)];
+                P_Tile* pout_tile = (*this->p_tiles)[make_tuple(i,j,k)];
 
                 MultOp* op = new MultOp(this->layer_name, op_ind, x_tile, w_tile, pout_tile);
                 this->main_ops[make_tuple(i,j,k)] = op;

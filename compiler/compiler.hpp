@@ -22,8 +22,6 @@ class Compiler{
         Banks* banks;
         Interconnects* interconnects;
         PostProcessors* post_processors;
-        // mt19937* random_generator;
-
 
         Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, PostProcessors* post_processors);
         void compile(Layers* layers);

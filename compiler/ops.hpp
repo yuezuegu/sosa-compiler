@@ -38,6 +38,9 @@ class MultOp: public Op{
         MultOp* aggregated_to;
         Array* array_placed;
 
+        int exec_cycles;
+        int weight_buffer_cycles;
+
         MultOp(string layer_name, tuple<int, int, int> op_ind, X_Tile* x_tile, W_Tile* w_tile, P_Tile* pout_tile);
         void assign_pin(MultOp* pin_op);
         void assign_to_array(int r, Array* array);

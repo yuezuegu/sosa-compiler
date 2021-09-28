@@ -12,13 +12,12 @@ Bank::~Bank(){
     
 }
 
-int Bank::get_next_virt_addr(){
-    return this->next_virt_addr;
-}
 
-void Bank::alloc_tile(Tile* tile){
-    this->allocated_tiles[tile] = this->next_virt_addr;
+int Bank::alloc_tile(Tile* tile){
+    int addr = this->next_virt_addr;
+    this->allocated_tiles[tile] = addr;
     this->next_virt_addr += tile->get_mem_height();
+    return addr;
 }
 
 Banks::Banks(int no_banks){

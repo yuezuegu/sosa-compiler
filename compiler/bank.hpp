@@ -22,8 +22,7 @@ class Bank{
         Bank(int id, data_type type);
         ~Bank();
         
-        void alloc_tile(Tile* tile);
-        int get_next_virt_addr();
+        int alloc_tile(Tile* tile);
     private:
         int next_virt_addr;
 };
