@@ -15,6 +15,11 @@ enum BUF_STATE{
     buffered
 };
 
+enum ARR_STATE{
+    idle,
+    processing,
+    done
+};
 
 class Array{
     public:
@@ -28,6 +33,10 @@ class Array{
         W_Tile* next_w_tile;
         int buf_cnt;
 
+        ARR_STATE arr_state;
+        X_Tile* x_tile;
+        int exec_cnt;
+
         int last_no_round;
 
         Array(int id, int no_rows, int no_cols);
@@ -38,6 +47,8 @@ class Array{
         bool is_idle(int r);
         void init_weight_buffering(int r);
         bool is_weight_buffered(int r);
+        
+        void init_tile_op(int r);
 
         void update();
     private:

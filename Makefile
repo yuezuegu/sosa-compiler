@@ -9,8 +9,9 @@ PROG = main
 SRC = main layer ops compiler tiles bank array interconnect post_processor
 HDR = nlohmann/json logger_setup layer ops compiler tiles bank array interconnect post_processor
 
-INC = /home/yuezuegu/boost/include
-LIB = /home/yuezuegu/boost/lib
+BOOST_DIR=/home/yuezuegu/boost
+INC = ${BOOST_DIR}/include
+LIB = ${BOOST_DIR}/lib
 
 CMD_DEBUG = g++ -std=c++17 -g -Wall -Wextra -pedantic ${LDFLAGS} $(INC:%=-I%) -c compiler/*.cpp -o compiler/*.o ${\newline}
 CMD_FINAL = g++ -std=c++17 -O3 -Wall -Wextra -pedantic  ${LDFLAGS} $(INC:%=-I%) -c compiler/*.cpp -o compiler/*.o ${\newline}

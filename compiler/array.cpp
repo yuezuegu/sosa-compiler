@@ -13,6 +13,9 @@ Array::Array(int id, int no_rows, int no_cols){
     this->next_w_tile = nullptr;
     this->buf_state = BUF_STATE::empty;
     this->buf_cnt = 0;
+
+    this->arr_state = ARR_STATE::idle;
+    this->exec_cnt = 0;
 }
 
 Array::~Array(){
@@ -22,15 +25,19 @@ Array::~Array(){
 void Array::update(){
     if (this->buf_state == BUF_STATE::buffering) {
         if (this->buf_cnt < get<0>(this->next_w_tile->dims)){
-            // FIXME This statement has no effect?
-            this->buf_cnt;
+            this->buf_cnt++;
         }
         else{
             this->buf_state = BUF_STATE::buffered;
-            this->curr_w_tile = this->next_w_tile;
-            this->next_w_tile = nullptr;
         }
     }
+
+    if (this->arr_state == ARR_STATE::processing){
+        if (this->exec_cnt < )
+    }
+
+
+
 }
 
 void Array::init_weight_buffering(int r){
@@ -46,8 +53,7 @@ void Array::init_weight_buffering(int r){
 }
 
 bool Array::is_weight_buffered(int r){
-    // FIXME Did you mean: return true
-    if (this->get_op(r) == nullptr) true;
+    if (this->get_op(r) == nullptr) return true;
 
     if ( this->buf_state == BUF_STATE::buffered){
         if (this->next_w_tile == this->get_op(r)->w_tile){
@@ -58,6 +64,23 @@ bool Array::is_weight_buffered(int r){
     return false;
 }
 
+void Array::init_tile_op(int r){
+    if (this->get_op(r) == nullptr) return true;
+
+    if ( this->arr_state == ARR_STATE::processing){
+        throw runtime_error("Array is already in processing state");
+    }
+
+    if ( this->buf_state == BUF_STATE::buffering){
+        throw runtime_error("Buffering is not done.");
+    }
+
+    this->exec_cnt = 0;
+    this->arr_state = ARR_STATE::processing;
+    this->curr_w_tile = this->next_w_tile;
+    this->next_w_tile = nullptr;    
+
+}
 
 bool Array::is_idle(int r){
     auto sch = this->schedule.find(r);

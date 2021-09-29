@@ -282,7 +282,6 @@ int Compiler::get_cycles(){
     int post_rounds = this->no_post_rounds();
     int max_rounds = main_rounds > post_rounds ? main_rounds : post_rounds;
 
-    
     int r = 0;
     int cycle = 0;
 
@@ -296,18 +295,18 @@ int Compiler::get_cycles(){
     }
 
     while(r < max_rounds){
+        if(this->arrays->is_weights_buffered(r)){
+            
+        }
 
-        
-
-        if(!this->arrays->is_weights_buffered(r)){
-            this->arrays->init_weight_buffering(r);
+        if(!this->arrays->is_weights_buffered(r+1)){
+            this->arrays->init_weight_buffering(r+1);
         }
 
         this->arrays->update();
         cycle++;
     }
 
-    // FIXME no return statements
 }
 
 

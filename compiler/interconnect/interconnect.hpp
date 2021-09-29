@@ -164,6 +164,29 @@ private:
   UnsignedInt n_;
 };
 
+struct Crossbar : InterconnectBase {
+  Crossbar(UnsignedInt n) : n_{n} {}
+
+  UnsignedInt latency() const override { return 1; }
+
+  UnsignedInt num_ports() const override { return 1 << n_; }
+
+  void reset() override {}
+
+  void propagate(Int const *, Int *, Int) const override {}
+
+  bool do_apply_permute(Int const *) override { return true; }
+
+  bool do_is_route_free(UnsignedInt, UnsignedInt) override {
+    return true;
+  }
+
+  Crossbar *clone() const override { return new Crossbar(*this); }
+
+private:
+  UnsignedInt n_;
+};
+
 struct Banyan : InterconnectBase {
   multistage_interconnect::Banyan impl;
   std::vector<Int> current_inverse_mapping;

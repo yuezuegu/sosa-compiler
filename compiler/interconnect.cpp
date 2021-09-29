@@ -9,6 +9,7 @@ InterconnectBase *generate_interconnect(UnsignedInt n, InterconnectType type) {
         return new class (n);
     
     XYZ(benes_copy, BenesWithCopy)
+    XYZ(crossbar, Crossbar)
     XYZ(benes_vanilla, Benes)
 #undef XYZ
     if ((unsigned) type & (unsigned) InterconnectType::banyan) {
@@ -48,7 +49,7 @@ std::istream &operator>>(std::istream &in, InterconnectType &interconnect_type) 
     XYZ(banyan_exp_2)
     XYZ(banyan_exp_3)
     XYZ(banyan_exp_4)
-    // TODO add crossbar here
+    XYZ(crossbar)
     else {
         in.setstate(std::ios_base::failbit);
     }
