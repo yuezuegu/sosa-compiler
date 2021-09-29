@@ -7,32 +7,19 @@
 
 namespace multistage_interconnect {
 
-struct _string_builder {
-    std::ostringstream oss;
-    auto str() { return oss.str(); }
-
-    template <typename A, typename ...AA>
-    _string_builder &build(A &&a, AA && ...aa) {
-        oss << a;
-        return build(aa...);
+struct Exception: public std::exception {
+    template <typename ...Args>
+    Exception(Args && ...args) {
+        std::ostringstream oss;
+        (oss << ... << args);
+        msg_ = oss.str();
     }
-
-    template <typename A>
-    _string_builder &build(A &&a) {
-        oss << a;
-        return *this;
+    
+    const char *what() const noexcept override {
+        return msg_.c_str();
     }
-};
-
-struct Exception : public std::exception {
-  template <typename... Args> Exception(Args &&...args) {
-    msg_ = _string_builder{}.build(args...).str();
-  }
-
-  const char *what() const noexcept override { return msg_.c_str(); }
-
 private:
-  std::string msg_;
+    std::string msg_;
 };
 
 } // namespace multistage_interconnect
