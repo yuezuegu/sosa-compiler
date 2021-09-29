@@ -69,7 +69,7 @@ int main(int ac, char* av[]){
     cout << "# of main rounds: " << compiler->no_main_rounds() << endl;
     cout << "# of post rounds: " << compiler->no_post_rounds() << endl;
 
-    // cout << "Total no. of cycles: " << compiler->get_cycles() << endl;
+    cout << "Total no. of cycles: " << compiler->get_cycles() << endl;
 
     delete layers;
     delete arrays;

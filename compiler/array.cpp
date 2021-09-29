@@ -46,9 +46,7 @@ void Array::update(){
 void Array::init_weight_buffering(int r){
     if (this->get_op(r) == nullptr) return;
     
-    if ( this->buf_state == BUF_STATE::buffering){
-        throw runtime_error("Array is already in buffering state");
-    }
+    if ( this->buf_state == BUF_STATE::buffering) return;
 
     this->buf_cnt = 0;
     this->buf_state = BUF_STATE::buffering;

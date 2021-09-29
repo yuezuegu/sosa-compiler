@@ -263,7 +263,7 @@ void Compiler::op_placement(int r, MultOp* op){
                     op->pout_tile->assign_bank(*p_bank_it);
                     (*sa_it)->assign_op(r, op);
 
-                    BOOST_LOG_TRIVIAL(info) <<"Op placed: layer_name: " << op->layer_name << "\tind: " <<  get<0>(op->op_ind) << "-" << get<1>(op->op_ind) << "-" << get<2>(op->op_ind) << "\tround: " << r << "\tsa: " << (*sa_it)->id << "\tx bank id: " << (op->x_tile->bank->id);
+                    BOOST_LOG_TRIVIAL(info) << "Op placed: layer_name: " << op->layer_name << "\tind: " <<  get<0>(op->op_ind) << "-" << get<1>(op->op_ind) << "-" << get<2>(op->op_ind) << "\tround: " << r << "\tsa: " << (*sa_it)->id << "\tx bank id: " << (op->x_tile->bank->id);
 
                     return;
                 }
@@ -274,9 +274,9 @@ void Compiler::op_placement(int r, MultOp* op){
 }
 
 int Compiler::get_cycles(){
-    int cycles = 0;
+    // int cycles = 0;
 
-    cycles += this->interconnects->x_interconnect->data_req_latency() + this->interconnects->x_interconnect->data_read_latency();
+    int sram_round_trip = this->interconnects->x_interconnect->data_req_latency() + this->interconnects->x_interconnect->data_read_latency();
 
     int main_rounds = this->no_main_rounds();
     int post_rounds = this->no_post_rounds();
@@ -285,30 +285,44 @@ int Compiler::get_cycles(){
     int r = 0;
     int cycle = 0;
 
-    if(!this->arrays->is_weights_buffered(r)){
-        this->arrays->init_weight_buffering(r);
-    }
 
+    // Warm-up
     while (!this->arrays->is_weights_buffered(r)){
+        this->arrays->init_weight_buffering(r);
         this->arrays->update();
         cycle++;
     }
 
+
+    int round_clk = 0;
+    bool new_round = true;
     while(r < max_rounds){
-        if(this->arrays->is_weights_buffered(r) && this->arrays->is_idle()){
+        if (new_round){
+            // Round start
+            round_clk = 0;
+
             this->arrays->init_tile_op(r);
-        }
-
-        if(!this->arrays->is_weights_buffered(r+1)){
             this->arrays->init_weight_buffering(r+1);
+
+            new_round = false;
         }
 
+        //Propagate clock
         this->arrays->update();
-        if (this->arrays->is_tile_op_done(r)){
+
+
+        if (this->arrays->is_tile_op_done(r) && this->arrays->is_weights_buffered(r+1) && round_clk >= sram_round_trip){
+            //Round end
+            BOOST_LOG_TRIVIAL(info) << "Round " << r << " takes " << round_clk << "clock cycles";
+
             r++;
+
+            
+            new_round = true;
         }
 
         cycle++;
+        round_clk++;
     }
 
     return cycle;
