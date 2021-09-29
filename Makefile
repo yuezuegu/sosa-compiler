@@ -9,7 +9,6 @@ PROG = main
 SRC = main layer ops compiler tiles bank array interconnect post_processor
 HDR = nlohmann/json logger_setup layer ops compiler tiles bank array interconnect post_processor
 
-BOOST_DIR=/home/yuezuegu/boost
 INC = ${BOOST_DIR}/include
 LIB = ${BOOST_DIR}/lib
 

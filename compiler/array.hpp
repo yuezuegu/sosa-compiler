@@ -44,11 +44,13 @@ class Array{
 
         void assign_op(int r, MultOp* op);
         MultOp* get_op(int r);
-        bool is_idle(int r);
+        bool is_schedule_empty(int r);
         void init_weight_buffering(int r);
         bool is_weight_buffered(int r);
         
         void init_tile_op(int r);
+        bool is_tile_op_done(int r);
+        bool is_idle();
 
         void update();
     private:
@@ -76,6 +78,10 @@ class Arrays{
         bool is_weights_buffered(int r);
 
         void init_weight_buffering(int r);
+
+        void init_tile_op(int r);
+        bool is_tile_op_done(int r);
+        bool is_idle();
 
         void update();
         map<int, Array*>* array_map;

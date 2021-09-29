@@ -216,35 +216,27 @@ void Layer::init_banks(Banks* banks){
 
     for (int j = 0; j < get<1>(this->no_tiles); j++){
         for (int i = 0; i < get<0>(this->no_tiles); i++){
-            for (int k = 0; k < get<2>(this->no_tiles); k++){
-                MultOp* op = this->get_mainop_by_index(make_tuple(i,j,k));
-                op->x_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::X));
-                bank_cnt = (bank_cnt+1) % banks->no_banks;
-            }
+            (*this->x_tiles)[make_tuple(i,j)]->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::X));
+            bank_cnt = (bank_cnt+1) % banks->no_banks;
+
+            // for (int k = 0; k < get<2>(this->no_tiles); k++){
+            //     MultOp* op = this->get_mainop_by_index(make_tuple(i,j,k));
+            //     op->x_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::X));
+            //     bank_cnt = (bank_cnt+1) % banks->no_banks;
+            // }
         }
     }
 
     bank_cnt = 0;
     for (int j = 0; j < get<1>(this->no_tiles); j++){
-        for (int i = 0; i < get<0>(this->no_tiles); i++){
-            for (int k = 0; k < get<2>(this->no_tiles); k++){
-                MultOp* op = this->get_mainop_by_index(make_tuple(i,j,k));
-                op->w_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::W));
-                bank_cnt = (bank_cnt+1) % banks->no_banks;
-            }
+        for (int k = 0; k < get<2>(this->no_tiles); k++){
+            (*this->w_tiles)[make_tuple(j,k)]->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::W));
+            bank_cnt = (bank_cnt+1) % banks->no_banks;
+            // MultOp* op = this->get_mainop_by_index(make_tuple(i,j,k));
+            // op->w_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::W));
+            // bank_cnt = (bank_cnt+1) % banks->no_banks;
         }
     }
-
-    // for (auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
-    //     it->second->x_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::X));
-    //     bank_cnt = (bank_cnt+1) % banks->no_banks;
-    // }
-
-    // bank_cnt = 0;
-    // for (auto it = this->main_ops.begin(); it != this->main_ops.end(); it++){
-    //     it->second->w_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::W));
-    //     bank_cnt = (bank_cnt+1) % banks->no_banks;
-    // }
 }
 
 

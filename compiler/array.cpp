@@ -15,6 +15,7 @@ Array::Array(int id, int no_rows, int no_cols){
     this->buf_cnt = 0;
 
     this->arr_state = ARR_STATE::idle;
+    this->x_tile = nullptr;
     this->exec_cnt = 0;
 }
 
@@ -33,11 +34,13 @@ void Array::update(){
     }
 
     if (this->arr_state == ARR_STATE::processing){
-        if (this->exec_cnt < )
+        if (this->exec_cnt < get<0>(this->x_tile->dims)){
+            this->exec_cnt++;
+        }
+        else{
+            this->arr_state = ARR_STATE::done;
+        }
     }
-
-
-
 }
 
 void Array::init_weight_buffering(int r){
@@ -65,7 +68,7 @@ bool Array::is_weight_buffered(int r){
 }
 
 void Array::init_tile_op(int r){
-    if (this->get_op(r) == nullptr) return true;
+    if (this->get_op(r) == nullptr) return;
 
     if ( this->arr_state == ARR_STATE::processing){
         throw runtime_error("Array is already in processing state");
@@ -77,12 +80,26 @@ void Array::init_tile_op(int r){
 
     this->exec_cnt = 0;
     this->arr_state = ARR_STATE::processing;
+    this->x_tile = this->get_op(r)->x_tile;
     this->curr_w_tile = this->next_w_tile;
     this->next_w_tile = nullptr;    
-
 }
 
-bool Array::is_idle(int r){
+bool Array::is_tile_op_done(int r){
+    if (this->get_op(r) == nullptr) return true;
+
+    if (this->x_tile != this->get_op(r)->x_tile){
+        throw runtime_error("Wrong tile is loaded, something is wrong.");
+    }
+
+    return this->arr_state == ARR_STATE::done;
+}
+
+bool Array::is_idle(){
+    return this->arr_state == ARR_STATE::idle || this->arr_state == ARR_STATE::done;
+}
+
+bool Array::is_schedule_empty(int r){
     auto sch = this->schedule.find(r);
     if (sch == this->schedule.end()){
         return true;
@@ -151,7 +168,7 @@ list<MultOp*>* Arrays::get_schedule(int r){
 list<Array*>* Arrays::available_arrays(int r){
     list<Array*>* avail_arrays = new list<Array*>();
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
-        if(it->second->is_idle(r)){
+        if(it->second->is_schedule_empty(r)){
             avail_arrays->push_back(it->second);
         }
     }
@@ -275,8 +292,32 @@ void Arrays::init_weight_buffering(int r){
     }
 }
 
+void Arrays::init_tile_op(int r){
+    for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
+        it->second->init_tile_op(r);
+    }
+}
+
+bool Arrays::is_tile_op_done(int r){
+    for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
+        if( !(it->second->is_tile_op_done(r))){
+            return false;
+        }
+    }
+    return true;
+}
+
 void Arrays::update(){
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
         it->second->update();
     }
+}
+
+bool Arrays::is_idle(){
+    for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
+        if( !(it->second->is_idle())){
+            return false;
+        }
+    }
+    return true;    
 }

@@ -19,7 +19,7 @@ class PostProcessor{
 
         void assign_op(int r, AggrOp* op);
         AggrOp* get_op(int r);
-        bool is_idle(int r);
+        bool is_schedule_empty(int r);
 
     private:
         map<int, AggrOp*> schedule;

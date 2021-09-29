@@ -29,7 +29,7 @@ void PostProcessor::assign_op(int r, AggrOp* op){
     throw runtime_error("Cannot assign op to array");
 }
 
-bool PostProcessor::is_idle(int r){
+bool PostProcessor::is_schedule_empty(int r){
     auto sch = this->schedule.find(r);
     if (sch == this->schedule.end()){
         return true;
@@ -81,7 +81,7 @@ list<AggrOp*>* PostProcessors::get_schedule(int r){
 list<PostProcessor*>* PostProcessors::available_pps(int r){
     list<PostProcessor*>* avail_pps = new list<PostProcessor*>();
     for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
-        if(it->second->is_idle(r)){
+        if(it->second->is_schedule_empty(r)){
             avail_pps->push_back(it->second);
         }
     }

@@ -30,7 +30,7 @@ int main(int ac, char* av[]){
         ("no_rows,r", po::value<int>(&no_rows)->default_value(32), "number of rows in a systolic array")
         ("no_cols,c", po::value<int>(&no_cols)->default_value(32), "number of columns in a systolic array")
         ("no_array,N", po::value<int>(&no_array)->default_value(32), "number of systolic arrays")
-        ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::banyan_exp_1), "interconnect type (see enum members)")
+        ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::crossbar), "interconnect type (see enum members)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(ac, av, desc), vm);
@@ -68,6 +68,8 @@ int main(int ac, char* av[]){
     cout << "Finished succesfully" << endl;
     cout << "# of main rounds: " << compiler->no_main_rounds() << endl;
     cout << "# of post rounds: " << compiler->no_post_rounds() << endl;
+
+    // cout << "Total no. of cycles: " << compiler->get_cycles() << endl;
 
     delete layers;
     delete arrays;

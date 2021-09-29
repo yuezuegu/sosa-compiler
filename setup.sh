@@ -42,6 +42,7 @@ rm ${WORK_DIR}/boost_${VER//./_}.tar.gz
 if [[ ${LD_LIBRARY_PATH} != *${WORK_DIR}/boost/lib* ]]; then
     echo \# Auto-added by sosa-compiler/setup.sh >> ${PROF_FILE}
     echo export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:${WORK_DIR}/boost/lib >> ${PROF_FILE}
+    echo export BOOST_DIR=${WORK_DIR}/boost >> ${PROF_FILE}
 fi
 
 cd $CURR_DIR

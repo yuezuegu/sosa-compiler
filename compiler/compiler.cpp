@@ -263,7 +263,7 @@ void Compiler::op_placement(int r, MultOp* op){
                     op->pout_tile->assign_bank(*p_bank_it);
                     (*sa_it)->assign_op(r, op);
 
-                    BOOST_LOG_TRIVIAL(info) <<"Op placed: layer_name: " << op->layer_name << "\tind: " <<  get<0>(op->op_ind) << "-" << get<1>(op->op_ind) << "-" << get<2>(op->op_ind) << "\tround: " << r << "\tsa: " << (*sa_it)->id;
+                    BOOST_LOG_TRIVIAL(info) <<"Op placed: layer_name: " << op->layer_name << "\tind: " <<  get<0>(op->op_ind) << "-" << get<1>(op->op_ind) << "-" << get<2>(op->op_ind) << "\tround: " << r << "\tsa: " << (*sa_it)->id << "\tx bank id: " << (op->x_tile->bank->id);
 
                     return;
                 }
@@ -295,8 +295,8 @@ int Compiler::get_cycles(){
     }
 
     while(r < max_rounds){
-        if(this->arrays->is_weights_buffered(r)){
-            
+        if(this->arrays->is_weights_buffered(r) && this->arrays->is_idle()){
+            this->arrays->init_tile_op(r);
         }
 
         if(!this->arrays->is_weights_buffered(r+1)){
@@ -304,9 +304,14 @@ int Compiler::get_cycles(){
         }
 
         this->arrays->update();
+        if (this->arrays->is_tile_op_done(r)){
+            r++;
+        }
+
         cycle++;
     }
 
+    return cycle;
 }
 
 
