@@ -5,6 +5,11 @@
 #include "benes.hpp"
 #include <cassert>
 #include <map>
+#include <boost/log/trivial.hpp>
+#include <sstream>
+
+// Uncomment the following line for enabling logs
+// #define INTERCONNECT_LOGS
 
 using multistage_interconnect::Int;
 using multistage_interconnect::UnsignedInt;
@@ -49,12 +54,31 @@ struct InterconnectBase {
     for (auto it = cbegin(*permute); it != cend(*permute); ++it) {
       v[it->first->id] = it->second->id;
     }
-    return do_apply_permute(&v[0]);
+    auto result = do_apply_permute(&v[0]);
+    #ifdef INTERCONNECT_LOGS
+    BOOST_LOG_TRIVIAL(info) <<
+      "apply_permute: this = " << this <<
+      " mapping = " << [&] {
+        std::ostringstream oss;
+        for (auto &i: v) oss << i << ",";
+        return oss.str();
+      }() <<
+      " result = " << result;
+    #endif
+    return result;
   }
 
   template <typename BankType, typename TargetType>
   bool is_route_free(BankType *bank, TargetType * target) {
-    return do_is_route_free(bank->id, target->id);
+    auto result = do_is_route_free(bank->id, target->id);
+    #ifdef INTERCONNECT_LOGS
+    BOOST_LOG_TRIVIAL(info) <<
+      "is_route_free: this = " << this <<
+      " bank = " << bank->id <<
+      " target = " << target->id <<
+      " result = " << result;
+    #endif
+    return result;
   }
 };
 
@@ -230,18 +254,10 @@ struct Banyan : InterconnectBase {
   }
 
   bool do_is_route_free(UnsignedInt src, UnsignedInt dest) override {
-    if (current_inverse_mapping[dest] != -1)
-      return false;
-
-    auto temp = current_inverse_mapping;
-    temp[dest] = src;
-
-    impl.reset();
-
     if (expansion == 0)
-      return impl.bit_follow(&temp[0], true);
+      return impl.bit_follow(src, dest, true, false);
     else
-      return impl.bit_follow_expansion(&temp[0], expansion);
+      return impl.bit_follow_expansion(src, dest, expansion, false);
   }
 
   Banyan *clone() const override { return new Banyan(*this); }
