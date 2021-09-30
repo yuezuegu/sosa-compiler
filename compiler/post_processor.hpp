@@ -37,9 +37,9 @@ class PostProcessors{
         bool check_pin1_bank_conflict(int r, P_Tile* p_tile);
         bool check_pin2_bank_conflict(int r, P_Tile* p_tile);
         bool check_pout_bank_conflict(int r, P_Tile* p_tile);
-        map<Bank*, PostProcessor*>* get_pin1_permute(int r);
-        map<Bank*, PostProcessor*>* get_pin2_permute(int r);
-        map<Bank*, PostProcessor*>* get_pout_permute(int r);
+        map<PostProcessor*, Bank*>* get_pin1_permute(int r);
+        map<PostProcessor*, Bank*>* get_pin2_permute(int r);
+        map<PostProcessor*, Bank*>* get_pout_permute(int r);
         
         map<int, PostProcessor*>* pp_map;
 

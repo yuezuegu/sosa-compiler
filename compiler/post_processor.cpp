@@ -130,38 +130,38 @@ bool PostProcessors::check_pout_bank_conflict(int r, P_Tile* p_tile){
     return false;
 }
 
-map<Bank*, PostProcessor*>* PostProcessors::get_pin1_permute(int r){
-    map<Bank*, PostProcessor*>* pin_permute = new map<Bank*, PostProcessor*>(); //key: bank_id, value: array_id
+map<PostProcessor*, Bank*>* PostProcessors::get_pin1_permute(int r){
+    auto pin_permute = new map<PostProcessor*, Bank*>();
     for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
         AggrOp* op = it->second->get_op(r);
         if(op == nullptr) continue;
         if(op->get_op1() == nullptr) continue;
         if(op->get_op1()->pout_tile == nullptr) continue;
-        (*pin_permute)[op->get_op1()->pout_tile->bank] = it->second;
+        (*pin_permute)[it->second] = op->get_op1()->pout_tile->bank;
     }
     return pin_permute;
 }
 
-map<Bank*, PostProcessor*>* PostProcessors::get_pin2_permute(int r){
-    map<Bank*, PostProcessor*>* pin_permute = new map<Bank*, PostProcessor*>(); //key: bank_id, value: array_id
+map<PostProcessor*, Bank*>* PostProcessors::get_pin2_permute(int r){
+    auto pin_permute = new map<PostProcessor*, Bank*>();
     for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
         AggrOp* op = it->second->get_op(r);
         if(op == nullptr) continue;
         if(op->get_op2() == nullptr) continue;
         if(op->get_op2()->pout_tile == nullptr) continue;
-        (*pin_permute)[op->get_op2()->pout_tile->bank] = it->second;
+        (*pin_permute)[it->second] = op->get_op2()->pout_tile->bank;
     }
     return pin_permute;
 }
 
-map<Bank*, PostProcessor*>* PostProcessors::get_pout_permute(int r){
-    map<Bank*, PostProcessor*>* pout_permute = new map<Bank*, PostProcessor*>(); //key: bank_id, value: pp_id
+map<PostProcessor*, Bank*>* PostProcessors::get_pout_permute(int r){
+    auto pout_permute = new map<PostProcessor*, Bank*>();
     for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
         AggrOp* op = it->second->get_op(r);
         if(op == nullptr) continue;
         if(op->pout_tile == nullptr) continue;
         if(op->pout_tile->bank == nullptr) continue;
-        (*pout_permute)[op->pout_tile->bank] = it->second;
+        (*pout_permute)[it->second] = op->pout_tile->bank;
     }
     return pout_permute;    
 }

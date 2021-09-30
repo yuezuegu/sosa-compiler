@@ -119,17 +119,17 @@ void Compiler::post_op_placement(int r, AggrOp* op){
         return;
     }
 
-    unique_ptr< map<Bank*, PostProcessor*> > pin1_permute (this->post_processors->get_pin1_permute(r));
+    unique_ptr< map<PostProcessor*, Bank*> > pin1_permute (this->post_processors->get_pin1_permute(r));
     if(this->post_processors->check_pin1_bank_conflict(r, in_op1->pout_tile)){
         return;
     }
 
-    unique_ptr< map<Bank*, PostProcessor*> > pin2_permute (this->post_processors->get_pin2_permute(r));
+    unique_ptr< map<PostProcessor*, Bank*> > pin2_permute (this->post_processors->get_pin2_permute(r));
     if(this->post_processors->check_pin2_bank_conflict(r, in_op2->pout_tile)){
         return;
     }
 
-    unique_ptr< map<Bank*, PostProcessor*> > pout_permute (this->post_processors->get_pout_permute(r));
+    unique_ptr< map<PostProcessor*, Bank*> > pout_permute (this->post_processors->get_pout_permute(r));
     
     unique_ptr< list<Bank*> > avail_pout_banks;
     if (op->pout_tile->bank != nullptr){
@@ -142,7 +142,7 @@ void Compiler::post_op_placement(int r, AggrOp* op){
     else{
         avail_pout_banks = unique_ptr< list<Bank*> >(new list<Bank*>(*this->banks->get_p_banks()));
         for (auto it = pout_permute->begin(); it != pout_permute->end(); it++){
-            avail_pout_banks->remove(it->first);
+            avail_pout_banks->remove(it->second);
         }
     }
     if(avail_pout_banks->empty()) return;
@@ -181,7 +181,7 @@ void Compiler::op_placement(int r, MultOp* op){
         return;
     }
 
-    unique_ptr< map<Bank*, Array*> > pout_permute (this->arrays->get_pout_permute(r));
+    unique_ptr< map<Array*, Bank*> > pout_permute (this->arrays->get_pout_permute(r));
 
     unique_ptr< list<Bank*> > avail_pout_banks;
     if (op->pout_tile->bank != nullptr){
@@ -195,12 +195,23 @@ void Compiler::op_placement(int r, MultOp* op){
     else{
         avail_pout_banks = unique_ptr< list<Bank*> >(new list<Bank*>(*this->banks->get_p_banks()));
         for (auto it = pout_permute->begin(); it != pout_permute->end(); it++){
-            avail_pout_banks->remove(it->first);
+            avail_pout_banks->remove(it->second);
         }
     }
     if(avail_pout_banks->empty()) return;
     
-    unique_ptr< map<Bank*, Array*> > x_permute (this->arrays->get_x_permute(r));
+    unique_ptr< map<Array*, Bank*> > x_permute (this->arrays->get_x_permute(r));
+    BOOST_LOG_TRIVIAL(info) << "op_placement: x_permute = " << [&] {
+        std::vector<int> permute(banks->no_banks, -1);
+        for (auto it = x_permute->begin(); it != x_permute->end(); it++) {
+            permute[it->first->id] = it->second->id;
+        }
+        std::ostringstream oss;
+        for (auto &x: permute) {
+            oss << x << ", ";
+        }
+        return oss.str();
+    }();
 
     unique_ptr< list<Bank*> > avail_x_banks;
     if (op->x_tile->bank != nullptr){
@@ -214,12 +225,12 @@ void Compiler::op_placement(int r, MultOp* op){
     else{
         avail_x_banks = unique_ptr< list<Bank*> >(new list<Bank*>(*this->banks->get_x_banks()));
         for (auto it = x_permute->begin(); it != x_permute->end(); it++){
-            avail_x_banks->remove(it->first);
+            avail_x_banks->remove(it->second);
         }
     }
     if(avail_x_banks->empty()) return;
     
-    unique_ptr< map<Bank*, Array*> > w_permute (this->arrays->get_w_permute(r));
+    unique_ptr< map<Array*, Bank*> > w_permute (this->arrays->get_w_permute(r));
     unique_ptr< list<Bank*> > avail_w_banks;
     if (op->w_tile->bank != nullptr){
         if (this->arrays->check_w_bank_conflict(r, op->w_tile)){
@@ -232,7 +243,7 @@ void Compiler::op_placement(int r, MultOp* op){
     else{
         avail_w_banks = unique_ptr< list<Bank*> >(new list<Bank*>(*this->banks->get_w_banks()));
         for (auto it = w_permute->begin(); it != w_permute->end(); it++){
-            avail_w_banks->remove(it->first);
+            avail_w_banks->remove(it->second);
         }
     }
     if(avail_w_banks->empty()) return;

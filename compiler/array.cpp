@@ -173,49 +173,49 @@ list<Array*>* Arrays::available_arrays(int r){
     return avail_arrays;
 }
 
-map<Bank*, Array*>* Arrays::get_x_permute(int r){
-    map<Bank*, Array*>* x_permute = new map<Bank*, Array*>(); //key: bank_id, value: array_id
+map<Array*, Bank*>* Arrays::get_x_permute(int r){
+    map<Array*, Bank*>* x_permute = new map<Array*, Bank*>();
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
         MultOp* op = it->second->get_op(r);
         if(op == nullptr) continue;
         if(op->x_tile == nullptr) continue;
         if(op->x_tile->bank == nullptr) continue;
-        (*x_permute)[op->x_tile->bank] = it->second;
+        (*x_permute)[it->second] = op->x_tile->bank;
     }
     return x_permute;
 }
 
-map<Bank*, Array*>* Arrays::get_w_permute(int r){
-    map<Bank*, Array*>* w_permute = new map<Bank*, Array*>(); //key: bank_id, value: array_id
+map<Array*, Bank*>* Arrays::get_w_permute(int r){
+    map<Array*, Bank*>* w_permute = new map<Array*, Bank*>();
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
         MultOp* op = it->second->get_op(r);
         if(op == nullptr) continue;
         if(op->w_tile == nullptr) continue;
         if(op->w_tile->bank == nullptr) continue;
-        (*w_permute)[op->w_tile->bank] = it->second;
+        (*w_permute)[it->second] = op->w_tile->bank;
     }
     return w_permute;
 }
 
-map<Bank*, Array*>* Arrays::get_pout_permute(int r){
-    map<Bank*, Array*>* pout_permute = new map<Bank*, Array*>(); //key: bank_id, value: array_id
+map<Array*, Bank*>* Arrays::get_pout_permute(int r){
+    map<Array*, Bank*>* pout_permute = new map<Array*, Bank*>();
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
         MultOp* op = it->second->get_op(r);
         if(op == nullptr) continue;
         if(op->pout_tile == nullptr) continue;
         if(op->pout_tile->bank == nullptr) continue;
-        (*pout_permute)[op->pout_tile->bank] = it->second;
+        (*pout_permute)[it->second] = op->pout_tile->bank;
     }
     return pout_permute;
 }
 
-map<Bank*, Array*>* Arrays::get_pin_permute(int r){
-    map<Bank*, Array*>* pin_permute = new map<Bank*, Array*>(); //key: bank_id, value: array_id
+map<Array*, Bank*>* Arrays::get_pin_permute(int r){
+    map<Array*, Bank*>* pin_permute = new map<Array*, Bank*>();
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
         MultOp* op = it->second->get_op(r);
         if(op == nullptr) continue;
         if(op->pin_op == nullptr) continue;
-        (*pin_permute)[op->pin_op->pout_tile->bank] = it->second;
+        (*pin_permute)[it->second] = op->pin_op->pout_tile->bank;
     }
     return pin_permute;
 }

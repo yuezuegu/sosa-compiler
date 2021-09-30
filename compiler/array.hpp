@@ -66,10 +66,10 @@ class Arrays{
 
         list<MultOp*>* get_schedule(int r);
         list<int>* get_exec_cycles(int r);
-        map<Bank*, Array*>* get_x_permute(int r);
-        map<Bank*, Array*>* get_w_permute(int r);
-        map<Bank*, Array*>* get_pout_permute(int r);
-        map<Bank*, Array*>* get_pin_permute(int r);
+        map<Array*, Bank*>* get_x_permute(int r);
+        map<Array*, Bank*>* get_w_permute(int r);
+        map<Array*, Bank*>* get_pout_permute(int r);
+        map<Array*, Bank*>* get_pin_permute(int r);
         bool check_x_bank_conflict(int r, X_Tile* x_tile);
         bool check_w_bank_conflict(int r, W_Tile* w_tile);
         bool check_pout_bank_conflict(int r, P_Tile* p_tile);
