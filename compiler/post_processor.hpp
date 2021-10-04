@@ -10,6 +10,12 @@ using namespace std;
 
 class AggrOp;
 
+enum class PP_STATE{
+    idle,
+    processing,
+    done
+};
+
 class PostProcessor{
     public:
         int id;
@@ -21,6 +27,15 @@ class PostProcessor{
         AggrOp* get_op(int r);
         bool is_schedule_empty(int r);
 
+        PP_STATE state;
+        int exec_cnt;
+        P_Tile* curr_tile;
+
+        void init_tile_op(int r);
+        bool is_tile_op_done(int r);
+        bool is_idle();
+
+        void update();
     private:
         map<int, AggrOp*> schedule;
 };
@@ -43,6 +58,10 @@ class PostProcessors{
         
         map<int, PostProcessor*>* pp_map;
 
+        void init_tile_op(int r);
+        bool is_tile_op_done(int r);
+
+        void update();
     private:
 
         

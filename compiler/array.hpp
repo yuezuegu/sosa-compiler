@@ -9,13 +9,13 @@
 
 using namespace std;
 
-enum BUF_STATE{
+enum class BUF_STATE{
     empty,
     buffering,
     buffered
 };
 
-enum ARR_STATE{
+enum class ARR_STATE{
     idle,
     processing,
     done

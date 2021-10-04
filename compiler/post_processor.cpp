@@ -2,11 +2,41 @@
 
 #include "post_processor.hpp"
 
-
-
 PostProcessor::PostProcessor(int id){
     this->id = id;
     this->last_no_round = 0;
+    this->state = PP_STATE::idle;
+    this->exec_cnt = 0;
+    this->curr_tile = nullptr;
+}
+
+void PostProcessor::update(){
+    if (this->state == PP_STATE::processing){
+        if (this->exec_cnt < get<0>(this->curr_tile->dims)){
+            this->exec_cnt++;
+        }
+        else{
+            this->state = PP_STATE::done;
+        }
+    }
+}
+
+void PostProcessor::init_tile_op(int r){
+    if (this->get_op(r) == nullptr) return;
+
+    if ( this->state == PP_STATE::processing){
+        throw runtime_error("PP is already in processing state");
+    }
+
+    this->exec_cnt = 0;
+    this->state = PP_STATE::processing;
+    this->curr_tile = this->get_op(r)->pin1_tile;
+}
+
+bool PostProcessor::is_tile_op_done(int r){
+    if (this->get_op(r) == nullptr) return true;
+
+    return this->state == PP_STATE::done;
 }
 
 void PostProcessor::assign_op(int r, AggrOp* op){
@@ -164,4 +194,25 @@ map<PostProcessor*, Bank*>* PostProcessors::get_pout_permute(int r){
         (*pout_permute)[it->second] = op->pout_tile->bank;
     }
     return pout_permute;    
+}
+
+void PostProcessors::init_tile_op(int r){
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        it->second->init_tile_op(r);
+    }
+}
+
+bool PostProcessors::is_tile_op_done(int r){
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        if( !(it->second->is_tile_op_done(r))){
+            return false;
+        }
+    }
+    return true;
+}
+
+void PostProcessors::update(){
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        it->second->update();
+    }
 }

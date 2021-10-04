@@ -291,23 +291,24 @@ int Compiler::get_cycles(){
 
     int main_rounds = this->no_main_rounds();
     int post_rounds = this->no_post_rounds();
-    int max_rounds = main_rounds > post_rounds ? main_rounds : post_rounds;
+    // int max_rounds = main_rounds > post_rounds ? main_rounds : post_rounds;
 
     int r = 0;
-    int cycle = 0;
-
+    int arr_cycle = 0;
+    int pp_cycle = 0;
 
     // Warm-up
     while (!this->arrays->is_weights_buffered(r)){
         this->arrays->init_weight_buffering(r);
         this->arrays->update();
-        cycle++;
+        arr_cycle++;
     }
 
+    pp_cycle = arr_cycle + this->interconnects->pout_interconnect->data_read_latency(); //TODO: Replace this with data_write_latency
 
     int round_clk = 0;
     bool new_round = true;
-    while(r < max_rounds){
+    while(r < main_rounds){
         if (new_round){
             // Round start
             round_clk = 0;
@@ -321,22 +322,47 @@ int Compiler::get_cycles(){
         //Propagate clock
         this->arrays->update();
 
-
         if (this->arrays->is_tile_op_done(r) && this->arrays->is_weights_buffered(r+1) && round_clk >= sram_round_trip){
             //Round end
-            BOOST_LOG_TRIVIAL(info) << "Round " << r << " takes " << round_clk << "clock cycles";
+            BOOST_LOG_TRIVIAL(info) << "Main round " << r << " takes " << round_clk << "clock cycles";
 
             r++;
 
-            
             new_round = true;
         }
 
-        cycle++;
+        arr_cycle++;
         round_clk++;
     }
 
-    return cycle;
+    
+    r = 0;
+    new_round = true;
+    while(r < main_rounds){
+        if (new_round){
+            round_clk = 0;
+
+            this->post_processors->init_tile_op(r);
+
+            new_round = false;
+        }
+
+        this->post_processors->update();
+
+        if (this->post_processors->is_tile_op_done(r) && round_clk >= sram_round_trip){
+            //Round end
+            BOOST_LOG_TRIVIAL(info) << "Post round " << r << " takes " << round_clk << "clock cycles";
+
+            r++;
+
+            new_round = true;
+        }
+
+        pp_cycle++;
+        round_clk++;
+    }
+
+    return arr_cycle > pp_cycle ? arr_cycle : pp_cycle;
 }
 
 

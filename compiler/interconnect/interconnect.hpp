@@ -39,6 +39,8 @@ struct InterconnectBase {
     return latency() + 1;
   }
 
+  //TODO: Have data_write_latency alias for data_read_latency, which should return the same value
+
   virtual UnsignedInt total_latency() const {
     return data_req_latency() + data_read_latency();
   }
