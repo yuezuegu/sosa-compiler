@@ -37,6 +37,7 @@ class Interconnects{
         InterconnectBase * pp_out_interconnect;
         
         Interconnects(int N, InterconnectType interconnect_type);
+        float tdp(int switch_width);
     private:
 
 

@@ -23,6 +23,8 @@ class Compiler{
         Interconnects* interconnects;
         PostProcessors* post_processors;
 
+        int no_cycles;
+
         Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, PostProcessors* post_processors);
         void compile(Layers* layers);
         void compile_layer(Layer* layer, int init_round);
@@ -30,7 +32,8 @@ class Compiler{
         void post_op_placement(int r, AggrOp* op);
         int no_main_rounds();
         int no_post_rounds();
-        int get_cycles();
+        void run_cycle_model();
+        void duplicate_schedule(int no_repeat);
     private:
 };
 

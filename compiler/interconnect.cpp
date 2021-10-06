@@ -36,6 +36,21 @@ Interconnects::Interconnects(int N, InterconnectType interconnect_type) {
     pp_out_interconnect = generate_interconnect(n, interconnect_type);
 }
 
+float Interconnects::tdp(int switch_width){
+    float tdp = 0;
+    tdp += this->x_interconnect->power(switch_width);
+    tdp += this->w_interconnect->power(switch_width);
+    tdp += this->pin_interconnect->power(switch_width);
+    tdp += this->pout_interconnect->power(switch_width);
+    tdp += this->pp_in1_interconnect->power(switch_width);
+    tdp += this->pp_in2_interconnect->power(switch_width);
+    tdp += this->pp_out_interconnect->power(switch_width);
+    return tdp;
+}
+
+
+
+
 std::istream &operator>>(std::istream &in, InterconnectType &interconnect_type) {
     std::string token;
     in >> token;

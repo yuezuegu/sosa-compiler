@@ -47,6 +47,7 @@ class Layer {
         void init_banks(Banks* banks);
         map<tuple<int, int, int>, MultOp*> main_ops;
         map<tuple<int, int>, list<AggrOp*>> post_ops;
+        int no_ops();
 
         MultOp* get_mainop_by_index(tuple<int, int, int> index);
 
@@ -62,9 +63,12 @@ class Layers{
         Layers();
         ~Layers();
 
-        void import_layers(string fname);
+        void import_layers(json j);
         bool all_layers_scheduled();
         Layer* get_layer_by_name(string layer_name);
+        friend ostream& operator<<(ostream& os, const Layers& layers);
+        int no_ops();
+        
     private:
         list<Layer>* layer_list;
 };

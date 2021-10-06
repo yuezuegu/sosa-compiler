@@ -7,6 +7,7 @@
 #include <map>
 #include <boost/log/trivial.hpp>
 #include <sstream>
+#include <cmath>
 
 // Uncomment the following line for enabling logs
 // #define INTERCONNECT_LOGS
@@ -26,6 +27,7 @@ inline void propagate_impl(Interconnect &interconnect, Int const *packets,
 }
 
 struct InterconnectBase {
+  virtual float power(int switch_width) const = 0;
   virtual UnsignedInt num_ports() const = 0;
   virtual UnsignedInt latency() const = 0;
   virtual void reset() = 0;
@@ -44,7 +46,9 @@ struct InterconnectBase {
     return latency() + 1;
   }
 
-  //TODO: Have data_write_latency alias for data_read_latency, which should return the same value
+  virtual UnsignedInt data_write_latency() const {
+    return latency() + 1;
+  }
 
   virtual UnsignedInt total_latency() const {
     return data_req_latency() + data_read_latency();
@@ -91,12 +95,21 @@ struct Benes : InterconnectBase {
     ALGO_LOOPING_MULTICAST = 2
   };
 
+  float energy_spent = 0;
   multistage_interconnect::Benes impl;
   std::vector<Int> current_inverse_mapping;
   Algo algorithm = ALGO_LOOPING_MULTICAST;
   UnsignedInt trials = 10;
 
   Benes(UnsignedInt n) : impl{n}, current_inverse_mapping(1 << n, -1) {}
+
+  float power(int switch_width) const override {
+    float I_0 = 2.875e-5; //W per byte
+
+    int _N = 1 << this->impl.n(); 
+
+    return I_0 * 2 * _N * log2(_N) * switch_width;
+  }
 
   UnsignedInt num_ports() const override {
     return current_inverse_mapping.size();
@@ -170,6 +183,16 @@ struct Benes : InterconnectBase {
 struct BenesWithCopy : InterconnectBase {
   BenesWithCopy(UnsignedInt n) : n_{n} {}
 
+  float energy_spent = 0;
+
+  float power(int switch_width) const override {
+    float I_0 = 2.875e-5; //W per byte
+
+    int _N = 1 << this->n_; 
+
+    return I_0 * 4 * _N * log2(_N) * switch_width;
+  }
+
   UnsignedInt latency() const override { return n_ * 4 - 1; }
 
   UnsignedInt num_ports() const override { return 1 << n_; }
@@ -193,6 +216,16 @@ private:
 struct Crossbar : InterconnectBase {
   Crossbar(UnsignedInt n) : n_{n} {}
 
+  float energy_spent = 0;
+
+  float power(int switch_width) const override {
+    float I_0 = 2.875e-5; //W per byte
+
+    int _N = 1 << this->n_; 
+
+    return I_0 * _N * _N * switch_width;
+  }
+  
   UnsignedInt latency() const override { return 1; }
 
   UnsignedInt num_ports() const override { return 1 << n_; }
@@ -221,6 +254,16 @@ struct Banyan : InterconnectBase {
   UnsignedInt expansion = 0;
 
   Banyan(UnsignedInt n) : impl{n}, current_inverse_mapping(1 << n, -1) {}
+
+  float energy_spent = 0;
+  
+  float power(int switch_width) const override {
+    float I_0 = 2.875e-5; //W per byte
+
+    int _N = 1 << this->impl.n(); 
+
+    return I_0 * _N * log2(_N) * switch_width;
+  }
 
   UnsignedInt latency() const override { return impl.n() + expansion; }
 

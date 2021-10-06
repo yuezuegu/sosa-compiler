@@ -42,6 +42,8 @@ class MultOp: public Op{
         int weight_buffer_cycles;
 
         MultOp(string layer_name, tuple<int, int, int> op_ind, X_Tile* x_tile, W_Tile* w_tile, P_Tile* pout_tile);
+        MultOp(const MultOp&);
+
         void assign_pin(MultOp* pin_op);
         void assign_to_array(int r, Array* array);
 };
@@ -62,6 +64,8 @@ class AggrOp: public Op{
         bool flip; //this allows distinguishing same pairs of operations.
 
         AggrOp(string layer_name, Op* operand1, Op* operand2, P_Tile* pout_tile, bool flip);
+        AggrOp(const AggrOp&) = default;
+
         void assign_to_pp(int r, PostProcessor* pp);
         Op* get_op1();
         Op* get_op2();

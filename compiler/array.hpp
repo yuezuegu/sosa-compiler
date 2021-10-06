@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "ops.hpp"
+#include "interconnect.hpp"
 
 using namespace std;
 

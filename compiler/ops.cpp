@@ -21,6 +21,24 @@ MultOp::MultOp(string layer_name, tuple<int, int, int> op_ind, X_Tile* x_tile, W
     this->weight_buffer_cycles = get<0>(w_tile->dims);
 }
 
+MultOp::MultOp(const MultOp& mult_op){
+    this->layer_name = mult_op.layer_name;
+    this->op_ind = mult_op.op_ind;
+    this->x_tile = new X_Tile(*(mult_op.x_tile));
+    this->x_tile->input_of->push_back(this);
+    this->w_tile = new W_Tile(*(mult_op.w_tile));
+    this->w_tile->input_of->push_back(this);
+    this->pout_tile = new P_Tile(*(mult_op.pout_tile));
+    this->pin_op = nullptr;
+    this->array_placed = nullptr;
+    this->aggregated_to = nullptr;
+    this->round_placed = -1;
+    this->is_placed_ = false;
+    this->pair_op = nullptr;
+    this->exec_cycles = get<0>(this->x_tile->dims);
+    this->weight_buffer_cycles = get<0>(this->w_tile->dims);
+}
+
 void MultOp::assign_pin(MultOp* pin_op){
     this->pin_op = pin_op;
     this->pin_op->pout_tile->input_of->push_back(this);
@@ -36,7 +54,6 @@ void MultOp::assign_to_array(int r, Array* array){
 bool Op::is_placed(){
     return this->is_placed_;
 }
-
 
 AggrOp::AggrOp(string layer_name, Op* operand1, Op* operand2, P_Tile* pout_tile, bool flip){
     this->layer_name = layer_name;

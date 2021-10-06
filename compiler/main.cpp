@@ -24,6 +24,8 @@ int main(int ac, char* av[]){
 
     int no_array, no_rows, no_cols;
     InterconnectType interconnect_type;
+    string work_dir;
+
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "show options")
@@ -31,6 +33,7 @@ int main(int ac, char* av[]){
         ("no_cols,c", po::value<int>(&no_cols)->default_value(32), "number of columns in a systolic array")
         ("no_array,N", po::value<int>(&no_array)->default_value(32), "number of systolic arrays")
         ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::crossbar), "interconnect type (see enum members)")
+        ("work_dir,d", po::value<string>(&work_dir)->default_value("experiments/tmp"), "directory for input/output files")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(ac, av, desc), vm);
@@ -50,10 +53,19 @@ int main(int ac, char* av[]){
         "interconnect_type = " << interconnect_type <<
         "\n";
 
-    string fname = "experiments/tmp/precompiled_model.json";
+    json jin;
+    ifstream input_file;
+    string ifname = work_dir + "/precompiled_model.json";
+    input_file.open(ifname, ifstream::in);
+    if(!input_file.is_open()){
+        cout << "Input file " << ifname << " cannot be opened." << endl;
+        exit(1);
+    }
+    input_file >> jin;
+    input_file.close();
 
     Layers* layers = new Layers();
-    layers->import_layers(fname);
+    layers->import_layers(jin);
 
     Arrays* arrays = new Arrays(no_array, no_rows, no_cols);
     PostProcessors* post_processors = new PostProcessors(no_array);
@@ -63,13 +75,41 @@ int main(int ac, char* av[]){
 
     Compiler* compiler = new Compiler(arrays, banks, interconnects, post_processors);
 
+    cout << layers;
     compiler->compile(layers);
+
+    int no_repeat = jin["no_repeat"].get<int>();
+    compiler->duplicate_schedule(no_repeat);
+
+    compiler->run_cycle_model();
 
     cout << "Finished succesfully" << endl;
     cout << "# of main rounds: " << compiler->no_main_rounds() << endl;
     cout << "# of post rounds: " << compiler->no_post_rounds() << endl;
 
-    cout << "Total no. of cycles: " << compiler->get_cycles() << endl;
+    cout << "Total no. of cycles: " << compiler->no_cycles << endl;
+
+    ofstream output_file;
+    string ofname = work_dir + "/results.json";
+    output_file.open(ofname, ofstream::out);
+    if(!output_file.is_open()){
+        cout << "Output file " << ofname << " cannot be opened." << endl;
+        exit(1);
+    }
+
+    json jout(jin["args"]);
+    jout["no_array"] = no_array;
+    jout["interconnect_type"] = interconnect_type; //TODO: Replace with string value
+    jout["no_cycles"] = compiler->no_cycles;
+    jout["no_main_rounds"] = compiler->no_main_rounds();
+    jout["no_post_rounds"] = compiler->no_post_rounds();
+    jout["interconnect_tdp"] = interconnects->tdp(no_cols);
+    jout["no_ops"] = layers->no_ops();
+
+    cout << jout.dump() << endl;
+
+    output_file << jout.dump();
+    output_file.close();
 
     delete layers;
     delete arrays;

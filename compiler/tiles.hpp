@@ -39,6 +39,7 @@ class X_Tile: public Tile{
         tuple<int, int> id;
         
         X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims);
+        X_Tile(const X_Tile& x_tile) = default;
 };
 
 class W_Tile: public Tile{
@@ -46,6 +47,7 @@ class W_Tile: public Tile{
         tuple<int, int> id;
 
         W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims);
+        W_Tile(const W_Tile& w_tile) = default;
 };
 
 class P_Tile: public Tile{
@@ -53,6 +55,7 @@ class P_Tile: public Tile{
         tuple<int, int, int> id;
         
         P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims);
+        P_Tile(const P_Tile& p_tile) = default;
 };
 
 

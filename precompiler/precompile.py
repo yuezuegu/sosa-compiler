@@ -125,14 +125,16 @@ def main():
     bm = get_benchmarks(model_name, batch_size, imsize, sentence_len)
     if bm.model_type == "BERT":
         model = bm.get_keras_model(no_layers=1)
+        no_repeat = bm.no_layers
     else:
         model = bm.get_keras_model() 
+        no_repeat = 1
 
     layers = precompile_model(model, array_size=array_size, partition_size=partition_size)
 
     os.makedirs(out_dir, exist_ok=True)
     with open(out_dir+"/precompiled_model.json", "w") as outfile:  
-        json.dump({"order":list(layers.keys()), "layers":layers}, outfile)
+        json.dump({"args":args.__dict__, "order":list(layers.keys()), "layers":layers, "no_repeat":no_repeat}, outfile)
 
     print("precompiled model is saved at: {}".format(out_dir))
 

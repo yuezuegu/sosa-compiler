@@ -25,6 +25,10 @@ Layer::Layer(string layer_name,
     this->p_tiles = new map<tuple<int, int, int>, P_Tile*>();
 }
 
+int Layer::no_ops(){
+    return get<0>(this->input_size) * get<1>(this->input_size) * get<1>(this->weight_size);
+}
+
 Layer::~Layer(){
     // delete this->x_tiles;
     // delete this->w_tiles;
@@ -39,18 +43,7 @@ Layers::~Layers(){
     delete this->layer_list;
 }
 
-void Layers::import_layers(string fname){
-    json j;
-    ifstream input_file;
-    input_file.open(fname, ifstream::in);
-    if(!input_file.is_open()){
-        cout << "Input file " << fname << " cannot be opened." << endl;
-        exit(1);
-    }
-
-    input_file >> j;
-    input_file.close();
-
+void Layers::import_layers(json j){
     for (json::iterator it = j["order"].begin(); it != j["order"].end(); ++it) {
         string layer_name = it.value();
         auto deps = j["layers"][layer_name]["deps"];
@@ -95,7 +88,6 @@ void Layers::import_layers(string fname){
             }   
         }
 
-        cout << layer_name << endl;
         Layer layer(layer_name, x_tile_dim, w_tile_dim, no_tiles, input_size, weight_size, dependencies);
         this->layer_list->push_back(layer);
     }
@@ -264,4 +256,20 @@ Layer* Layers::get_layer_by_name(string layer_name){
     }
 
     return nullptr;
+}
+
+int Layers::no_ops(){
+    int no_ops = 0;
+    for (auto it = this->begin(); it != this->end(); it++){
+        no_ops += it->no_ops();
+    }    
+    return no_ops;
+}
+
+ostream& operator<<(ostream& os, const Layers& layers)
+{
+    for(auto it = layers.layer_list->begin(); it != layers.layer_list->end(); it++){
+        os << it->layer_name << endl;
+    }
+    return os;
 }

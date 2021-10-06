@@ -3,22 +3,66 @@ source ~/.bashrc
 eval "$(conda shell.bash hook)"
 conda activate sosa-compiler 
 
-
-model="bert_large"
-r=32
-c=32
-N=128
-
 start_time=$(date +%s)
 
-python precompiler/precompile.py \
-    --model=${model} \
-    --batch_size=1 \
-    --sentence_len=100 \
-    --array_size ${r} ${c} \
-    --out_dir=experiments/tmp
+dir=$(date "+%Y-%m-%d-%H-%M-%S")
+mkdir experiments/${dir}
 
-./main --r=${r} --c=${c} --N=${N}
+
+r=32
+c=32
+
+for model in bert_small bert_base bert_large
+do
+    for N in 32 64 128 256 512
+    do
+        for sentence_len in 20 60 100
+        do
+            for interconn in crossbar banyan_exp_1 benes_vanilla benes_copy 
+            do
+                hash=$(echo $(date +%s) | md5sum | cut -c1-8)
+                mkdir experiments/${dir}/${hash}
+
+                python precompiler/precompile.py \
+                    --model=${model} \
+                    --batch_size=1 \
+                    --sentence_len=${sentence_len} \
+                    --array_size ${r} ${c} \
+                    --out_dir=experiments/${dir}/${hash}
+
+                ./main -r ${r} -c ${c} -N ${N} -I ${interconn} -d experiments/${dir}/${hash} &
+                pids[${i}]=$!
+            done
+        done
+    done
+done
+
+for model in inception resnet50 densenet121
+do
+    for N in 32 64 128 256 512
+    do
+        for interconn in crossbar banyan_exp_1 benes_vanilla benes_copy 
+        do
+
+            hash=$(echo $(date +%s) | md5sum | cut -c1-8)
+            mkdir experiments/${dir}/${hash}
+
+            python precompiler/precompile.py \
+                --model=${model} \
+                --batch_size=1 \
+                --array_size ${r} ${c} \
+                --out_dir=experiments/${dir}/${hash}
+
+            ./main -r ${r} -c ${c} -N ${N} -I ${interconn} -d experiments/${dir}/${hash} &
+            pids[${i}]=$!
+        done
+    done
+done
+
+for pid in ${pids[*]}; do
+    wait $pid
+done
+
 
 end_time=$(date +%s)
 elapsed=$(( end_time - start_time ))

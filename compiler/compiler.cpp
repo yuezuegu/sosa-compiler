@@ -284,14 +284,12 @@ void Compiler::op_placement(int r, MultOp* op){
 
 }
 
-int Compiler::get_cycles(){
-    // int cycles = 0;
-
+void Compiler::run_cycle_model(){
     int sram_round_trip = this->interconnects->x_interconnect->data_req_latency() + this->interconnects->x_interconnect->data_read_latency();
 
     int main_rounds = this->no_main_rounds();
     int post_rounds = this->no_post_rounds();
-    // int max_rounds = main_rounds > post_rounds ? main_rounds : post_rounds;
+    int max_rounds = main_rounds > post_rounds ? main_rounds : post_rounds;
 
     int r = 0;
     int arr_cycle = 0;
@@ -304,25 +302,31 @@ int Compiler::get_cycles(){
         arr_cycle++;
     }
 
-    pp_cycle = arr_cycle + this->interconnects->pout_interconnect->data_read_latency(); //TODO: Replace this with data_write_latency
+    pp_cycle = arr_cycle + this->interconnects->pout_interconnect->data_write_latency();
 
     int round_clk = 0;
     bool new_round = true;
-    while(r < main_rounds){
+    while(r < max_rounds){
         if (new_round){
             // Round start
             round_clk = 0;
 
             this->arrays->init_tile_op(r);
             this->arrays->init_weight_buffering(r+1);
+            this->post_processors->init_tile_op(r);
 
             new_round = false;
         }
 
         //Propagate clock
         this->arrays->update();
+        this->post_processors->update();
 
-        if (this->arrays->is_tile_op_done(r) && this->arrays->is_weights_buffered(r+1) && round_clk >= sram_round_trip){
+        if (this->arrays->is_tile_op_done(r) && 
+            this->arrays->is_weights_buffered(r+1) && 
+            this->post_processors->is_tile_op_done(r) && 
+            round_clk >= sram_round_trip){
+
             //Round end
             BOOST_LOG_TRIVIAL(info) << "Main round " << r << " takes " << round_clk << "clock cycles";
 
@@ -332,37 +336,11 @@ int Compiler::get_cycles(){
         }
 
         arr_cycle++;
-        round_clk++;
-    }
-
-    
-    r = 0;
-    new_round = true;
-    while(r < main_rounds){
-        if (new_round){
-            round_clk = 0;
-
-            this->post_processors->init_tile_op(r);
-
-            new_round = false;
-        }
-
-        this->post_processors->update();
-
-        if (this->post_processors->is_tile_op_done(r) && round_clk >= sram_round_trip){
-            //Round end
-            BOOST_LOG_TRIVIAL(info) << "Post round " << r << " takes " << round_clk << "clock cycles";
-
-            r++;
-
-            new_round = true;
-        }
-
         pp_cycle++;
         round_clk++;
     }
 
-    return arr_cycle > pp_cycle ? arr_cycle : pp_cycle;
+    this->no_cycles = arr_cycle > pp_cycle ? arr_cycle : pp_cycle;
 }
 
 
@@ -384,4 +362,48 @@ int Compiler::no_post_rounds(){
         }
     }
     return max_rounds;
+}
+
+
+void Compiler::duplicate_schedule(int no_repeat){
+    int no_main_rounds = this->no_main_rounds();
+    int no_post_rounds = this->no_post_rounds();
+    int max_no_rounds = no_main_rounds > no_post_rounds ? no_main_rounds : no_post_rounds;
+
+    int new_r;
+
+    for (int i = 1; i < no_repeat; i++){
+        for (int r = 0; r < no_main_rounds; r++){
+            new_r = r+i*max_no_rounds+1;
+
+            list<MultOp*>* sch = this->arrays->get_schedule(r);
+            for (auto it = sch->begin(); it != sch->end(); it++){
+                if (*it == nullptr) continue;
+
+                MultOp* new_op = new MultOp(*(*it));
+                new_op->layer_name = new_op->layer_name + "_copy" + to_string(i);
+                if ((*it)->pin_op != nullptr){
+                    new_op->assign_pin((*it)->pin_op);
+                }
+                (*it)->array_placed->assign_op(new_r, new_op);
+                
+            }
+
+            delete sch;
+        }
+        for (int r = 0; r < no_post_rounds; r++){
+            new_r = r+i*max_no_rounds+1;
+
+            list<AggrOp*>* sch = this->post_processors->get_schedule(r);
+            for (auto it = sch->begin(); it != sch->end(); it++){
+                if (*it == nullptr) continue;
+                
+                AggrOp* new_op = new AggrOp(*(*it));
+                new_op->layer_name = new_op->layer_name + "_copy" + to_string(i);
+                (*it)->pp_placed->assign_op(new_r, new_op);
+            }
+
+            delete sch;
+        }
+    }
 }
