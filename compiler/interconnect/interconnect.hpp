@@ -30,6 +30,7 @@ struct InterconnectBase {
   virtual float power(int switch_width) const = 0;
   virtual UnsignedInt num_ports() const = 0;
   virtual UnsignedInt latency() const = 0;
+  virtual const char *name() const = 0;
   virtual void reset() = 0;
   virtual void propagate(Int const *packets, Int *output,
                          Int invalid) const = 0;
@@ -117,6 +118,10 @@ struct Benes : InterconnectBase {
 
   UnsignedInt latency() const override { return impl.n() * 2 - 1; }
 
+  const char *name() const override {
+    return "benes";
+  }
+
   void reset() override {
     impl.reset();
     for (auto &x : current_inverse_mapping)
@@ -195,6 +200,10 @@ struct BenesWithCopy : InterconnectBase {
 
   UnsignedInt latency() const override { return n_ * 4 - 1; }
 
+  const char *name() const override {
+    return "benes_with_copy";
+  }
+
   UnsignedInt num_ports() const override { return 1 << n_; }
 
   void reset() override {}
@@ -227,6 +236,10 @@ struct Crossbar : InterconnectBase {
   }
   
   UnsignedInt latency() const override { return 1; }
+
+  const char *name() const override {
+    return "crossbar";
+  }
 
   UnsignedInt num_ports() const override { return 1 << n_; }
 
@@ -266,6 +279,10 @@ struct Banyan : InterconnectBase {
   }
 
   UnsignedInt latency() const override { return impl.n() + expansion; }
+
+  const char *name() const override {
+    return "banyan";
+  }
 
   UnsignedInt num_ports() const override {
     return current_inverse_mapping.size();

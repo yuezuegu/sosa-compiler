@@ -11,8 +11,8 @@ using namespace std;
 enum class InterconnectType : unsigned {
     crossbar = 1 << 4, // TODO not yet implemented
     benes_copy = 2 << 4,
-    benes_vanilla = 3 << 4,
-    banyan = 4 << 4, // Vanilla Banyan network
+    benes_vanilla = 4 << 4,
+    banyan = 8 << 4, // Vanilla Banyan network
     // expansion factor is given in log2
     banyan_exp_0 = banyan | 0, // 1 Banyan network
     banyan_exp_1 = banyan | 1, // 2 Banyan networks

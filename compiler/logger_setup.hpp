@@ -23,7 +23,8 @@ void logger_setup(){
     logging::add_file_log("cpp.log");
     logging::core::get()->set_filter
     (
-        logging::trivial::severity >= logging::trivial::debug
+        // logging::trivial::severity >= logging::trivial::debug
+        logging::trivial::severity >= logging::trivial::info
     );
 }
 
