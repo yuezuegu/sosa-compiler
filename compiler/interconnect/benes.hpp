@@ -236,10 +236,12 @@ struct Benes {
     return true;
   }
 
-  bool looping_multicast(Int const *inverse_mapping, Int k = 10) {
+  bool looping_multicast(Int const *inverse_mapping, Int k = 16) {
     // randomness
     static std::mt19937_64 mt(
-        std::chrono::high_resolution_clock::now().time_since_epoch().count());
+        0
+        // std::chrono::high_resolution_clock::now().time_since_epoch().count()
+    );
 
     const UnsignedInt N = 1 << n_;
 
