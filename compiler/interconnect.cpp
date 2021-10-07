@@ -5,14 +5,14 @@
 
 InterconnectBase *generate_interconnect(UnsignedInt n, InterconnectType type) {
 #define XYZ(id, class) \
-    if ((unsigned) type & (unsigned) InterconnectType :: id) \
+    if (((unsigned) type) & (unsigned) InterconnectType :: id) \
         return new class (n);
     
+    XYZ(benes_vanilla, Benes)
     XYZ(benes_copy, BenesWithCopy)
     XYZ(crossbar, Crossbar)
-    XYZ(benes_vanilla, Benes)
 #undef XYZ
-    if ((unsigned) type & (unsigned) InterconnectType::banyan) {
+    if (((unsigned) type) & (unsigned) InterconnectType::banyan) {
         bool expansion = (unsigned) type & 0x0Fu;
         auto banyan = new Banyan(n + expansion);
         banyan->set_expansion(expansion);
@@ -73,16 +73,18 @@ std::istream &operator>>(std::istream &in, InterconnectType &interconnect_type) 
 }
 
 std::ostream &operator<<(std::ostream &out, InterconnectType interconnect_type) {
-    const char *arr[] = {
-        "",
-        "crossbar",
-        "benes_copy",
-        "benes_vanilla",
-        "banyan_exp_"
-    };
-    out << arr[(unsigned) interconnect_type >> 4];
-    if ((unsigned) interconnect_type & (unsigned) InterconnectType::banyan) {
-        out << ((unsigned) interconnect_type & 0x0Fu);
+#define XYZ(x) else if ((unsigned) interconnect_type & (unsigned) InterconnectType :: x) out << #x;
+    if (false) ;
+    XYZ(benes_copy)
+    XYZ(benes_vanilla)
+    XYZ(banyan)
+    XYZ(crossbar)
+#undef XYZ
+    else if ((unsigned) interconnect_type & (unsigned) InterconnectType::banyan) {
+        out << "banyan_exp_" << ((unsigned) interconnect_type & 0x0Fu);
+    }
+    else {
+        out.setstate(std::ios_base::failbit);
     }
     return out;
 }
