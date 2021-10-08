@@ -102,7 +102,7 @@ def precompile_model(model, array_size=[512,512], partition_size=None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, required=False, default='bert_tiny')
+    parser.add_argument('--model', type=str, required=False, default='bert_base')
     parser.add_argument('--batch_size', type=int, required=False, default=1, help='Batch size')
     parser.add_argument('--sentence_len', type=int, required=False, default=100, help='Sentence length for transformer model')
     parser.add_argument('--imsize', type=int, required=False, default=299)  
@@ -134,7 +134,7 @@ def main():
 
     os.makedirs(out_dir, exist_ok=True)
     with open(out_dir+"/precompiled_model.json", "w") as outfile:  
-        json.dump({"args":args.__dict__, "order":list(layers.keys()), "layers":layers, "no_repeat":no_repeat}, outfile)
+        json.dump({"args":args.__dict__, "order":list(layers.keys()), "layers":layers, "no_repeat":no_repeat, "no_ops":bm.no_ops}, outfile)
 
     print("precompiled model is saved at: {}".format(out_dir))
 

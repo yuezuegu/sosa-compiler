@@ -5,13 +5,16 @@ conda activate sosa-compiler
 
 start_time=$(date +%s)
 
+make clean
+make final
+
 dir=$(date "+%Y-%m-%d-%H-%M-%S")
 mkdir experiments/${dir}
-
 
 r=32
 c=32
 
+cnt=0
 for model in bert_small bert_base bert_large
 do
     for N in 32 64 128 256 512
@@ -21,6 +24,7 @@ do
             for interconn in crossbar banyan_exp_1 benes_vanilla benes_copy 
             do
                 hash=$(echo $(date +%s) | md5sum | cut -c1-8)
+
                 mkdir experiments/${dir}/${hash}
 
                 python precompiler/precompile.py \
@@ -31,7 +35,9 @@ do
                     --out_dir=experiments/${dir}/${hash}
 
                 ./main -r ${r} -c ${c} -N ${N} -I ${interconn} -d experiments/${dir}/${hash} &
-                pids[${i}]=$!
+                pids[${cnt}]=$!
+                echo pid:${pids[${cnt}]} hash:${hash} ${model} ${N} ${sentence_len} ${interconn} 
+                cnt=${cnt}+1
             done
         done
     done
@@ -45,6 +51,7 @@ do
         do
 
             hash=$(echo $(date +%s) | md5sum | cut -c1-8)
+            
             mkdir experiments/${dir}/${hash}
 
             python precompiler/precompile.py \
@@ -54,7 +61,9 @@ do
                 --out_dir=experiments/${dir}/${hash}
 
             ./main -r ${r} -c ${c} -N ${N} -I ${interconn} -d experiments/${dir}/${hash} &
-            pids[${i}]=$!
+            pids[${cnt}]=$!
+            echo pid:${pids[${cnt}]} hash:${hash} ${model} ${N} ${interconn}
+            cnt=${cnt}+1
         done
     done
 done

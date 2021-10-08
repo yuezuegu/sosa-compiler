@@ -25,15 +25,7 @@ Layer::Layer(string layer_name,
     this->p_tiles = new map<tuple<int, int, int>, P_Tile*>();
 }
 
-int Layer::no_ops(){
-    return get<0>(this->input_size) * get<1>(this->input_size) * get<1>(this->weight_size);
-}
-
-Layer::~Layer(){
-    // delete this->x_tiles;
-    // delete this->w_tiles;
-    // delete this->p_tiles;
-}
+Layer::~Layer(){}
 
 Layers::Layers(){
     this->layer_list = new list<Layer>();
@@ -247,7 +239,6 @@ bool Layers::all_layers_scheduled(){
     return true;
 }
 
-
 Layer* Layers::get_layer_by_name(string layer_name){
     for (auto it = this->begin(); it != this->end(); it++){
         if (it->layer_name.compare(layer_name) == 0){
@@ -256,14 +247,6 @@ Layer* Layers::get_layer_by_name(string layer_name){
     }
 
     return nullptr;
-}
-
-int Layers::no_ops(){
-    int no_ops = 0;
-    for (auto it = this->begin(); it != this->end(); it++){
-        no_ops += it->no_ops();
-    }    
-    return no_ops;
 }
 
 ostream& operator<<(ostream& os, const Layers& layers)

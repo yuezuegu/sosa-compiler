@@ -100,7 +100,7 @@ struct Benes : InterconnectBase {
   multistage_interconnect::Benes impl;
   std::vector<Int> current_inverse_mapping;
   Algo algorithm = ALGO_LOOPING_MULTICAST;
-  UnsignedInt trials = 16;
+  UnsignedInt trials = 128;
 
   Benes(UnsignedInt n) : impl{n}, current_inverse_mapping(1 << n, -1) {}
 

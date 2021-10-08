@@ -72,6 +72,7 @@ int main(int ac, char* av[]){
     Banks* banks = new Banks(no_array);
 
     Interconnects* interconnects = new Interconnects(no_array, interconnect_type);
+    cout << "interconnects->x_interconnect->name() = " << interconnects->x_interconnect->name() << endl;
 
     Compiler* compiler = new Compiler(arrays, banks, interconnects, post_processors);
 
@@ -104,7 +105,7 @@ int main(int ac, char* av[]){
     jout["no_main_rounds"] = compiler->no_main_rounds();
     jout["no_post_rounds"] = compiler->no_post_rounds();
     jout["interconnect_tdp"] = interconnects->tdp(no_cols);
-    jout["no_ops"] = layers->no_ops();
+    jout["no_ops"] = jin["no_ops"].get<long>();
 
     cout << jout.dump() << endl;
 

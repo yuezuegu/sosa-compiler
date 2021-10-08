@@ -54,7 +54,13 @@ class benchmark:
             self.no_layers = 24
 
         self.layer_dims = self.calculate_layer_dims()
-        
+
+        self.no_ops = 0
+        for layer_name in self.layer_dims:
+            X = self.layer_dims[layer_name][0]
+            W = self.layer_dims[layer_name][1]
+            self.no_ops += (2 * X[0] * X[1] * W[1])
+
     def get_keras_model(self, no_layers=None):
         if self.model_name == 'inception':
             return InceptionV3(input_tensor = Input(batch_shape=(self.batch_size, self.image_size, self.image_size, 3)), weights='imagenet')
@@ -149,25 +155,38 @@ def create_benchmarks():
 
 def get_benchmarks(model_name, batch_size, image_size, seq_len):
     with FileLock("benchmarks.pickle.lock"):
-        print("Lock acquired for benchmarks.pickle")
+        # print("Lock acquired for benchmarks.pickle")
 
-        with open('benchmarks.pickle', 'rb') as pickle_file:
+        try:
+            pickle_file = open('benchmarks.pickle', 'rb')
+        
             benchmarks = pickle.load(pickle_file)
         
-        if "bert" in model_name:
-            if model_name in benchmarks:
-                if batch_size in benchmarks[model_name]:
-                    if seq_len in benchmarks[model_name][batch_size]:
-                        return benchmarks[model_name][batch_size][seq_len]
-            bm = benchmark(model_name, "BERT", seq_len=seq_len, batch_size=batch_size)
-            benchmarks[model_name][batch_size][seq_len] = bm
-        else:
-            if model_name in benchmarks:
-                if batch_size in benchmarks[model_name]:
-                    if image_size in benchmarks[model_name][batch_size]:
-                        return benchmarks[model_name][batch_size][image_size]
-            bm = benchmark(model_name, "CNN", batch_size=batch_size, image_size=image_size)
-            benchmarks[model_name][batch_size][image_size] = bm
+            if "bert" in model_name:
+                if model_name in benchmarks:
+                    if batch_size in benchmarks[model_name]:
+                        if seq_len in benchmarks[model_name][batch_size]:
+                            return benchmarks[model_name][batch_size][seq_len]
+                bm = benchmark(model_name, "BERT", seq_len=seq_len, batch_size=batch_size)
+                benchmarks[model_name][batch_size][seq_len] = bm
+            else:
+                if model_name in benchmarks:
+                    if batch_size in benchmarks[model_name]:
+                        if image_size in benchmarks[model_name][batch_size]:
+                            return benchmarks[model_name][batch_size][image_size]
+                bm = benchmark(model_name, "CNN", batch_size=batch_size, image_size=image_size)
+                benchmarks[model_name][batch_size][image_size] = bm
+
+        except:
+            benchmarks = {}
+            benchmarks[model_name] = {}
+            benchmarks[model_name][batch_size] = {}
+            if "bert" in model_name:
+                bm = benchmark(model_name, "BERT", seq_len=seq_len, batch_size=batch_size)
+                benchmarks[model_name][batch_size][seq_len] = bm
+            else:
+                bm = benchmark(model_name, "CNN", batch_size=batch_size, image_size=image_size)
+                benchmarks[model_name][batch_size][image_size] = bm
 
         with open("benchmarks.pickle", 'wb') as pkl_file:
             pickle.dump(benchmarks, pkl_file)
