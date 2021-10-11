@@ -45,7 +45,7 @@ def get_result(target, fields, out_jsons):
         return res[0]
 
 if __name__=="__main__":
-    out_dir = "experiments/2021-10-07-18-41-28"
+    out_dir = "experiments/2021-10-10-13-53-10"
 
     files = os.listdir(out_dir)
 
@@ -64,18 +64,18 @@ if __name__=="__main__":
     batch_size = out_jsons[0]["batch_size"]
     imsize = out_jsons[0]["imsize"]
 
-    no_seqs = [20, 60, 100]
+    no_seqs = [100]
     cnn_models = ["inception", "resnet50", "densenet121"]
     bert_models = ["bert_small", "bert_base", "bert_large"]
 
     # interconn_keys = [65, 32, 48, 16]
     # labels = ["Butterfly-2", "Benes w/ copy", "Benes", "Crossbar"]
     
-    interconn_keys = [129, 64, 16]
+    interconn_keys = [129, 32, 16]
     labels = ["Butterfly-2", "Benes w/ copy", "Crossbar"]
         
     
-    no_arrays = [32,64,128,256,512]
+    no_arrays = [32,64,128,256]
 
     e_data = 4.1e-12 #J per byte
     e_compute = 0.4e-12 #J per MAC
