@@ -70,11 +70,11 @@ function install_cmake() {
     echo "$URL_CMAKE"
     pushd "$TMPDIR"
 
-    wget "$URL_CMAKE" -O "cmake.tar.gz"
+    wget "$URL_CMAKE" -O "cmake.tar.gz" || fail_msg "wget failed."
     echo "Extracting files."
-    tar -xf "cmake.tar.gz"
+    tar -xf "cmake.tar.gz" || fail_msg "tar failed."
     echo "Copying files."
-    cp -r cmake*/* "$PREFIX/"
+    cp -r cmake*/* "$PREFIX/" || fail_msg "cp failed."
 
     popd
     return 0
@@ -85,16 +85,16 @@ function install_boost() {
     echo "Install boost from:"
     echo "$URL_BOOST"
     pushd "$TMPDIR"
-
-        wget "$URL_BOOST" -O "boost.tar.gz"
+        wget "$URL_BOOST" -O "boost.tar.gz" || fail_msg "wget failed."
         echo "Extracting files."
-        tar -xf "boost.tar.gz"
+        tar -xf "boost.tar.gz" || fail_msg "tar failed."
         echo "Build and install."
-        mv boost_* boost
+        mv boost_* boost || fail_msg "mv failed."
         pushd ./boost
             # TODO change this line to build other libraries as well
-            ./bootstrap.sh --prefix="$PREFIX/" --with-libraries=log,system,program_options
-            ./b2 --prefix="$PREFIX/" install -j 8
+            ./bootstrap.sh --prefix="$PREFIX/" --with-libraries=log,system,program_options || \
+                fail_msg "bootstrap.sh failed."
+            ./b2 --prefix="$PREFIX/" install -j 8 || fail_msg "b2 failed."
         popd
     popd
     return 0
@@ -102,7 +102,7 @@ function install_boost() {
 
 # Profile file related
 function update_profile() {
-    if [[ -e "$HOME/.profile_contains_prefix" ]]
+    if [[ -e "$HOME/.sosa-compiler-install-sh" ]]
     then
         echo "No need to update $PROFILE_FILE, it is already patched."
     else
@@ -115,6 +115,8 @@ function update_profile() {
         echo "export LD_LIBRARY_PATH=\"$PREFIX/lib:\$LD_LIBRARY_PATH\"" >> "$PROFILE_FILE"
         echo "# Add user $PREFIX/bin to PATH" >> "$PROFILE_FILE"
         echo "export PATH=\"$PREFIX/bin:\$PATH\"" >> "$PROFILE_FILE"
+
+        echo "created by install.sh of sosa-compiler." >> "$HOME/.sosa-compiler-install-sh"
 
         echo "Done updating: $PROFILE_FILE"
     fi
