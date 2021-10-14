@@ -136,7 +136,7 @@ done
 # -dumpfullversion -dumpversion works well for older versions.
 # TODO support checking for clang.
 fail_minimum_version "g++" "$(g++ -dumpfullversion -dumpversion)" "$GCC_MIN_VER"
-echo "If you have g++ linked to clang, this might not be accurate, otherwise no problem."
+echo "If you have g++ linked to clang, this might not be accurate; otherwise no problem."
 
 # prepare the temporary directory
 TMPDIR=$(mktemp -d)
