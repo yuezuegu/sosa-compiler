@@ -66,6 +66,10 @@ class Arrays{
         ~Arrays();
 
         list<MultOp*>* get_schedule(int r);
+        list<X_Tile*>* get_x_tiles(int r);
+        list<W_Tile*>* get_w_tiles(int r);
+
+
         list<int>* get_exec_cycles(int r);
         map<Array*, Bank*>* get_x_permute(int r);
         map<Array*, Bank*>* get_w_permute(int r);

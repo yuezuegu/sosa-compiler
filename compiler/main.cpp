@@ -11,6 +11,7 @@
 #include "interconnect.hpp"
 #include "post_processor.hpp"
 #include "logger_setup.hpp"
+#include "dram.hpp"
 
 #include <boost/log/trivial.hpp>
 #include <boost/program_options.hpp>
@@ -31,7 +32,7 @@ int main(int ac, char* av[]){
         ("help", "show options")
         ("no_rows,r", po::value<int>(&no_rows)->default_value(32), "number of rows in a systolic array")
         ("no_cols,c", po::value<int>(&no_cols)->default_value(32), "number of columns in a systolic array")
-        ("no_array,N", po::value<int>(&no_array)->default_value(32), "number of systolic arrays")
+        ("no_array,N", po::value<int>(&no_array)->default_value(8), "number of systolic arrays")
         ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::crossbar), "interconnect type (see enum members)")
         ("work_dir,d", po::value<string>(&work_dir)->default_value("experiments/tmp"), "directory for input/output files")
     ;
@@ -74,7 +75,13 @@ int main(int ac, char* av[]){
     Interconnects* interconnects = new Interconnects(no_array, interconnect_type);
     cout << "interconnects->x_interconnect->name() = " << interconnects->x_interconnect->name() << endl;
 
-    Compiler* compiler = new Compiler(arrays, banks, interconnects, post_processors);
+    float bandwidth = (float)10 * (1 << 30); //100GB/s
+    float freq = 1e9;
+    bandwidth = bandwidth / freq; // Bytes per cycle
+
+    Dram* dram = new Dram(bandwidth);
+
+    Compiler* compiler = new Compiler(arrays, banks, interconnects, post_processors, dram);
 
     cout << layers;
     compiler->compile(layers);

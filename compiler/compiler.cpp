@@ -6,11 +6,12 @@
 using namespace std;
 
 
-Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, PostProcessors* post_processors){
+Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, PostProcessors* post_processors, Dram* dram){
     this->arrays = arrays;
     this->banks = banks;
     this->interconnects = interconnects;
     this->post_processors = post_processors;
+    this->dram = dram;
 }
 
 void Compiler::compile(Layers* layers){
@@ -284,7 +285,33 @@ void Compiler::op_placement(int r, MultOp* op){
 
 }
 
+
+void Compiler::create_memory_fifo(){
+    int main_rounds = this->no_main_rounds();
+
+    int r = 0;
+    while(r <= main_rounds){
+        list<MultOp*>* sch = this->arrays->get_schedule(r);
+
+        for (auto it = sch->begin(); it != sch->end(); it++){
+            if (*it == nullptr) continue;
+            this->dram->memory_queue->push((*it)->w_tile);
+        }
+
+        for (auto it = sch->begin(); it != sch->end(); it++){
+            if (*it == nullptr) continue;
+            this->dram->memory_queue->push((*it)->x_tile);
+        }
+
+        delete sch;
+        r++;
+    }
+}
+
+
+
 void Compiler::run_cycle_model(){
+    this->create_memory_fifo();
     int sram_round_trip = this->interconnects->x_interconnect->data_req_latency() + this->interconnects->x_interconnect->data_read_latency();
 
     int main_rounds = this->no_main_rounds();
@@ -297,11 +324,24 @@ void Compiler::run_cycle_model(){
 
     // Warm-up
     while (!this->arrays->is_weights_buffered(r)){
-        this->arrays->init_weight_buffering(r);
+        list<W_Tile*>* w_tiles = this->arrays->get_w_tiles(r);
+        if( all_of(w_tiles->begin(), w_tiles->end(), [](W_Tile* w_tile){ return w_tile->is_allocated(); }) ){
+            this->arrays->init_weight_buffering(r);
+        }
+        delete w_tiles;
+
         this->arrays->update();
+        this->dram->update();
         arr_cycle++;
     }
 
+    list<X_Tile*>* x_tiles = this->arrays->get_x_tiles(r);
+    while(!all_of(x_tiles->begin(), x_tiles->end(), [](X_Tile* x_tile){ return x_tile->is_allocated(); })){
+        this->dram->update();
+        arr_cycle++;        
+    }
+    delete x_tiles;
+    
     pp_cycle = arr_cycle + this->interconnects->pout_interconnect->data_write_latency();
 
     int round_clk = 0;
@@ -321,18 +361,26 @@ void Compiler::run_cycle_model(){
         //Propagate clock
         this->arrays->update();
         this->post_processors->update();
+        this->dram->update();
 
         if (this->arrays->is_tile_op_done(r) && 
             this->arrays->is_weights_buffered(r+1) && 
             this->post_processors->is_tile_op_done(r) && 
             round_clk >= sram_round_trip){
 
-            //Round end
-            BOOST_LOG_TRIVIAL(info) << "Main round " << r << " takes " << round_clk << "clock cycles";
+            list<W_Tile*>* w_tiles = this->arrays->get_w_tiles(r+2);
+            list<X_Tile*>* x_tiles = this->arrays->get_x_tiles(r+1);
+            if( all_of(w_tiles->begin(), w_tiles->end(), [](W_Tile* w_tile){ return w_tile->is_allocated(); }) &&
+                all_of(x_tiles->begin(), x_tiles->end(), [](X_Tile* x_tile){ return x_tile->is_allocated(); })     ){
 
-            r++;
+                r++;
+                new_round = true;
+                //Round end
+                BOOST_LOG_TRIVIAL(info) << "Main round " << r << " takes " << round_clk << "clock cycles";
+            }
+            delete x_tiles;
+            delete w_tiles;
 
-            new_round = true;
         }
 
         arr_cycle++;

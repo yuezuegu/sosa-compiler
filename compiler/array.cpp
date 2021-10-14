@@ -274,6 +274,30 @@ bool Arrays::check_pin_bank_conflict(int r, P_Tile* p_tile){
     return false;
 }
 
+list<X_Tile*>* Arrays::get_x_tiles(int r){
+    list<X_Tile*>* x_tiles = new list<X_Tile*>();
+
+    for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
+        MultOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        x_tiles->push_back(op->x_tile);
+    }    
+
+    return x_tiles;
+}
+
+list<W_Tile*>* Arrays::get_w_tiles(int r){
+    list<W_Tile*>* w_tiles = new list<W_Tile*>();
+
+    for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
+        MultOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        w_tiles->push_back(op->w_tile);
+    }    
+
+    return w_tiles;
+}
+
 
 bool Arrays::is_weights_buffered(int r){
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
