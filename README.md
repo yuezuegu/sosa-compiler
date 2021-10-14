@@ -22,3 +22,5 @@ Use CMake to build (assuming in the repository root directory):
 If you want a highly optimized release build, use instead:
 
     cmake .. -DCMAKE_PREFIX_PATH="$HOME/.local" -DCMAKE_BUILD_TYPE=Release
+
+You can use CMake and CMake Tools extensions of vscode to facilitate development. Let CMake Tools to configure IntelliSense.
