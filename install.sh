@@ -125,7 +125,7 @@ function install_conda_env() {
     echo "Install conda env"
 
     pushd "$TMPDIR"
-        # eval "$(conda shell.bash hook)"
+        eval "$(conda shell.bash hook)"
         if [[ "$(conda env list)" == *${CONDA_ENV}*  ]]
         then
             echo "${CONDA_ENV} is found, removing it."
