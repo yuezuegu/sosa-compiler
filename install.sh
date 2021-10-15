@@ -188,7 +188,7 @@ prepare_prefix
 if check_program "conda"
 then
     echo "conda is found, update it."
-    conda update conda || fail_msg "update conda failed"
+    conda update -y conda || fail_msg "update conda failed"
 else
     echo "conda is not found, install conda."
     install_conda
