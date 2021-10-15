@@ -17,6 +17,8 @@ PREFIX="$HOME/.local"
 CONDA_TARGET="$HOME/miniconda"
 PROFILE_FILE="$HOME/.bashrc"
 
+SCRIPT_DIR="$(pwd)"
+
 # helper functions
 function fail_msg() {
     echo "$1" >&2
@@ -130,7 +132,7 @@ function install_conda_env() {
             conda env remove -n ${CONDA_ENV} || fail_msg "conda env remove failed"
         fi
 
-        conda env create -f conda.yml || fail_msg "conda env create failed"
+        conda env create -f "$SCRIPT_DIR/conda.yml" || fail_msg "conda env create failed"
         conda activate $CONDA_ENV || fail_msg "conda env activate failed"
     popd
     return 0
