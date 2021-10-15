@@ -14,7 +14,7 @@ CONDA_ENV=sosa-compiler
 
 # target prefix
 PREFIX="$HOME/.local"
-CONDA_PREFIX="$HOME/miniconda"
+CONDA_TARGET="$HOME/miniconda"
 PROFILE_FILE="$HOME/.bashrc"
 
 # helper functions
@@ -112,8 +112,8 @@ function install_conda() {
     pushd "$TMPDIR"
         wget "$URL_CONDA" -O "conda.sh" || fail_msg "wget failed."
         echo "Install."
-        bash ~/conda.sh -b -f -p "$CONDA_PREFIX" || fail_msg "install failed."
-        source "$CONDA_PREFIX/bin/activate" || fail_msg "activate failed."
+        bash ~/conda.sh -b -f -p "$CONDA_TARGET" || fail_msg "install failed."
+        source "$CONDA_TARGET/bin/activate" || fail_msg "activate failed."
         conda init || fail_msg "init failed."
     popd
     return 0
