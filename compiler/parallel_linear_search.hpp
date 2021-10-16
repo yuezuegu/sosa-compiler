@@ -114,7 +114,10 @@ struct ParallelLinearSearch {
 
     // Sets the end of the queue and waits for the execution to complete.
     void end() {
-        shared_state_.set_num_tasks(num_tasks_);
+        // add invalid jobs that stop the worker
+        for (std::size_t i = 0; i < num_workers_; ++i)
+            shared_state_.task_queue.emplace_back(Task{ nullptr, 0, true });
+        
         shared_state_.join_workers();
     }
 
@@ -133,6 +136,7 @@ private:
     struct Task {
         std::function<bool (std::size_t)> f;
         std::size_t idx;
+        bool invalid = false;
     };
 
     struct SharedState {
@@ -144,7 +148,6 @@ private:
 
         // Resets the shared state
         void reset() {
-            num_tasks_set_ = false;
             completion_array_.clear();
             num_contiguous_completed_from_beginning_ = 0;
             done_ = false;
@@ -177,11 +180,8 @@ private:
                 }
             }
 
-            if (
-                // case 1: search completed successfully, and a contiguous range is covered
-                (success_ && num_contiguous_completed_from_beginning_ == idx) ||
-                // case 2: the whole numbers are covered with no success
-                (num_tasks_set_ && num_contiguous_completed_from_beginning_ == num_tasks_)) {
+            //search completed successfully, and a contiguous range is covered
+            if (success_ && num_contiguous_completed_from_beginning_ == idx) {
                 done_ = true;
                 task_queue.cancel();
             }
@@ -192,12 +192,6 @@ private:
                 // increase the variable as long as we have a result
                 completion_array_[num_contiguous_completed_from_beginning_] >= 0)
                 ++num_contiguous_completed_from_beginning_;
-        }
-
-        void set_num_tasks(std::size_t num_tasks) {
-            std::lock_guard<std::mutex> lock{mtx_};
-            num_tasks_set_ = true;
-            num_tasks_ = num_tasks;
         }
 
         bool done() const {
@@ -228,8 +222,6 @@ private:
 
     private:
         std::size_t num_workers_;
-        std::size_t num_tasks_;
-        bool num_tasks_set_;
 
         // task queue
 
@@ -280,6 +272,13 @@ private:
                     while (true) {
                         auto task = shared_state.task_queue.pop_front();
                         if (task) {
+                            if (task->invalid) {
+                                #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+                                cout_mt() << "Worker idx = " << idx << " invalid task" << "\n";
+                                #endif
+                                break ;
+                            }
+
                             #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
                             cout_mt() << "Worker idx = " << idx << " task idx = " << task->idx << "\n";
                             #endif
