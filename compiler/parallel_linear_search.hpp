@@ -6,8 +6,8 @@
  * 
  */
 
-#ifndef MULTITHREADING_HPP_INCLUDED
-#define MULTITHREADING_HPP_INCLUDED
+#ifndef PARALLEL_LINEAR_SEARCH_HPP_INCLUDED
+#define PARALLEL_LINEAR_SEARCH_HPP_INCLUDED
 
 #include <thread>
 #include <mutex>
@@ -24,6 +24,26 @@
 
 #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
 #include "ostream_mt.hpp"
+#include "print.hpp"
+
+#define DEBUG \
+    print(cout_mt()) \
+    ("[ PLS_DEBUG ] ").ln
+
+#define DEBUG_WORKER \
+    print(cout_mt()) \
+    ("[ PLS_DEBUG ] worker idx = ", idx, " ").ln
+
+#define DEBUG_WORKER_TASK \
+    print(cout_mt()) \
+    ("[ PLS_DEBUG ] worker idx = ", idx, " task idx = ", task->idx, " ").ln
+
+#else
+#include "print.hpp"
+
+#define DEBUG_WORKER fake_print_functor{}
+#define DEBUG_WORKER_TASK fake_print_functor{}
+
 #endif
 
 namespace multithreading {
@@ -34,8 +54,8 @@ namespace multithreading {
  * 
  */
 template <typename Task>
-struct CancellableTaskQueue {
-    CancellableTaskQueue() {
+struct CancellableQueue {
+    CancellableQueue() {
         reset();
     }
 
@@ -117,7 +137,7 @@ struct ParallelLinearSearch {
     void end() {
         // add invalid jobs that stop the worker
         for (std::size_t i = 0; i < num_workers_; ++i)
-            shared_state_.task_queue.emplace_back(Task{ nullptr, 0, true });
+            shared_state_.task_queue.emplace_back(Task{ nullptr, 0, true, nullptr });
         
         shared_state_.join_workers();
     }
@@ -142,7 +162,7 @@ private:
     };
 
     struct SharedState {
-        CancellableTaskQueue<Task> task_queue;
+        CancellableQueue<Task> task_queue;
 
         SharedState(std::size_t num_workers):
             num_workers_{num_workers} {
@@ -258,9 +278,7 @@ private:
     struct Worker {
         Worker(SharedState &shared_state, std::size_t idx): start_{false}, quit_{false} {
             thread_ = std::thread([&, idx] {
-                #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
-                cout_mt() << "Worker idx = " << idx << " start_worker" << "\n";
-                #endif
+                DEBUG_WORKER("start_worker");
 
                 while (true) {
                     // wait until started or quit requested
@@ -268,49 +286,34 @@ private:
                     cv_.wait(lock, [this] { return start_ || quit_; });
 
                     if (quit_) {
-                        #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
-                        cout_mt() << "Worker idx = " << idx << " quit_" << "\n";
-                        #endif
+                        DEBUG_WORKER("quit");
                         return ;
                     }
 
-                    #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
-                    cout_mt() << "Worker idx = " << idx << " start_" << "\n";
-                    #endif
+                    DEBUG_WORKER("start");
                     
                     while (true) {
                         auto task = shared_state.task_queue.pop_front();
                         if (task) {
                             if (task->invalid) {
-                                #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
-                                cout_mt() << "Worker idx = " << idx << " invalid task" << "\n";
-                                #endif
+                                DEBUG_WORKER("invalid_task");
                                 break ;
                             }
 
-                            #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
-                            cout_mt() << "Worker idx = " << idx << " task idx = " << task->idx << "\n";
-                            #endif
+                            DEBUG_WORKER_TASK();
 
                             bool r = task->f(task->idx);
                             shared_state.inform_completion(task->idx, std::move(task->data), r);
 
-                            #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
-                            cout_mt() << "Worker idx = " << idx << " task done idx = " << task->idx << "\n";
-                            #endif
+                            DEBUG_WORKER_TASK("task_done");
 
                             if (r) {
-                                #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
-                                cout_mt() << "Worker idx = " << idx << " success" << "\n";
-                                #endif
-
+                                DEBUG_WORKER_TASK("task_success");
                                 break ;
                             }
                         }
                         else {
-                            #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
-                            cout_mt() << "Worker idx = " << idx << " !task" << "\n";
-                            #endif
+                            DEBUG_WORKER("not_a_task");
                             
                             // cancelled
                             break ;
@@ -319,15 +322,11 @@ private:
 
                     start_ = false;
 
-                    #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
-                    cout_mt() << "Worker idx = " << idx << " inform_worker_done" << "\n";
-                    #endif
+                    DEBUG_WORKER("inform_worker_done");
 
                     shared_state.inform_worker_done();
 
-                    #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
-                    cout_mt() << "Worker idx = " << idx << " end" << "\n";
-                    #endif
+                    DEBUG_WORKER("end");
                 }
             });
         }
@@ -370,4 +369,4 @@ private:
 
 }
 
-#endif // MULTITHREADING_HPP_INCLUDED
+#endif // PARALLEL_LINEAR_SEARCH_HPP_INCLUDED

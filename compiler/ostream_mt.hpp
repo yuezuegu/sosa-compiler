@@ -25,6 +25,9 @@ private:
         wrapper(ostream_mt &osmt): osmt_{osmt} {
         }
 
+        wrapper(wrapper &&w): std::ostringstream{std::move(w)}, osmt_{w.osmt_} {
+        }
+
         ~wrapper() {
             std::unique_lock<std::mutex> lock{osmt_.mtx_};
             osmt_.os_ << this->str();

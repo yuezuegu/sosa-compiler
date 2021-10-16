@@ -6,6 +6,7 @@
 #include <thread>
 #include <chrono>
 #include "ostream_mt.hpp"
+#include "print.hpp"
 
 using namespace multithreading;
 
@@ -15,14 +16,17 @@ int main() {
         return [=](std::size_t idx) {
             (void) idx;
             std::this_thread::sleep_for(std::chrono::milliseconds(duration));
+            print(cout_mt()).ln("done ", idx);
             return result;
         };
     };
+
 
     pls.begin();
 
     for (int i = 0; pls.should_continue() && i < 2010; ++i) {
         pls.append_job(job(i, false && i >= 2000));
+        // job(i, false && i >= 2000)(i);
     }
 
     pls.end();
