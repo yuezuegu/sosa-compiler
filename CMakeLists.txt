@@ -29,13 +29,6 @@ add_executable(
     compiler/post_processor.cpp
 )
 
-add_executable(
-    parallel_linear_search
-    # sources
-    compiler/parallel_linear_search.cpp
-    compiler/ostream_mt.cpp
-)
-
 target_include_directories(compiler PRIVATE compiler/)
 target_link_libraries(
     compiler
@@ -46,9 +39,16 @@ target_link_libraries(
     Boost::program_options
 )
 
-target_include_directories(parallel_linear_search PRIVATE compiler/)
+add_executable(
+    test_pls
+    # sources
+    compiler/parallel_linear_search.cpp
+    compiler/ostream_mt.cpp
+)
+
+target_include_directories(test_pls PRIVATE compiler/)
 target_link_libraries(
-    parallel_linear_search
+    test_pls
     PRIVATE
     # nlohmann_json::nlohmann_json
     Boost::boost
@@ -56,4 +56,7 @@ target_link_libraries(
     Boost::program_options
 )
 
-target_compile_definitions(parallel_linear_search PRIVATE $<$<CONFIG:DEBUG>:PARALLEL_LINEAR_SEARCH_DEBUG>)
+add_test(NAME test_pls COMMAND test_pls)
+
+# Uncomment the following line to help debug the PLS.
+# target_compile_definitions(parallel_linear_search PRIVATE $<$<CONFIG:DEBUG>:PARALLEL_LINEAR_SEARCH_DEBUG>)
