@@ -29,7 +29,7 @@ int main() {
 
     auto r = pls.result();
     if (r) {
-       cout_mt() << "success idx = " << *r << std::endl;
+       cout_mt() << "success idx = " << r->first << std::endl;
     }
     else {
         cout_mt() << "failure\n";

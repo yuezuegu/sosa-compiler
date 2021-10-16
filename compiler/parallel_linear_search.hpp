@@ -19,6 +19,7 @@
 #include <functional>
 #include <type_traits>
 #include <optional>
+#include <any>
 #include <cassert>
 
 #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
@@ -100,8 +101,8 @@ struct ParallelLinearSearch {
     }
 
     // Assigns a new job to workers.
-    void append_job(std::function<bool (std::size_t)> f) {
-        shared_state_.task_queue.emplace_back(Task{std::move(f), num_tasks_});
+    void append_job(std::function<bool (std::size_t)> f, std::any data = nullptr) {
+        shared_state_.task_queue.emplace_back(Task{std::move(f), num_tasks_, false, std::move(data)});
         ++num_tasks_;
     }
 
@@ -122,9 +123,9 @@ struct ParallelLinearSearch {
     }
 
     // Get the result
-    std::optional<std::size_t> result() {
+    std::optional<std::pair<std::size_t, std::any>> result() {
         if (shared_state_.success()) {
-            return shared_state_.success_idx();
+            return std::make_pair(shared_state_.success_idx(), shared_state_.success_data());
         }
         return {};
     }
@@ -137,6 +138,7 @@ private:
         std::function<bool (std::size_t)> f;
         std::size_t idx;
         bool invalid = false;
+        std::any data;
     };
 
     struct SharedState {
@@ -159,7 +161,7 @@ private:
 
         // informs the shared state that one of the workers have found a result
         // sets the done flag if it can judge the execution is complete
-        void inform_completion(std::size_t idx, bool r) {
+        void inform_completion(std::size_t idx, std::any data, bool r) {
             std::lock_guard<std::mutex> lock{mtx_};
 
             // append -1 until the size is good to go
@@ -173,6 +175,7 @@ private:
                 if (!success_) {
                     success_ = true;
                     success_idx_ = idx;
+                    success_data_ = std::move(data);
                 }
 
                 if (success_idx_ > idx) {
@@ -209,6 +212,11 @@ private:
             return success_idx_;
         }
 
+        std::any success_data() const {
+            // no need for locks here
+            return std::move(success_data_);
+        }
+
         void join_workers() {
             std::unique_lock<std::mutex> lock{mtx_join_};
             cv_join_.wait(lock, [this] { return num_remaining_workers_ == 0; });
@@ -235,6 +243,7 @@ private:
         bool done_;
         bool success_;
         std::size_t success_idx_;
+        std::any success_data_;
         std::mutex mtx_;
 
         // for joining the workers
@@ -284,7 +293,7 @@ private:
                             #endif
 
                             bool r = task->f(task->idx);
-                            shared_state.inform_completion(task->idx, r);
+                            shared_state.inform_completion(task->idx, std::move(task->data), r);
 
                             #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
                             cout_mt() << "Worker idx = " << idx << " task done idx = " << task->idx << "\n";
