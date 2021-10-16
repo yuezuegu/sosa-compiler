@@ -18,8 +18,65 @@
 #include <memory>
 #include <functional>
 #include <type_traits>
+#include <optional>
+#include <cassert>
+
+#ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+#include "ostream_mt.hpp"
+#endif
 
 namespace multithreading {
+
+/**
+ * 
+ * A task queue of infinite length with cancellation option.
+ * 
+ */
+template <typename Task>
+struct CancellableTaskQueue {
+    CancellableTaskQueue() {
+        reset();
+    }
+
+    // should be called before execution
+    void reset() {
+        std::lock_guard<std::mutex> lock{mtx_};
+        cancel_ = false;
+        tasks_.clear();
+    }
+
+    template <typename ...Args>
+    void emplace_back(Args && ...args) {
+        std::lock_guard<std::mutex> lock{mtx_};
+        assert(!cancel_ || "reset() the queue first!");
+        tasks_.emplace_back(std::forward<Args>(args)...);
+        cv_.notify_all();
+    }
+
+    std::optional<Task> pop_front() {
+        std::unique_lock<std::mutex> lock{mtx_};
+        cv_.wait(lock, [this]{ return tasks_.size() > 0 || cancel_; });
+        if (cancel_) {
+            return {};
+        }
+        auto popped = tasks_.front();
+        tasks_.pop_front();
+        return popped;
+    }
+
+    // removes all the tasks and sends a nullptr_t to waiting threads.
+    void cancel() {
+        std::lock_guard<std::mutex> lock{mtx_};
+        tasks_.clear();
+        cancel_ = true;
+        cv_.notify_all();
+    }
+private:
+    std::list<Task> tasks_;
+    bool cancel_;
+    std::mutex mtx_;
+    std::condition_variable cv_;
+};
 
 /**
  *
@@ -30,62 +87,83 @@ namespace multithreading {
 struct ParallelLinearSearch {
     ParallelLinearSearch(std::size_t num_workers):
         shared_state_{num_workers},
-        num_workers_{num_workers},
-        next_worker_{0},
-        num_tasks_{0} {
+        num_workers_{num_workers} {
         // generate the workers
         for (std::size_t i = 0; i < num_workers_; ++i) {
-            workers_.emplace_back(std::make_unique<Worker>(shared_state_));
+            workers_.emplace_back(std::make_unique<Worker>(shared_state_, i));
         }
+    }
+
+    // whether or not continue (false if success)
+    bool should_continue() const {
+        return !shared_state_.success();
     }
 
     // Assigns a new job to workers.
     void append_job(std::function<bool (std::size_t)> f) {
-        workers_[next_worker_]->emplace_task(std::move(f), num_tasks_);
-        num_tasks_++;
-        next_worker_ = (next_worker_ + 1) % num_workers_;
+        shared_state_.task_queue.emplace_back(Task{std::move(f), num_tasks_});
+        ++num_tasks_;
     }
 
-    // Starts execution and waits until completion.
-    bool execute(std::size_t &idx) {
-        shared_state_.reset(num_tasks_);
-
-        for (auto &worker: workers_) worker->start();
-
-        shared_state_.join_workers();
-
-        // reset
-        next_worker_ = 0;
+    // Starts execution.
+    void begin() {
+        shared_state_.reset();
         num_tasks_ = 0;
+        for (auto &worker: workers_) worker->start();
+    }
 
-        idx = shared_state_.success_idx();
-        return shared_state_.success();
+    // Sets the end of the queue and waits for the execution to complete.
+    void end() {
+        shared_state_.set_num_tasks(num_tasks_);
+        shared_state_.join_workers();
+    }
+
+    // Get the result
+    std::optional<std::size_t> result() {
+        if (shared_state_.success()) {
+            return shared_state_.success_idx();
+        }
+        return {};
     }
 
     ~ParallelLinearSearch() {
         for (auto &worker: workers_) worker->quit();
     }
 private:
+    struct Task {
+        std::function<bool (std::size_t)> f;
+        std::size_t idx;
+    };
+
     struct SharedState {
+        CancellableTaskQueue<Task> task_queue;
+
         SharedState(std::size_t num_workers):
             num_workers_{num_workers} {
         }
 
         // Resets the shared state
-        void reset(std::size_t num_tasks) {
-            num_tasks_ = num_tasks;
-            completion_array_ = std::vector<int>(num_tasks, -1);
+        void reset() {
+            num_tasks_set_ = false;
+            completion_array_.clear();
             num_contiguous_completed_from_beginning_ = 0;
             done_ = false;
             success_ = false;
             success_idx_ = 0;
             num_remaining_workers_ = num_workers_;
+            task_queue.reset();
         }
 
         // informs the shared state that one of the workers have found the result
         // sets the done flag if it can judge the execution is complete
         void inform_completion(std::size_t idx, bool r) {
             std::lock_guard<std::mutex> lock{mtx_};
+
+            // append -1 until the size is good to go
+            while (idx >= completion_array_.size()) {
+                completion_array_.push_back(-1);
+            }
+
             completion_array_[idx] = r;
 
             if (r) {
@@ -102,14 +180,21 @@ private:
             if (
                 // case 1: search completed successfully, and a contiguous range is covered
                 (success_ && num_contiguous_completed_from_beginning_ == idx) ||
-                // case 2: the whole range is covered with no success
-                (num_contiguous_completed_from_beginning_ == num_tasks_)) {
+                // case 2: the whole numbers are covered with no success
+                (num_tasks_set_ && num_contiguous_completed_from_beginning_ == num_tasks_)) {
                 done_ = true;
+                task_queue.cancel();
                 return ;
             }
 
             while (completion_array_[num_contiguous_completed_from_beginning_] >= 0)
                 ++num_contiguous_completed_from_beginning_;
+        }
+
+        void set_num_tasks(std::size_t num_tasks) {
+            std::lock_guard<std::mutex> lock{mtx_};
+            num_tasks_set_ = true;
+            num_tasks_ = num_tasks_;
         }
 
         bool done() const {
@@ -141,6 +226,10 @@ private:
     private:
         std::size_t num_workers_;
         std::size_t num_tasks_;
+        bool num_tasks_set_;
+
+        // task queue
+
 
         // -1 --> Not initialized
         // 0  --> Completed, not successful
@@ -162,40 +251,64 @@ private:
     // For synchronization among workers.
     SharedState shared_state_;
 
-    struct Task {
-        std::function<bool (std::size_t)> f;
-        std::size_t idx;
-    };
-
     struct Worker {
-        Worker(SharedState &shared_state): start_{false}, quit_{false} {
-            thread_ = std::thread([&] {
+        Worker(SharedState &shared_state, std::size_t idx): start_{false}, quit_{false} {
+            thread_ = std::thread([&, idx] {
+                #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+                cout_mt() << "Worker idx = " << idx << " start_worker" << "\n";
+                #endif
+
                 while (true) {
                     // wait until started or quit requested
                     std::unique_lock<std::mutex> lock{mtx_};
                     cv_.wait(lock, [this] { return start_ || quit_; });
 
-                    if (quit_)
+                    if (quit_) {
+                        #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+                        cout_mt() << "Worker idx = " << idx << " quit_" << "\n";
+                        #endif
                         return ;
+                    }
+
+                    #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+                    cout_mt() << "Worker idx = " << idx << " start_" << "\n";
+                    #endif
                     
-                    for (auto &task: tasks_) {
-                        bool r = task.f(task.idx);
-                        if (r) {
-                            shared_state.inform_completion(task.idx, r);
+                    while (true) {
+                        auto task = shared_state.task_queue.pop_front();
+                        if (task) {
+                            #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+                            cout_mt() << "Worker idx = " << idx << " task idx = " << task->idx << "\n";
+                            #endif
+
+                            bool r = task->f(task->idx);
+
+                            #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+                            cout_mt() << "Worker idx = " << idx << " task done idx = " << task->idx << "\n";
+                            #endif
+                            if (r) {
+                                #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+                                cout_mt() << "Worker idx = " << idx << " success" << "\n";
+                                #endif
+
+                                shared_state.inform_completion(task->idx, r);
+                                break ;
+                            }
+                        }
+                        else {
+                            #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+                            cout_mt() << "Worker idx = " << idx << " !task" << "\n";
+                            #endif
+                            
+                            // cancelled
                             break ;
                         }
                     }
 
                     start_ = false;
-                    tasks_.clear();
                     shared_state.inform_worker_done();
                 }
             });
-        }
-
-        // Emplaces a new task for the worker.
-        void emplace_task(std::function<bool (std::size_t)> f, std::size_t idx) {
-            tasks_.emplace_back(Task{ std::move(f), idx });
         }
 
         // Starts the worker.
@@ -217,7 +330,6 @@ private:
                 thread_.join();
         }
     private:
-        std::list<Task> tasks_;
         std::thread thread_;
         std::mutex mtx_;
         std::condition_variable cv_;
@@ -231,11 +343,8 @@ private:
     };
 
     std::size_t num_workers_;
-    std::vector<std::unique_ptr<Worker>> workers_;
-    
-    // task management
-    std::size_t next_worker_;
     std::size_t num_tasks_;
+    std::vector<std::unique_ptr<Worker>> workers_;
 };
 
 }

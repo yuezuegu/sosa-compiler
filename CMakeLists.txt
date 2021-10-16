@@ -33,6 +33,7 @@ add_executable(
     parallel_linear_search
     # sources
     compiler/parallel_linear_search.cpp
+    compiler/ostream_mt.cpp
 )
 
 target_include_directories(compiler PRIVATE compiler/)
@@ -54,3 +55,5 @@ target_link_libraries(
     Boost::log
     Boost::program_options
 )
+
+target_compile_definitions(parallel_linear_search PRIVATE $<$<CONFIG:DEBUG>:PARALLEL_LINEAR_SEARCH_DEBUG>)

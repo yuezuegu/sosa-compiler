@@ -5,37 +5,34 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include "ostream_mt.hpp"
 
 using namespace multithreading;
 
 int main() {
-    ParallelLinearSearch pls(8);
+    ParallelLinearSearch pls(64);
     auto job = [](std::size_t duration, bool result) {
-        return [=](std::size_t) {
+        return [=](std::size_t idx) {
+            (void) idx;
             std::this_thread::sleep_for(std::chrono::milliseconds(duration));
             return result;
         };
     };
 
-    pls.append_job(job(5, false));
-    pls.append_job(job(1, false));
-    pls.append_job(job(100, true));
-    pls.append_job(job(1, false));
-    pls.append_job(job(5, true));
-    pls.append_job(job(1, false));
-    pls.append_job(job(1, false));
-    pls.append_job(job(1, false));
-    pls.append_job(job(5, true));
-    pls.append_job(job(1, false));
-    pls.append_job(job(1, false));
-    pls.append_job(job(1, false));
+    pls.begin();
 
-    std::size_t idx;
-    if (pls.execute(idx)) {
-        std::cout << "success idx = " << idx << std::endl;
+    for (int i = 0; pls.should_continue() && i < 10000; ++i) {
+        pls.append_job(job(i, i >= 2000));
+    }
+
+    pls.end();
+
+    auto r = pls.result();
+    if (r) {
+       cout_mt() << "success idx = " << *r << std::endl;
     }
     else {
-        std::cout << "failure";
+        cout_mt() << "failure\n";
     }
 
 
