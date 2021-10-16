@@ -197,19 +197,15 @@ private:
             completion_array_[idx] = r;
 
             if (r) {
-                if (!success_) {
+                if (!success_ || success_idx_ > idx) {
                     success_ = true;
                     success_idx_ = idx;
                     success_data_ = std::move(data);
                 }
-
-                if (success_idx_ > idx) {
-                    success_idx_ = idx;
-                }
             }
 
-            //search completed successfully, and a contiguous range is covered
-            if (success_ && num_contiguous_completed_from_beginning_ == idx) {
+            // search completed successfully, and a contiguous range is covered
+            if (success_ && num_contiguous_completed_from_beginning_ > idx) {
                 done_ = true;
                 task_queue.cancel();
             }

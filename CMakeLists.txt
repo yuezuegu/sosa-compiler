@@ -59,4 +59,4 @@ target_link_libraries(
 add_test(NAME test_pls COMMAND test_pls)
 
 # Uncomment the following line to help debug the PLS.
-# target_compile_definitions(parallel_linear_search PRIVATE $<$<CONFIG:DEBUG>:PARALLEL_LINEAR_SEARCH_DEBUG>)
+# target_compile_definitions(test_pls PRIVATE $<$<CONFIG:DEBUG>:PARALLEL_LINEAR_SEARCH_DEBUG_MSGS>)

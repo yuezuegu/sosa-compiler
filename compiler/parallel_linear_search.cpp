@@ -224,3 +224,68 @@ BOOST_AUTO_TEST_CASE(case9_func_rand_multi_mid)
     BOOST_TEST((bool) result);
     BOOST_TEST(result->index == 800);
 }
+
+BOOST_AUTO_TEST_CASE(case10_func_rand_0)
+{
+    auto rdgen = bdata::random();
+    auto random = [&, it = rdgen.begin()]() mutable { auto v = *it; ++it; return v; };
+    
+    ParallelLinearSearch pls(num_workers);
+
+    pls.begin();
+
+    int expected = -1;
+
+    for (int i = 0; pls.should_continue() && i < 1600; ++i) {
+        auto r = random() >= 0.5;
+        pls.append_job(job{random() * 5 + i / 5, r});
+        if (r && expected < 0)
+            expected = i;
+    }
+
+    pls.end();
+
+    print(cout_mt()).ln("expected ", expected);
+
+    auto result = pls.result();
+
+    BOOST_TEST((bool) result == (expected >= 0));
+    if (expected > 0)
+        BOOST_TEST(result->index == expected);
+}
+
+BOOST_AUTO_TEST_CASE(case11_func_det_first)
+{
+    ParallelLinearSearch pls(num_workers);
+
+    pls.begin();
+
+    for (int i = 0; pls.should_continue() && i < 1600; ++i) {
+        pls.append_job(job{i == 0 ? 3.0 : 1.0, i == 0});
+    }
+
+    pls.end();
+
+    auto result = pls.result();
+
+    BOOST_TEST((bool) result);
+    BOOST_TEST(result->index == 0);
+}
+
+BOOST_AUTO_TEST_CASE(case12_func_det_last)
+{
+    ParallelLinearSearch pls(num_workers);
+
+    pls.begin();
+
+    for (int i = 0; pls.should_continue() && i < 1600; ++i) {
+        pls.append_job(job{(double) i, i >= 1599});
+    }
+
+    pls.end();
+
+    auto result = pls.result();
+
+    BOOST_TEST((bool) result);
+    BOOST_TEST(result->index == 1599);
+}
