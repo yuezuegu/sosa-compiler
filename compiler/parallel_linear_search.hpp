@@ -154,7 +154,7 @@ private:
             task_queue.reset();
         }
 
-        // informs the shared state that one of the workers have found the result
+        // informs the shared state that one of the workers have found a result
         // sets the done flag if it can judge the execution is complete
         void inform_completion(std::size_t idx, bool r) {
             std::lock_guard<std::mutex> lock{mtx_};
@@ -184,17 +184,20 @@ private:
                 (num_tasks_set_ && num_contiguous_completed_from_beginning_ == num_tasks_)) {
                 done_ = true;
                 task_queue.cancel();
-                return ;
             }
 
-            while (completion_array_[num_contiguous_completed_from_beginning_] >= 0)
+            while (
+                // make sure that we do not exceed the array size during iteration
+                num_contiguous_completed_from_beginning_ < completion_array_.size() &&
+                // increase the variable as long as we have a result
+                completion_array_[num_contiguous_completed_from_beginning_] >= 0)
                 ++num_contiguous_completed_from_beginning_;
         }
 
         void set_num_tasks(std::size_t num_tasks) {
             std::lock_guard<std::mutex> lock{mtx_};
             num_tasks_set_ = true;
-            num_tasks_ = num_tasks_;
+            num_tasks_ = num_tasks;
         }
 
         bool done() const {
@@ -282,16 +285,17 @@ private:
                             #endif
 
                             bool r = task->f(task->idx);
+                            shared_state.inform_completion(task->idx, r);
 
                             #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
                             cout_mt() << "Worker idx = " << idx << " task done idx = " << task->idx << "\n";
                             #endif
+
                             if (r) {
                                 #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
                                 cout_mt() << "Worker idx = " << idx << " success" << "\n";
                                 #endif
 
-                                shared_state.inform_completion(task->idx, r);
                                 break ;
                             }
                         }
@@ -306,7 +310,16 @@ private:
                     }
 
                     start_ = false;
+
+                    #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+                    cout_mt() << "Worker idx = " << idx << " inform_worker_done" << "\n";
+                    #endif
+
                     shared_state.inform_worker_done();
+
+                    #ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+                    cout_mt() << "Worker idx = " << idx << " end" << "\n";
+                    #endif
                 }
             });
         }
