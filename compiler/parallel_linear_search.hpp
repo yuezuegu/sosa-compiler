@@ -22,7 +22,7 @@
 #include <any>
 #include <cassert>
 
-#ifdef PARALLEL_LINEAR_SEARCH_DEBUG
+#ifdef PARALLEL_LINEAR_SEARCH_DEBUG_MSGS
 #include "ostream_mt.hpp"
 #include "print.hpp"
 
@@ -142,10 +142,15 @@ struct ParallelLinearSearch {
         shared_state_.join_workers();
     }
 
+    struct result_type {
+        std::size_t index;
+        std::any data;
+    };
+
     // Get the result
-    std::optional<std::pair<std::size_t, std::any>> result() {
+    std::optional<result_type> result() {
         if (shared_state_.success()) {
-            return std::make_pair(shared_state_.success_idx(), shared_state_.success_data());
+            return result_type{shared_state_.success_idx(), std::move(shared_state_.success_data())};
         }
         return {};
     }
