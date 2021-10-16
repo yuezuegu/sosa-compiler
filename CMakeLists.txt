@@ -29,9 +29,25 @@ add_executable(
     compiler/post_processor.cpp
 )
 
+add_executable(
+    parallel_linear_search
+    # sources
+    compiler/parallel_linear_search.cpp
+)
+
 target_include_directories(compiler PRIVATE compiler/)
 target_link_libraries(
     compiler
+    PRIVATE
+    # nlohmann_json::nlohmann_json
+    Boost::boost
+    Boost::log
+    Boost::program_options
+)
+
+target_include_directories(parallel_linear_search PRIVATE compiler/)
+target_link_libraries(
+    parallel_linear_search
     PRIVATE
     # nlohmann_json::nlohmann_json
     Boost::boost
