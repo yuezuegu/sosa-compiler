@@ -27,6 +27,7 @@ add_executable(
     compiler/array.cpp
     compiler/interconnect.cpp
     compiler/post_processor.cpp
+    compiler/dram.cpp
 )
 
 target_include_directories(compiler PRIVATE compiler/)

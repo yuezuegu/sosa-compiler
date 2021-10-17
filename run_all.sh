@@ -1,14 +1,21 @@
-source ~/.bashrc 
+#!/bin/bash
+
+# Activate conda
 eval "$(conda shell.bash hook)"
-conda activate sosa-compiler 
+conda activate sosa-compiler
+
+# Rebuild
+pushd ./build
+make
+popd
+
+COMPILER="${COMPILER:-./build/compiler}"
+echo "Using COMPILER=${COMPILER}"
 
 start_time=$(date +%s)
 
-make clean
-make final
-
 dir=$(date "+%Y-%m-%d-%H-%M-%S")
-mkdir experiments/${dir}
+mkdir -p experiments/${dir}
 
 r=32
 c=32
@@ -31,7 +38,7 @@ do
                 --array_size ${r} ${c} \
                 --out_dir=experiments/${dir}/${hash}
 
-            ./main -r ${r} -c ${c} -N ${N} -I ${interconn} -d experiments/${dir}/${hash} &
+            ${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d experiments/${dir}/${hash} &
             pids[${cnt}]=$!
             echo pid:${pids[${cnt}]} hash:${hash} ${model} ${N} ${sentence_len} ${interconn} 
             cnt=${cnt}+1
@@ -56,7 +63,7 @@ do
                 --array_size ${r} ${c} \
                 --out_dir=experiments/${dir}/${hash}
 
-            ./main -r ${r} -c ${c} -N ${N} -I ${interconn} -d experiments/${dir}/${hash} &
+            ${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d experiments/${dir}/${hash} &
             pids[${cnt}]=$!
             echo pid:${pids[${cnt}]} hash:${hash} ${model} ${N} ${interconn}
             cnt=${cnt}+1
@@ -66,7 +73,6 @@ done
 
 for pid in ${pids[*]}; do
     wait $pid
-    
 done
 
 end_time=$(date +%s)
