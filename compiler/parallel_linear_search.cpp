@@ -14,9 +14,10 @@ namespace bdata = boost::unit_test::data;
 #include "ostream_mt.hpp"
 #include "print.hpp"
 
-const std::size_t num_workers = 64;
-
 using namespace multithreading;
+
+const std::size_t num_workers = 64;
+ParallelLinearSearch pls(num_workers);
 
 struct job {
     double duration;
@@ -33,8 +34,6 @@ struct job {
 
 BOOST_AUTO_TEST_CASE(case0_func_det_single_end)
 {
-    ParallelLinearSearch pls(num_workers);
-
     pls.begin();
 
     for (int i = 0; pls.should_continue() && i < 1600; ++i) {
@@ -51,8 +50,6 @@ BOOST_AUTO_TEST_CASE(case0_func_det_single_end)
 
 BOOST_AUTO_TEST_CASE(case1_func_det_multi_end)
 {
-    ParallelLinearSearch pls(num_workers);
-
     pls.begin();
 
     for (int i = 0; pls.should_continue() && i < 1600; ++i) {
@@ -69,8 +66,6 @@ BOOST_AUTO_TEST_CASE(case1_func_det_multi_end)
 
 BOOST_AUTO_TEST_CASE(case2_func_det_none)
 {
-    ParallelLinearSearch pls(num_workers);
-
     pls.begin();
 
     for (int i = 0; pls.should_continue() && i < 1600; ++i) {
@@ -86,8 +81,6 @@ BOOST_AUTO_TEST_CASE(case2_func_det_none)
 
 BOOST_AUTO_TEST_CASE(case3_func_det_single_mid)
 {
-    ParallelLinearSearch pls(num_workers);
-
     pls.begin();
 
     for (int i = 0; pls.should_continue() && i < 1600; ++i) {
@@ -104,8 +97,6 @@ BOOST_AUTO_TEST_CASE(case3_func_det_single_mid)
 
 BOOST_AUTO_TEST_CASE(case4_func_det_multi_end)
 {
-    ParallelLinearSearch pls(num_workers);
-
     pls.begin();
 
     for (int i = 0; pls.should_continue() && i < 1600; ++i) {
@@ -126,8 +117,6 @@ BOOST_AUTO_TEST_CASE(case5_func_rand_single_end)
     auto rdgen = bdata::random();
     auto random = [&, it = rdgen.begin()]() mutable { auto v = *it; ++it; return v; };
 
-    ParallelLinearSearch pls(num_workers);
-
     pls.begin();
 
     for (int i = 0; pls.should_continue() && i < 1600; ++i) {
@@ -146,8 +135,6 @@ BOOST_AUTO_TEST_CASE(case6_func_rand_multi_end)
 {
     auto rdgen = bdata::random();
     auto random = [&, it = rdgen.begin()]() mutable { auto v = *it; ++it; return v; };
-
-    ParallelLinearSearch pls(num_workers);
 
     pls.begin();
 
@@ -168,8 +155,6 @@ BOOST_AUTO_TEST_CASE(case7_func_rand_none)
     auto rdgen = bdata::random();
     auto random = [&, it = rdgen.begin()]() mutable { auto v = *it; ++it; return v; };
     
-    ParallelLinearSearch pls(num_workers);
-
     pls.begin();
 
     for (int i = 0; pls.should_continue() && i < 1600; ++i) {
@@ -188,8 +173,6 @@ BOOST_AUTO_TEST_CASE(case8_func_rand_single_mid)
     auto rdgen = bdata::random();
     auto random = [&, it = rdgen.begin()]() mutable { auto v = *it; ++it; return v; };
     
-    ParallelLinearSearch pls(num_workers);
-
     pls.begin();
 
     for (int i = 0; pls.should_continue() && i < 1600; ++i) {
@@ -209,8 +192,6 @@ BOOST_AUTO_TEST_CASE(case9_func_rand_multi_mid)
     auto rdgen = bdata::random();
     auto random = [&, it = rdgen.begin()]() mutable { auto v = *it; ++it; return v; };
     
-    ParallelLinearSearch pls(num_workers);
-
     pls.begin();
 
     for (int i = 0; pls.should_continue() && i < 1600; ++i) {
@@ -230,8 +211,6 @@ BOOST_AUTO_TEST_CASE(case10_func_rand_0)
     auto rdgen = bdata::random();
     auto random = [&, it = rdgen.begin()]() mutable { auto v = *it; ++it; return v; };
     
-    ParallelLinearSearch pls(num_workers);
-
     pls.begin();
 
     int expected = -1;
@@ -256,8 +235,6 @@ BOOST_AUTO_TEST_CASE(case10_func_rand_0)
 
 BOOST_AUTO_TEST_CASE(case11_func_det_first)
 {
-    ParallelLinearSearch pls(num_workers);
-
     pls.begin();
 
     for (int i = 0; pls.should_continue() && i < 1600; ++i) {
@@ -274,7 +251,6 @@ BOOST_AUTO_TEST_CASE(case11_func_det_first)
 
 BOOST_AUTO_TEST_CASE(case12_func_det_last)
 {
-    ParallelLinearSearch pls(num_workers);
 
     pls.begin();
 
