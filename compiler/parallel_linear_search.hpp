@@ -22,6 +22,13 @@
 #include <any>
 #include <cassert>
 
+/**
+ * 
+ * TODO I may optimize the code further by revoking the use of std::function<> and
+ * std::any, both of which rely on heap allocations.
+ * 
+ */
+
 #ifdef PARALLEL_LINEAR_SEARCH_DEBUG_MSGS
 #include "ostream_mt.hpp"
 #include "print.hpp"
@@ -41,6 +48,7 @@
 #else
 #include "print.hpp"
 
+#define DEBUG fake_print_functor{}
 #define DEBUG_WORKER fake_print_functor{}
 #define DEBUG_WORKER_TASK fake_print_functor{}
 
@@ -66,6 +74,7 @@ struct CancellableQueue {
         tasks_.clear();
     }
 
+    // adds a new task to the queue
     template <typename ...Args>
     void emplace_back(Args && ...args) {
         std::lock_guard<std::mutex> lock{mtx_};
@@ -74,6 +83,9 @@ struct CancellableQueue {
         cv_.notify_all();
     }
 
+    // pops a task from the queue. if the queue is empty, waits until:
+    //   1. a new item is added
+    //   2. the queue is cancelled
     std::optional<Task> pop_front() {
         std::unique_lock<std::mutex> lock{mtx_};
         cv_.wait(lock, [this]{ return tasks_.size() > 0 || cancel_; });
@@ -85,7 +97,7 @@ struct CancellableQueue {
         return popped;
     }
 
-    // removes all the tasks and sends a nullptr_t to waiting threads.
+    // removes all the tasks and sends an null task to the waiting threads.
     void cancel() {
         std::lock_guard<std::mutex> lock{mtx_};
         tasks_.clear();
@@ -160,9 +172,16 @@ struct ParallelLinearSearch {
     }
 private:
     struct Task {
+        // the function object handling this task
         std::function<bool (std::size_t)> f;
+
+        // ID of the task
         std::size_t idx;
+
+        // Flag if invalid
         bool invalid = false;
+
+        // Associated data
         std::any data;
     };
 
@@ -204,18 +223,18 @@ private:
                 }
             }
 
-            // search completed successfully, and a contiguous range is covered
-            if (success_ && num_contiguous_completed_from_beginning_ > idx) {
-                done_ = true;
-                task_queue.cancel();
-            }
-
             while (
                 // make sure that we do not exceed the array size during iteration
                 num_contiguous_completed_from_beginning_ < completion_array_.size() &&
                 // increase the variable as long as we have a result
                 completion_array_[num_contiguous_completed_from_beginning_] >= 0)
                 ++num_contiguous_completed_from_beginning_;
+
+            // search completed successfully, and a contiguous range is covered
+            if (success_ && num_contiguous_completed_from_beginning_ > idx) {
+                done_ = true;
+                task_queue.cancel();
+            }
         }
 
         bool done() const {
