@@ -19,6 +19,7 @@ MultOp::MultOp(string layer_name, tuple<int, int, int> op_ind, X_Tile* x_tile, W
     this->pair_op = nullptr;
     this->exec_cycles = get<0>(x_tile->dims);
     this->weight_buffer_cycles = get<0>(w_tile->dims);
+    this->retired = false;
 }
 
 MultOp::MultOp(const MultOp& mult_op){
@@ -37,6 +38,15 @@ MultOp::MultOp(const MultOp& mult_op){
     this->pair_op = nullptr;
     this->exec_cycles = get<0>(this->x_tile->dims);
     this->weight_buffer_cycles = get<0>(this->w_tile->dims);
+    this->retired = false;
+}
+
+void MultOp::retire(){
+    this->retired = true;
+
+    this->x_tile->try_free();
+    this->w_tile->try_free();
+
 }
 
 void MultOp::assign_pin(MultOp* pin_op){

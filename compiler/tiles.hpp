@@ -35,7 +35,8 @@ class Tile{
         bool is_allocated();
         int get_mem_width();
         int get_mem_height();
-        bool fetch_from_memory(int bytes);
+        void fetch_from_memory(int bytes);
+        void try_free();
 
     protected:
         bool is_allocated_on_sram;

@@ -6,8 +6,8 @@ endef
 LDFLAGS = -DBOOST_LOG_DYN_LINK -lpthread -lboost_log -lboost_thread -lboost_system -lboost_filesystem -lboost_atomic -lboost_regex -lboost_chrono -lboost_program_options
 
 PROG = main
-SRC = main layer ops compiler tiles bank array interconnect post_processor
-HDR = nlohmann/json logger_setup layer ops compiler tiles bank array interconnect post_processor
+SRC = main layer ops compiler tiles bank array interconnect post_processor dram
+HDR = nlohmann/json logger_setup layer ops compiler tiles bank array interconnect post_processor dram 
 
 INC = ${BOOST_DIR}/include
 LIB = ${BOOST_DIR}/lib

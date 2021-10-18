@@ -14,10 +14,20 @@ Bank::~Bank(){
     
 }
 
-void Bank::alloc_tile(Tile* tile){
-    this->capacity_used += tile->memory_size;
-    if (this->capacity_used > this->capacity){
-        throw runtime_error("SRAM usage exceeds capacity");
+bool Bank::alloc_tile(Tile* tile){
+    if (this->capacity_used + tile->memory_size <= this->capacity){
+        this->capacity_used += tile->memory_size;
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+void Bank::free_tile(Tile* tile){
+    this->capacity_used -= tile->memory_size;
+    if (this->capacity_used < 0){
+        throw runtime_error("Usage cannot be negative, something is wrong!");
     }
 }
 

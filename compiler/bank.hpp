@@ -23,7 +23,8 @@ class Bank{
         Bank(int id, data_type type, int capacity);
         ~Bank();
         
-        void alloc_tile(Tile* tile);
+        bool alloc_tile(Tile* tile);
+        void free_tile(Tile* tile);
     private:
         int capacity_used;
 };
