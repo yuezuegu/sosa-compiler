@@ -70,7 +70,8 @@ int main(int ac, char* av[]){
 
     Arrays* arrays = new Arrays(no_array, no_rows, no_cols);
     PostProcessors* post_processors = new PostProcessors(no_array);
-    Banks* banks = new Banks(no_array);
+    int bank_size = 1 << 10;
+    Banks* banks = new Banks(no_array, bank_size);
 
     Interconnects* interconnects = new Interconnects(no_array, interconnect_type);
     cout << "interconnects->x_interconnect->name() = " << interconnects->x_interconnect->name() << endl;

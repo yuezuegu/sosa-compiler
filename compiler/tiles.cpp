@@ -60,10 +60,13 @@ void Tile::assign_bank(Bank* bank){
     assert((this->type == bank->type && "Tile type and bank type do not match!"));
     this->bank = bank;
     this->bank_id = bank->id;
-    this->virt_bank_addr = bank->alloc_tile(this);
 }
 
 bool Tile::fetch_from_memory(int bytes){
+    if (this->bytes_fetched_from_memory == 0){
+        this->bank->alloc_tile(this);
+    }
+
     if (this->bytes_fetched_from_memory+bytes>=this->memory_size){
         this->bytes_fetched_from_memory = this->memory_size;
         this->is_allocated_on_sram = true;
