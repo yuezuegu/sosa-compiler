@@ -3,14 +3,21 @@
 # URLs for software
 URL_CMAKE="https://github.com/Kitware/CMake/releases/download/v3.21.3/cmake-3.21.3-linux-x86_64.tar.gz"
 URL_BOOST="https://boostorg.jfrog.io/artifactory/main/release/1.77.0/source/boost_1_77_0.tar.gz"
+URL_CONDA="https://repo.anaconda.com/miniconda/Miniconda3-py39_4.10.3-Linux-x86_64.sh"
 
 # minimum requirements
 CMAKE_MIN_VER=3.11.0
-GCC_MIN_VER=8.0.0
+GCC_MIN_VER=7.0.0
+
+# conda-related
+CONDA_ENV=sosa-compiler
 
 # target prefix
 PREFIX="$HOME/.local"
+CONDA_TARGET="$HOME/miniconda"
 PROFILE_FILE="$HOME/.bashrc"
+
+SCRIPT_DIR="$(pwd)"
 
 # helper functions
 function fail_msg() {
@@ -100,6 +107,37 @@ function install_boost() {
     return 0
 }
 
+# Conda-related
+function install_conda() {
+    echo "Install conda from:"
+    echo "$URL_CONDA"
+    pushd "$TMPDIR"
+        wget "$URL_CONDA" -O "conda.sh" || fail_msg "wget failed."
+        echo "Install."
+        bash ~/conda.sh -b -f -p "$CONDA_TARGET" || fail_msg "install failed."
+        source "$CONDA_TARGET/bin/activate" || fail_msg "activate failed."
+        conda init || fail_msg "init failed."
+    popd
+    return 0
+}
+
+function install_conda_env() {
+    echo "Install conda env"
+
+    pushd "$TMPDIR"
+        eval "$(conda shell.bash hook)"
+        if [[ "$(conda env list)" == *${CONDA_ENV}*  ]]
+        then
+            echo "${CONDA_ENV} is found, removing it."
+            conda env remove -n ${CONDA_ENV} || fail_msg "conda env remove failed"
+        fi
+
+        conda env create -f "$SCRIPT_DIR/conda.yml" || fail_msg "conda env create failed"
+        conda activate $CONDA_ENV || fail_msg "conda env activate failed"
+    popd
+    return 0
+}
+
 # Profile file related
 function update_profile() {
     if [[ -e "$HOME/.sosa-compiler-install-sh" ]]
@@ -123,7 +161,7 @@ function update_profile() {
 }
 
 # check the prerequistes
-for program in grep wget g++ tar mktemp
+for program in grep wget g++ tar mktemp conda
 do
     if ! check_program "$program"
     then
@@ -148,6 +186,16 @@ trap 'echo "Removing the temporary directory."; rm -rf "$TMPDIR"' EXIT
 # prepare the prefix
 prepare_prefix
 
+# check conda
+if check_program "conda"
+then
+    echo "conda is found, update it."
+    conda update -y conda || fail_msg "update conda failed"
+else
+    echo "conda is not found, install conda."
+    install_conda
+fi
+
 # check cmake, we do not want to install if unless needed
 if check_program "cmake"
 then
@@ -156,13 +204,14 @@ then
     then
         echo "cmake $cmake_ver >= $CMAKE_MIN_VER is installed, skip installation."
     else
-        echo "cmake $cmake_ver < $CMAKE_MIN_VER is installed, install cmake $CMAKE_MIN_VER."
+        echo "cmake $cmake_ver < $CMAKE_MIN_VER is installed, install cmake."
         install_cmake
     fi
 else
-    echo "cmake is not found, install cmake $CMAKE_MIN_VER."
+    echo "cmake is not found, install cmake."
     install_cmake
 fi
 
 install_boost
+install_conda_env
 update_profile
