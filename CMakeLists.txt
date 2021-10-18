@@ -16,7 +16,7 @@ find_package(Boost 1.68 REQUIRED log program_options)
 # find_package(nlohmann_json 3.2.0 REQUIRED)
 
 add_executable(
-    compiler
+    sim
     # sources
     compiler/main.cpp
     compiler/layer.cpp
@@ -27,11 +27,12 @@ add_executable(
     compiler/array.cpp
     compiler/interconnect.cpp
     compiler/post_processor.cpp
+    compiler/dram.cpp
 )
 
-target_include_directories(compiler PRIVATE compiler/)
+target_include_directories(sim PRIVATE compiler/)
 target_link_libraries(
-    compiler
+    sim
     PRIVATE
     # nlohmann_json::nlohmann_json
     Boost::boost
