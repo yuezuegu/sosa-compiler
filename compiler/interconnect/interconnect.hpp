@@ -36,6 +36,7 @@ struct InterconnectBase {
                          Int invalid) const = 0;
   virtual bool do_apply_permute(Int const *inverse_mapping) = 0;
   virtual bool do_is_route_free(UnsignedInt src, UnsignedInt dest) = 0;
+  virtual void copy_from(InterconnectBase *other) = 0;
   virtual InterconnectBase *clone() const = 0;
   virtual ~InterconnectBase() = default;
 
@@ -182,6 +183,12 @@ struct Benes : InterconnectBase {
     throw std::runtime_error("not valid default algorithm type");
   }
 
+  void copy_from(InterconnectBase *other) override {
+    if (this != (Benes *) other) {
+      *this = *((Benes *) other);
+    }
+  }
+
   Benes *clone() const override { return new Benes(*this); }
 };
 
@@ -214,6 +221,12 @@ struct BenesWithCopy : InterconnectBase {
 
   bool do_is_route_free(UnsignedInt, UnsignedInt) override {
     return true;
+  }
+
+  void copy_from(InterconnectBase *other) override {
+    if (this != (BenesWithCopy *) other) {
+      *this = *((BenesWithCopy *) other);
+    }
   }
 
   BenesWithCopy *clone() const override { return new BenesWithCopy(*this); }
@@ -251,6 +264,12 @@ struct Crossbar : InterconnectBase {
 
   bool do_is_route_free(UnsignedInt, UnsignedInt) override {
     return true;
+  }
+
+  void copy_from(InterconnectBase *other) override {
+    if (this != (Crossbar *) other) {
+      *this = *((Crossbar *) other);
+    }
   }
 
   Crossbar *clone() const override { return new Crossbar(*this); }
@@ -320,6 +339,12 @@ struct Banyan : InterconnectBase {
       return impl.bit_follow(src, dest, true, false);
     else
       return impl.bit_follow_expansion(src, dest, expansion, false);
+  }
+
+  void copy_from(InterconnectBase *other) override {
+    if (this != (Banyan *) other) {
+      *this = *((Banyan *) other);
+    }
   }
 
   Banyan *clone() const override { return new Banyan(*this); }

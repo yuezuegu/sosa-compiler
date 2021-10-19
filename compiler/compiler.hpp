@@ -53,8 +53,11 @@ class Compiler{
         ~Compiler();
     private:
         #ifdef COMPILER_MULTITHREADING
+
+        struct PlacementClosure;
+        struct WorkerData;
         
-        std::unique_ptr<multithreading::ParallelLinearSearch> pls_;
+        std::unique_ptr<multithreading::ParallelLinearSearch<PlacementClosure, WorkerData>> pls_;
         
         #endif
 };

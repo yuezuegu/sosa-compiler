@@ -3,7 +3,7 @@
 r=32
 c=32
 N=128
-model="bert_base"
+model="bert_tiny"
 interconn="benes_vanilla"
 
 function fail_msg() {

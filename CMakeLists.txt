@@ -17,6 +17,7 @@ find_package(Boost 1.68 REQUIRED log program_options)
 
 set(
     COMPILER_SRCS
+    compiler/ostream_mt.cpp
     compiler/main.cpp
     compiler/layer.cpp
     compiler/ops.cpp
@@ -51,8 +52,8 @@ target_link_libraries(compiler_st PRIVATE ${COMPILER_LIBS})
 add_executable(
     test_pls
     # sources
+    compiler/ostream_mt.cpp # should be initialized first (or else segfault)
     compiler/parallel_linear_search.cpp
-    compiler/ostream_mt.cpp
 )
 
 target_include_directories(test_pls PRIVATE compiler/)

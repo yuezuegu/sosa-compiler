@@ -17,15 +17,14 @@ namespace bdata = boost::unit_test::data;
 using namespace multithreading;
 
 const std::size_t num_workers = 64;
-ParallelLinearSearch pls(num_workers);
 
 struct job {
     double duration;
     bool result;
 
-    bool operator()(std::size_t idx, std::any &data, std::any & worker_data) {
+    template <typename WorkerData>
+    bool operator()(std::size_t idx, const WorkerData &worker_data) {
         (void) idx;
-        (void) data;
         (void) worker_data;
         std::this_thread::sleep_for(std::chrono::duration<double>(duration * 1e-3));
         if (idx % 200 == 0)
@@ -33,6 +32,8 @@ struct job {
         return result;
     }
 };
+
+ParallelLinearSearch<job> pls(num_workers);
 
 BOOST_AUTO_TEST_CASE(case0_func_det_single_end)
 {
@@ -47,7 +48,7 @@ BOOST_AUTO_TEST_CASE(case0_func_det_single_end)
     auto result = pls.result();
 
     BOOST_TEST((bool) result);
-    BOOST_TEST(result->index == 1590);
+    BOOST_TEST(result->idx == 1590);
 }
 
 BOOST_AUTO_TEST_CASE(case1_func_det_multi_end)
@@ -63,7 +64,7 @@ BOOST_AUTO_TEST_CASE(case1_func_det_multi_end)
     auto result = pls.result();
 
     BOOST_TEST((bool) result);
-    BOOST_TEST(result->index == 1590);
+    BOOST_TEST(result->idx == 1590);
 }
 
 BOOST_AUTO_TEST_CASE(case2_func_det_none)
@@ -94,7 +95,7 @@ BOOST_AUTO_TEST_CASE(case3_func_det_single_mid)
     auto result = pls.result();
 
     BOOST_TEST((bool) result);
-    BOOST_TEST(result->index == 800);
+    BOOST_TEST(result->idx == 800);
 }
 
 BOOST_AUTO_TEST_CASE(case4_func_det_multi_end)
@@ -110,7 +111,7 @@ BOOST_AUTO_TEST_CASE(case4_func_det_multi_end)
     auto result = pls.result();
 
     BOOST_TEST((bool) result);
-    BOOST_TEST(result->index == 800);
+    BOOST_TEST(result->idx == 800);
 }
 
 
@@ -130,7 +131,7 @@ BOOST_AUTO_TEST_CASE(case5_func_rand_single_end)
     auto result = pls.result();
 
     BOOST_TEST((bool) result);
-    BOOST_TEST(result->index == 1590);
+    BOOST_TEST(result->idx == 1590);
 }
 
 BOOST_AUTO_TEST_CASE(case6_func_rand_multi_end)
@@ -149,7 +150,7 @@ BOOST_AUTO_TEST_CASE(case6_func_rand_multi_end)
     auto result = pls.result();
 
     BOOST_TEST((bool) result);
-    BOOST_TEST(result->index == 1590);
+    BOOST_TEST(result->idx == 1590);
 }
 
 BOOST_AUTO_TEST_CASE(case7_func_rand_none)
@@ -186,7 +187,7 @@ BOOST_AUTO_TEST_CASE(case8_func_rand_single_mid)
     auto result = pls.result();
 
     BOOST_TEST((bool) result);
-    BOOST_TEST(result->index == 800);
+    BOOST_TEST(result->idx == 800);
 }
 
 BOOST_AUTO_TEST_CASE(case9_func_rand_multi_mid)
@@ -205,7 +206,7 @@ BOOST_AUTO_TEST_CASE(case9_func_rand_multi_mid)
     auto result = pls.result();
 
     BOOST_TEST((bool) result);
-    BOOST_TEST(result->index == 800);
+    BOOST_TEST(result->idx == 800);
 }
 
 BOOST_AUTO_TEST_CASE(case10_func_rand_0)
@@ -232,7 +233,7 @@ BOOST_AUTO_TEST_CASE(case10_func_rand_0)
 
     BOOST_TEST((bool) result == (expected >= 0));
     if (expected > 0)
-        BOOST_TEST(result->index == expected);
+        BOOST_TEST(result->idx == expected);
 }
 
 BOOST_AUTO_TEST_CASE(case11_func_det_first)
@@ -248,7 +249,7 @@ BOOST_AUTO_TEST_CASE(case11_func_det_first)
     auto result = pls.result();
 
     BOOST_TEST((bool) result);
-    BOOST_TEST(result->index == 0);
+    BOOST_TEST(result->idx == 0);
 }
 
 BOOST_AUTO_TEST_CASE(case12_func_det_last)
@@ -265,5 +266,5 @@ BOOST_AUTO_TEST_CASE(case12_func_det_last)
     auto result = pls.result();
 
     BOOST_TEST((bool) result);
-    BOOST_TEST(result->index == 1599);
+    BOOST_TEST(result->idx == 1599);
 }
