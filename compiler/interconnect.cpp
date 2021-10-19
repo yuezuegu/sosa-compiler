@@ -98,7 +98,7 @@ std::istream &operator>>(std::istream &in, InterconnectType &interconnect_type) 
 }
 
 std::ostream &operator<<(std::ostream &out, InterconnectType interconnect_type) {
-#define XYZ(x) else if ((unsigned) interconnect_type & (unsigned) InterconnectType :: x) out << #x;
+#define XYZ(x) else if ((unsigned) interconnect_type == (unsigned) InterconnectType :: x) out << #x;
     if (false) ;
     XYZ(benes_copy)
     XYZ(benes_vanilla)

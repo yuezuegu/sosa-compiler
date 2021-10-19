@@ -3,8 +3,8 @@
 r=32
 c=32
 N=128
-model="bert_tiny"
-interconn="benes_vanilla"
+model="bert_large"
+interconn="banyan_exp_2" # benes_vanilla or so
 
 function fail_msg() {
     echo "$1" >&2
