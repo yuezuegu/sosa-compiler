@@ -17,14 +17,58 @@ PREFIX="$HOME/.local"
 CONDA_TARGET="$HOME/miniconda"
 PROFILE_FILE="$HOME/.bashrc"
 
-SCRIPT_DIR="$(pwd)"
+# flags
+should_install_cmake=true
+should_install_boost=true
+should_install_conda=true
+should_install_condaenv=true
+should_update_profile=true
 
-# helper functions
 function fail_msg() {
     echo "$1" >&2
     exit 1
 }
 
+while getopts "h-:" OPT
+do
+    if [[ "$OPT" = "-" ]]
+    then
+        OPT="${OPTARG%%=*}"
+        OPTARG="${OPTARG#$OPT}"
+        OPTARG="${OPTARG#=}"
+    fi
+
+    case "$OPT" in
+        help | h) # help message
+            usage
+            ;;
+        install_cmake) # Should I install cmake? [true/false] (default = true)
+            should_install_cmake="$OPTARG"
+            ;;
+        install_boost) # Should I install boost? [true/false] (default = true)
+            should_install_boost="$OPTARG"
+            ;;
+        install_conda) # Should I install conda? [true/false] (default = true)
+            should_install_conda="$OPTARG"
+            ;;
+        install_condaenv) # Should I install the conda environment? [true/false] (default = true)
+            should_install_condaenv="$OPTARG"
+            ;;
+        update_profile) # Should I update .bashrc? [true/false] (default = true)
+            should_update_profile="$OPTARG"
+            ;;
+        ??*)
+            fail_msg "Illegal long option --$OPT"
+            ;;
+        ?)
+            fail_msg "getopt error."
+            ;;
+    esac
+done
+
+SCRIPT_DIR="$(pwd)"
+
+# helper functions
 function check_program() {
     command -v "$1" &> /dev/null
 }
@@ -114,7 +158,7 @@ function install_conda() {
     pushd "$TMPDIR"
         wget "$URL_CONDA" -O "conda.sh" || fail_msg "wget failed."
         echo "Install."
-        bash ~/conda.sh -b -f -p "$CONDA_TARGET" || fail_msg "install failed."
+        bash ./conda.sh -b -f -p "$CONDA_TARGET" || fail_msg "install failed."
         source "$CONDA_TARGET/bin/activate" || fail_msg "activate failed."
         conda init || fail_msg "init failed."
     popd
@@ -161,7 +205,7 @@ function update_profile() {
 }
 
 # check the prerequistes
-for program in grep wget g++ tar mktemp conda
+for program in grep wget g++ tar mktemp
 do
     if ! check_program "$program"
     then
@@ -186,32 +230,59 @@ trap 'echo "Removing the temporary directory."; rm -rf "$TMPDIR"' EXIT
 # prepare the prefix
 prepare_prefix
 
-# check conda
-if check_program "conda"
+if [[ "$should_install_conda" = true ]]
 then
-    echo "conda is found, update it."
-    conda update -y conda || fail_msg "update conda failed"
+    # check conda
+    if check_program "conda"
+    then
+        echo "conda is found, update it."
+        conda update -y conda || fail_msg "update conda failed"
+    else
+        echo "conda is not found, install conda."
+        install_conda
+    fi
 else
-    echo "conda is not found, install conda."
-    install_conda
+    echo "Not installing conda."
 fi
 
-# check cmake, we do not want to install if unless needed
-if check_program "cmake"
+if [[ "$should_install_cmake" = true ]]
 then
-    cmake_ver="$(cmake_version)"
-    if check_minimum_version "$cmake_ver" "$CMAKE_MIN_VER"
+    # check cmake, we do not want to install if unless needed
+    if check_program "cmake"
     then
-        echo "cmake $cmake_ver >= $CMAKE_MIN_VER is installed, skip installation."
+        cmake_ver="$(cmake_version)"
+        if check_minimum_version "$cmake_ver" "$CMAKE_MIN_VER"
+        then
+            echo "cmake $cmake_ver >= $CMAKE_MIN_VER is installed, skip installation."
+        else
+            echo "cmake $cmake_ver < $CMAKE_MIN_VER is installed, install cmake."
+            install_cmake
+        fi
     else
-        echo "cmake $cmake_ver < $CMAKE_MIN_VER is installed, install cmake."
+        echo "cmake is not found, install cmake."
         install_cmake
     fi
 else
-    echo "cmake is not found, install cmake."
-    install_cmake
+    echo "Not installing cmake."
 fi
 
-install_boost
-install_conda_env
-update_profile
+if [[ "$should_install_boost" = true ]]
+then
+    install_boost
+else
+    echo "Not installing boost."
+fi
+
+if [[ "$should_install_condaenv" = true ]]
+then
+    install_conda_env
+else
+    echo "Not installing the conda environment."
+fi
+
+if [[ "$should_update_profile" = true ]]
+then
+    update_profile
+else
+    echo "Not updating .bashrc."
+fi
