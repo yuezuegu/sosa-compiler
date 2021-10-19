@@ -597,7 +597,7 @@ void Compiler::run_cycle_model(){
     pp_cycle = arr_cycle + this->interconnects->pout_interconnect->data_write_latency();
 
     int memory_stall = 0;
-    int w_mem_size, x_mem_size, max_mem_size;
+    int max_mem_size;
 
     int round_clk = 0;
     bool new_round = true;
@@ -656,97 +656,6 @@ void Compiler::run_cycle_model(){
     }
 
     this->no_cycles = arr_cycle > pp_cycle ? arr_cycle : pp_cycle;
-}
-
-
-int Compiler::no_main_rounds(){
-    int max_rounds = 0;
-    for(auto it = this->arrays->array_map->begin(); it != this->arrays->array_map->end(); it++ ){
-        if (it->second->last_no_round > max_rounds){
-            max_rounds = it->second->last_no_round;
-        }
-    }
-    return max_rounds;
-}
-
-int Compiler::no_post_rounds(){
-    int max_rounds = 0;
-    for(auto it = this->post_processors->pp_map->begin(); it != this->post_processors->pp_map->end(); it++ ){
-        if (it->second->last_no_round > max_rounds){
-            max_rounds = it->second->last_no_round;
-        }
-    }
-    return max_rounds;
-}
-
-
-void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
-    int no_layers = layers->layer_list->size();
-
-    int no_main_rounds = this->no_main_rounds();
-    int no_post_rounds = this->no_post_rounds();
-    int max_no_rounds = no_main_rounds > no_post_rounds ? no_main_rounds : no_post_rounds;
-
-    int new_r;
-
-    for (int i = 1; i < no_repeat; i++){
-
-        auto layer_it = layers->begin();
-        for(int l = 0; l < no_layers; l++){
-            string suffix =  "_copy" + to_string(i);
-            
-            Layer new_layer =  layer_it->create_copy(suffix);
-
-            layers->layer_list->push_back(new_layer);
-            layer_it++;
-        }
-        
-
-        for (int r = 0; r < no_main_rounds; r++){
-            new_r = r+i*max_no_rounds+1;
-
-
-
-
-
-
-
-            // list<MultOp*>* sch = this->arrays->get_schedule(r);
-            // for (auto it = sch->begin(); it != sch->end(); it++){
-            //     if (*it == nullptr) continue;
-
-                
-            //     tuple<int, int, int> op_ind = (*it)->op_ind;
-
-
-            //     MultOp* new_op = new MultOp(layer_name,  op_ind, X_Tile* x_tile, W_Tile* w_tile, P_Tile* pout_tile);
-
-            //     // MultOp* new_op = new MultOp(*(*it));
-            //     // new_op->layer_name = new_op->layer_name + "_copy" + to_string(i);
-            //     if ((*it)->pin_op != nullptr){
-            //         new_op->assign_pin((*it)->pin_op);
-            //     }
-            //     (*it)->array_placed->assign_op(new_r, new_op);
-                
-            // }
-
-            // delete sch;
-        }
-        for (int r = 0; r < no_post_rounds; r++){
-            new_r = r+i*max_no_rounds+1;
-
-            list<AggrOp*>* sch = this->post_processors->get_schedule(r);
-            for (auto it = sch->begin(); it != sch->end(); it++){
-                if (*it == nullptr) continue;
-                
-                AggrOp* new_op = new AggrOp(*(*it));
-                new_op->layer_name = new_op->layer_name + "_copy" + to_string(i);
-                (*it)->pp_placed->assign_op(new_r, new_op);
-            }
-
-            delete sch;
-        }
-    }
 }
 
 #ifdef COMPILER_MULTITHREADING
