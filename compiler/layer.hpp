@@ -30,6 +30,9 @@ class Layer {
         tuple<int, int> input_size;
         tuple<int, int> weight_size;
 
+        bool is_conv;
+        tuple<int, int> conv_kernel_size;
+
         map<tuple<int, int>, X_Tile*>* x_tiles;
         map<tuple<int, int>, W_Tile*>* w_tiles;
         map<tuple<int, int, int>, P_Tile*>* p_tiles;
@@ -39,7 +42,7 @@ class Layer {
         int end_round;
         list<string>* dependencies;
 
-        Layer(string, tile_dim_map*, tile_dim_map*, tuple<int, int, int>, tuple<int, int>, tuple<int, int>, list<string>*);
+        Layer(string, tile_dim_map*, tile_dim_map*, tuple<int, int, int>, tuple<int, int>, tuple<int, int>, bool, tuple<int, int>, list<string>*);
         ~Layer();
         
         void create_main_ops();
@@ -49,6 +52,8 @@ class Layer {
         map<tuple<int, int>, list<AggrOp*>> post_ops;
 
         MultOp* get_mainop_by_index(tuple<int, int, int> index);
+        AggrOp* get_postop_by_index(tuple<int, int, int> index, bool flip);
+        
         Layer create_copy(string);
 
     private:

@@ -19,6 +19,9 @@ class Op{
         string layer_name;
         
         int round_placed;
+        tuple<int, int, int> op_ind;
+
+        bool is_multop;
 
         P_Tile* pout_tile;
         Op* pair_op;
@@ -32,7 +35,6 @@ class Op{
 
 class MultOp: public Op{
     public:
-        tuple<int, int, int> op_ind;
         X_Tile* x_tile;
         W_Tile* w_tile;
 
@@ -54,10 +56,10 @@ class MultOp: public Op{
 
 class AggrOp: public Op{
     public:
+        
         P_Tile* pin1_tile;
         P_Tile* pin2_tile;
-        // P_Tile* pout_tile;
-        
+
         Op* operand1;
         Op* operand2;
 
@@ -67,7 +69,7 @@ class AggrOp: public Op{
 
         bool flip; //this allows distinguishing same pairs of operations.
 
-        AggrOp(string layer_name, Op* operand1, Op* operand2, P_Tile* pout_tile, bool flip);
+        AggrOp(string layer_name, tuple<int, int, int> op_ind, Op* operand1, Op* operand2, P_Tile* pout_tile, bool flip);
         AggrOp(const AggrOp&) = default;
 
         void assign_to_pp(int r, PostProcessor* pp);

@@ -309,6 +309,86 @@ void Compiler::create_memory_fifo(){
 
 
 
+int Compiler::no_main_rounds(){
+    int max_rounds = 0;
+    for(auto it = this->arrays->array_map->begin(); it != this->arrays->array_map->end(); it++ ){
+        if (it->second->last_no_round > max_rounds){
+            max_rounds = it->second->last_no_round;
+        }
+    }
+    return max_rounds;
+}
+
+int Compiler::no_post_rounds(){
+    int max_rounds = 0;
+    for(auto it = this->post_processors->pp_map->begin(); it != this->post_processors->pp_map->end(); it++ ){
+        if (it->second->last_no_round > max_rounds){
+            max_rounds = it->second->last_no_round;
+        }
+    }
+    return max_rounds;
+}
+
+
+void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
+    int no_layers = layers->layer_list->size();
+
+    int no_main_rounds = this->no_main_rounds();
+    int no_post_rounds = this->no_post_rounds();
+    int max_no_rounds = no_main_rounds > no_post_rounds ? no_main_rounds : no_post_rounds;
+
+    for (int i = 1; i < no_repeat; i++){
+
+        auto layer_it = layers->begin();
+        for(int l = 0; l < no_layers; l++){
+            string suffix =  "_copy" + to_string(i);
+            
+            Layer new_layer =  layer_it->create_copy(suffix);
+
+            for (auto op_it = layer_it->main_ops.begin(); op_it != layer_it->main_ops.end(); op_it++){
+                tuple<int, int, int> op_ind = op_it->first;
+                MultOp* op_old = op_it->second;
+                MultOp* op_new = new_layer.main_ops[op_ind];
+
+                op_new->x_tile->assign_bank(op_old->x_tile->bank);
+                op_new->w_tile->assign_bank(op_old->w_tile->bank);
+                op_new->pout_tile->assign_bank(op_old->pout_tile->bank);
+
+                int old_round = op_old->round_placed;
+                int new_round = old_round + i*max_no_rounds + 1;
+                op_old->array_placed->assign_op(new_round, op_new);
+
+                if (op_old->pin_op != nullptr){
+                    op_new->assign_pin(new_layer.main_ops[op_old->pin_op->op_ind]);
+                }
+            }
+
+            for (auto list_it = layer_it->post_ops.begin(); list_it != layer_it->post_ops.end(); list_it++){
+                list<AggrOp*> op_list = list_it->second;
+
+                auto op_it = op_list.begin();
+                while(op_it != op_list.end()){
+                    AggrOp* post_op_old = *op_it;
+                    AggrOp* post_op_new = new_layer.get_postop_by_index(post_op_old->op_ind, post_op_old->flip);
+
+                    int old_round = post_op_old->round_placed;
+                    int new_round = old_round + i*max_no_rounds + 1;
+
+                    post_op_new->pout_tile->assign_bank(post_op_old->pout_tile->bank);
+                    post_op_old->pp_placed->assign_op(new_round, post_op_new);
+
+                    op_it++;
+                }
+            }
+
+            layers->layer_list->push_back(new_layer);
+            layer_it++;
+        }
+    }
+}
+
+
+
 void Compiler::run_cycle_model(){
     this->create_memory_fifo();
     int sram_round_trip = this->interconnects->x_interconnect->data_req_latency() + this->interconnects->x_interconnect->data_read_latency();
@@ -343,6 +423,9 @@ void Compiler::run_cycle_model(){
     
     pp_cycle = arr_cycle + this->interconnects->pout_interconnect->data_write_latency();
 
+    int memory_stall = 0;
+    int w_mem_size, x_mem_size, max_mem_size;
+
     int round_clk = 0;
     bool new_round = true;
     while(r < max_rounds){
@@ -369,13 +452,25 @@ void Compiler::run_cycle_model(){
 
             list<W_Tile*>* w_tiles = this->arrays->get_w_tiles(r+2);
             list<X_Tile*>* x_tiles = this->arrays->get_x_tiles(r+1);
+
             if( all_of(w_tiles->begin(), w_tiles->end(), [](W_Tile* w_tile){ return w_tile->is_allocated(); }) &&
                 all_of(x_tiles->begin(), x_tiles->end(), [](X_Tile* x_tile){ return x_tile->is_allocated(); })     ){
 
                 r++;
                 new_round = true;
+                memory_stall = 0;
                 //Round end
                 BOOST_LOG_TRIVIAL(info) << "Main round " << r << " takes " << round_clk << "clock cycles";
+            }
+            else{
+                memory_stall++;
+                max_mem_size = accumulate(w_tiles->begin(), w_tiles->end(), 0.0, [](const int a, const W_Tile* b){return a + b->memory_size;});
+                max_mem_size += accumulate(x_tiles->begin(), x_tiles->end(), 0.0, [](const int a, const X_Tile* b){return a + b->memory_size;});
+
+                if(memory_stall > (float)max_mem_size / this->dram->bandwidth){
+                    cout << "Execution is deadlocked because of not enough SRAM memory" << endl;
+                    exit(1);
+                }
             }
             delete x_tiles;
             delete w_tiles;
@@ -388,95 +483,4 @@ void Compiler::run_cycle_model(){
     }
 
     this->no_cycles = arr_cycle > pp_cycle ? arr_cycle : pp_cycle;
-}
-
-
-int Compiler::no_main_rounds(){
-    int max_rounds = 0;
-    for(auto it = this->arrays->array_map->begin(); it != this->arrays->array_map->end(); it++ ){
-        if (it->second->last_no_round > max_rounds){
-            max_rounds = it->second->last_no_round;
-        }
-    }
-    return max_rounds;
-}
-
-int Compiler::no_post_rounds(){
-    int max_rounds = 0;
-    for(auto it = this->post_processors->pp_map->begin(); it != this->post_processors->pp_map->end(); it++ ){
-        if (it->second->last_no_round > max_rounds){
-            max_rounds = it->second->last_no_round;
-        }
-    }
-    return max_rounds;
-}
-
-
-void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
-    int no_layers = layers->layer_list->size();
-
-    int no_main_rounds = this->no_main_rounds();
-    int no_post_rounds = this->no_post_rounds();
-    int max_no_rounds = no_main_rounds > no_post_rounds ? no_main_rounds : no_post_rounds;
-
-    int new_r;
-
-    for (int i = 1; i < no_repeat; i++){
-
-        auto layer_it = layers->begin();
-        for(int l = 0; l < no_layers; l++){
-            string suffix =  "_copy" + to_string(i);
-            
-            Layer new_layer =  layer_it->create_copy(suffix);
-
-            layers->layer_list->push_back(new_layer);
-            layer_it++;
-        }
-        
-
-        for (int r = 0; r < no_main_rounds; r++){
-            new_r = r+i*max_no_rounds+1;
-
-
-
-
-
-
-
-            // list<MultOp*>* sch = this->arrays->get_schedule(r);
-            // for (auto it = sch->begin(); it != sch->end(); it++){
-            //     if (*it == nullptr) continue;
-
-                
-            //     tuple<int, int, int> op_ind = (*it)->op_ind;
-
-
-            //     MultOp* new_op = new MultOp(layer_name,  op_ind, X_Tile* x_tile, W_Tile* w_tile, P_Tile* pout_tile);
-
-            //     // MultOp* new_op = new MultOp(*(*it));
-            //     // new_op->layer_name = new_op->layer_name + "_copy" + to_string(i);
-            //     if ((*it)->pin_op != nullptr){
-            //         new_op->assign_pin((*it)->pin_op);
-            //     }
-            //     (*it)->array_placed->assign_op(new_r, new_op);
-                
-            // }
-
-            // delete sch;
-        }
-        for (int r = 0; r < no_post_rounds; r++){
-            new_r = r+i*max_no_rounds+1;
-
-            list<AggrOp*>* sch = this->post_processors->get_schedule(r);
-            for (auto it = sch->begin(); it != sch->end(); it++){
-                if (*it == nullptr) continue;
-                
-                AggrOp* new_op = new AggrOp(*(*it));
-                new_op->layer_name = new_op->layer_name + "_copy" + to_string(i);
-                (*it)->pp_placed->assign_op(new_r, new_op);
-            }
-
-            delete sch;
-        }
-    }
 }

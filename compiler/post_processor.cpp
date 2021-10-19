@@ -56,7 +56,7 @@ void PostProcessor::assign_op(int r, AggrOp* op){
         return;
     }
 
-    throw runtime_error("Cannot assign op to array");
+    throw runtime_error("Cannot assign op to post-processor");
 }
 
 bool PostProcessor::is_schedule_empty(int r){

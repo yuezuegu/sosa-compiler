@@ -38,8 +38,7 @@ int main(int ac, char* av[]){
         ("memory_bw,M", po::value<float>(&bandwidth)->default_value(100), "memory bandwidth in GB/s")
         ("bank_size,S", po::value<int>(&bank_size)->default_value(1<<19), "SRAM bank size")
         ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::crossbar), "interconnect type (see enum members)")
-        ("work_dir,d", po::value<string>(&work_dir)->default_value("experiments/tmp"), "directory for input/output files")
-    ;
+        ("work_dir,d", po::value<string>(&work_dir)->default_value("experiments/tmp"), "directory for input/output files");
     po::variables_map vm;
     po::store(po::parse_command_line(ac, av, desc), vm);
     po::notify(vm);

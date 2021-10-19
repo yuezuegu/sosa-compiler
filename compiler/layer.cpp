@@ -9,6 +9,8 @@ Layer::Layer(string layer_name,
                 tuple<int, int, int> no_tiles, 
                 tuple<int, int> input_size, 
                 tuple<int, int> weight_size,
+                bool is_conv,
+                tuple<int, int> conv_kernel_size,
                 list<string>* dependencies){
     this->layer_name = layer_name;
     this->x_tile_dims = x_tile_dims;
@@ -20,6 +22,10 @@ Layer::Layer(string layer_name,
     this->start_round = -1;
     this->end_round = -1;
     this->dependencies = dependencies;
+
+    this->is_conv = is_conv;
+    this->conv_kernel_size = conv_kernel_size;
+    
     this->x_tiles = new map<tuple<int, int>, X_Tile*>();
     this->w_tiles = new map<tuple<int, int>, W_Tile*>();
     this->p_tiles = new map<tuple<int, int, int>, P_Tile*>();
@@ -34,7 +40,7 @@ Layer Layer::create_copy(string suffix){
         dependencies->push_back(dep_name);
     }
 
-    Layer new_layer(layer_name, this->x_tile_dims, this->w_tile_dims, this->no_tiles, this->input_size, this->weight_size, dependencies);
+    Layer new_layer(layer_name, this->x_tile_dims, this->w_tile_dims, this->no_tiles, this->input_size, this->weight_size, this->is_conv, this->conv_kernel_size, dependencies);
 
     for(auto tile_it = this->x_tiles->begin(); tile_it != this->x_tiles->end(); tile_it++){
         tuple<int, int> ind = tile_it->first;
@@ -73,6 +79,48 @@ Layer Layer::create_copy(string suffix){
 
         MultOp* op_new = new MultOp(new_layer.layer_name, op_ind, x_tile, w_tile, pout_tile);
         new_layer.main_ops[make_tuple(i,j,k)] = op_new;
+    }
+
+    for(auto list_it = this->post_ops.begin(); list_it != this->post_ops.end(); list_it++){
+        list<AggrOp*> op_list_old = list_it->second;
+
+        auto op_it = op_list_old.begin();
+        while(op_it != op_list_old.end()){
+            AggrOp* op_old = *op_it;
+            tuple<int, int, int> op_id = op_old->op_ind;
+            
+            Op* op1_old = op_old->operand1;
+            Op* op2_old = op_old->operand2;
+            Op* op1_new;
+            Op* op2_new;
+
+            if (op1_old->is_multop){
+                op1_new = new_layer.get_mainop_by_index(op1_old->op_ind);
+            }
+            else{
+                op1_new = new_layer.get_postop_by_index(op1_old->op_ind, 0);
+            }
+            if (op2_old->is_multop){
+                op2_new = new_layer.get_mainop_by_index(op2_old->op_ind);
+            }
+            else{
+                op2_new = new_layer.get_postop_by_index(op2_old->op_ind, 1);
+            }
+
+            P_Tile* pout_tile = new P_Tile(new_layer.layer_name, op_id, op_old->pout_tile->dims);
+
+            AggrOp* aggr_op1 = new AggrOp(new_layer.layer_name, op_id, op1_new, op2_new, pout_tile, 0);
+            AggrOp* aggr_op2 = new AggrOp(new_layer.layer_name, op_id, op1_new, op2_new, pout_tile, 1);
+
+            new_layer.post_ops[list_it->first].push_back(aggr_op1);
+            new_layer.post_ops[list_it->first].push_back(aggr_op2);
+
+            aggr_op1->set_pair(aggr_op2);
+
+            //Skip two ops because they are pairs.
+            op_it++;
+            op_it++;
+        }
     }
 
     return new_layer;
@@ -128,13 +176,17 @@ void Layers::import_layers(json j){
         for(auto it_dep = deps.begin(); it_dep != deps.end(); it_dep++){
             string dep_name = it_dep->get<string>(); // remove 
             dependencies->push_back(dep_name);
-            //Layer* dep_layer = this->get_layer_by_name(dep_name);
-            // if (dep_layer != nullptr){
-            //     dependencies->push_back(dep_layer);
-            // }   
         }
 
-        Layer layer(layer_name, x_tile_dim, w_tile_dim, no_tiles, input_size, weight_size, dependencies);
+        bool is_conv = false;
+        tuple<int,int> conv_kernel_size (-1,-1);
+        string layer_type =  j["layers"][layer_name]["layer_type"].get<string>();
+
+        if (layer_type == "Conv2D"){
+            is_conv = true;
+            conv_kernel_size = make_tuple(gemm_op["kernel_size"][0].get<int>(), gemm_op["kernel_size"][1].get<int>());
+        }
+        Layer layer(layer_name, x_tile_dim, w_tile_dim, no_tiles, input_size, weight_size, is_conv, conv_kernel_size, dependencies);
         this->layer_list->push_back(layer);
     }
 }
@@ -224,6 +276,7 @@ void Layer::create_post_ops(Arrays* arrays, Interconnects* interconnects){
 
             list<AggrOp*>* post_op_list = &this->post_ops[make_tuple(i,k)];
 
+            int j = 0;
             while (unconsumed_ops.size()/2 >= 1){
                 Op* op1 = unconsumed_ops.front();
                 unconsumed_ops.pop_front();
@@ -231,16 +284,18 @@ void Layer::create_post_ops(Arrays* arrays, Interconnects* interconnects){
                 Op* op2 = unconsumed_ops.front();
                 unconsumed_ops.pop_front();
 
-                P_Tile* pout_tile = new P_Tile(layer_name, make_tuple(-1, -1, -1), op1->pout_tile->dims);
+                tuple<int, int, int> op_id = make_tuple(i, j, k);
+                P_Tile* pout_tile = new P_Tile(layer_name, op_id, op1->pout_tile->dims);
 
-                AggrOp* aggr_op1 = new AggrOp(this->layer_name, op1, op2, pout_tile, 0);
+                AggrOp* aggr_op1 = new AggrOp(this->layer_name, op_id, op1, op2, pout_tile, 0);
                 unconsumed_ops.push_back(aggr_op1);
                 post_op_list->push_back(aggr_op1);
 
-                AggrOp* aggr_op2 = new AggrOp(this->layer_name, op1, op2, pout_tile, 1);
+                AggrOp* aggr_op2 = new AggrOp(this->layer_name, op_id, op1, op2, pout_tile, 1);
                 post_op_list->push_back(aggr_op2);
 
                 aggr_op1->set_pair(aggr_op2);
+                j++;
             }
         }
     }
@@ -271,6 +326,21 @@ void Layer::init_banks(Banks* banks){
 
 MultOp* Layer::get_mainop_by_index(tuple<int, int, int> index){
     return this->main_ops[index];
+}
+
+AggrOp* Layer::get_postop_by_index(tuple<int, int, int> index, bool flip){
+    int i = get<0>(index);
+    int k = get<2>(index);
+
+    list<AggrOp*> op_list = this->post_ops[make_tuple(i,k)];
+
+    for (auto it = op_list.begin(); it != op_list.end(); it++){
+        if ( (*it)->op_ind == index && (*it)->flip == flip ){
+            return *it;
+        }
+    }
+
+    return nullptr;
 }
 
 

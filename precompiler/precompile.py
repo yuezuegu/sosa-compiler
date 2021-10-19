@@ -60,10 +60,13 @@ def split_mat(x_size, w_size, array_size, partition_size=None):
 
 def partition_layer(layer_node, array_size, partition_size):
     if layer_node.layer_type == 'Conv2D' or layer_node.layer_type == 'Dense':
-        gemm_info = {}  
+        gemm_info = {}
 
         input_size = layer_node.layer_attr["input_size"]
         weight_size = layer_node.layer_attr["weight_size"]
+
+        if layer_node.layer_type == 'Conv2D':
+            gemm_info["kernel_size"] = layer_node.layer_attr["kernel_size"]
 
         gemm_info["input_size"] = input_size
         gemm_info["weight_size"] = weight_size
@@ -74,6 +77,7 @@ def partition_layer(layer_node, array_size, partition_size):
         gemm_info["x_tile_dim"] = x_tile_dim
         gemm_info["w_tile_dim"] = w_tile_dim
         gemm_info["no_tiles"] = no_tiles
+        
 
         return gemm_info
     else:
@@ -97,12 +101,12 @@ def precompile_model(model, array_size=[512,512], partition_size=None):
         layer_node = graph.get_node(layer_name)
         gemm_op = partition_layer(layer_node, array_size, partition_size)
         dependencies = [s.layer_name for s in layer_node.src]
-        layers[layer_name] = {"gemm_op": gemm_op, "deps": dependencies}
+        layers[layer_name] = {"gemm_op": gemm_op, "deps": dependencies, "layer_type": layer_node.layer_type}
     return layers
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, required=False, default='bert_base')
+    parser.add_argument('--model', type=str, required=False, default='bert_tiny')
     parser.add_argument('--batch_size', type=int, required=False, default=1, help='Batch size')
     parser.add_argument('--sentence_len', type=int, required=False, default=60, help='Sentence length for transformer model')
     parser.add_argument('--imsize', type=int, required=False, default=299)  

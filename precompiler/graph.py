@@ -145,6 +145,9 @@ def convert_keras_to_graph(model):
             node.set_layer_attr("input_size", input_size)
             node.set_layer_attr("weight_size", weight_size)
 
+            kernel_size = [layer.get_weights()[0].shape[0], layer.get_weights()[0].shape[1]]
+            node.set_layer_attr("kernel_size", kernel_size)
+
             graph_tmp.add_node(node)
 
         elif node.layer_type == "Dense":

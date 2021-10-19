@@ -20,6 +20,7 @@ MultOp::MultOp(string layer_name, tuple<int, int, int> op_ind, X_Tile* x_tile, W
     this->exec_cycles = get<0>(x_tile->dims);
     this->weight_buffer_cycles = get<0>(w_tile->dims);
     this->retired = false;
+    this->is_multop = true;
 }
 
 MultOp::MultOp(const MultOp& mult_op){
@@ -39,6 +40,7 @@ MultOp::MultOp(const MultOp& mult_op){
     this->exec_cycles = get<0>(this->x_tile->dims);
     this->weight_buffer_cycles = get<0>(this->w_tile->dims);
     this->retired = false;
+    this->is_multop = true;
 }
 
 void MultOp::retire(){
@@ -65,8 +67,9 @@ bool Op::is_placed(){
     return this->is_placed_;
 }
 
-AggrOp::AggrOp(string layer_name, Op* operand1, Op* operand2, P_Tile* pout_tile, bool flip){
+AggrOp::AggrOp(string layer_name, tuple<int, int, int> op_ind, Op* operand1, Op* operand2, P_Tile* pout_tile, bool flip){
     this->layer_name = layer_name;
+    this->op_ind = op_ind;
     this->operand1 = operand1;
     this->operand2 = operand2;
     this->pin1_tile = operand1->pout_tile;
@@ -76,6 +79,7 @@ AggrOp::AggrOp(string layer_name, Op* operand1, Op* operand2, P_Tile* pout_tile,
     this->round_placed = -1;
     this->is_placed_ = false;
     this->pair_op = nullptr;
+    this->is_multop = false;
 
     assert((this->pin1_tile->dims == this->pin2_tile->dims && "Input dimensions do not match!"));
     if (pout_tile == nullptr){
