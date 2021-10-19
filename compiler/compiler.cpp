@@ -70,9 +70,9 @@ struct Compiler::PlacementClosure {
                             continue;
                         }
 
-                        x_bank_it = x_bank_it;
-                        w_bank_it = w_bank_it;
-                        p_bank_it = p_bank_it;
+                        this->x_bank_it = x_bank_it;
+                        this->w_bank_it = w_bank_it;
+                        this->p_bank_it = p_bank_it;
 
                         return true;
                     }
@@ -393,7 +393,7 @@ void Compiler::op_placement(int r, MultOp* op){
 
         for(auto sa_it = avail_arrays->begin(); sa_it != avail_arrays->end() && (!pls_ || pls_->should_continue()); sa_it++){
             pls_->append_job(PlacementClosure{
-                true,
+                false,
                 sa_it, // sa_it
                 {}, // x_bank_it
                 {}, // w_bank_it
@@ -662,7 +662,7 @@ void Compiler::run_cycle_model(){
 
 void Compiler::enable_multithreading(std::size_t num_workers) {
     pls_ = std::make_unique<multithreading::ParallelLinearSearch<PlacementClosure, WorkerData>>(num_workers);
-    for (std::size_t i = 0; i < num_workers; ++i) {
+    for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
         pls_->worker_data(i).interconnects.construct(interconnects->N, interconnects->type);
     }
 }
@@ -674,9 +674,4 @@ void Compiler::disable_multithreading() {
 #endif
 
 Compiler::~Compiler() {
-    #ifdef COMPILER_MULTITHREADING
-    for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
-        delete std::any_cast<Interconnects *>(pls_->worker_data(i));
-    }
-    #endif
 }

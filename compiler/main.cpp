@@ -87,7 +87,7 @@ int main(int ac, char* av[]){
 
     #ifdef COMPILER_MULTITHREADING
     // TODO enable passing the number of workers as a command-line argument argument
-    compiler->enable_multithreading(48);
+    compiler->enable_multithreading(4);
     #endif
 
     cout << layers;

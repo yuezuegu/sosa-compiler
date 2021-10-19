@@ -140,11 +140,11 @@ struct ParallelLinearSearch {
 
     // gets the worker specific data
     WorkerData &worker_data(std::size_t i) {
-        return (WorkerData &) workers_[i];
+        return (*workers_[i]);
     }
 
     WorkerData const &worker_data(std::size_t i) const {
-        return (WorkerData const &) workers_[i];
+        return (*workers_[i]);
     }
 
     // whether or not continue (false if success)
@@ -313,7 +313,7 @@ private:
     // For synchronization among workers.
     SharedState shared_state_;
 
-    struct Worker: WorkerData {
+    struct Worker: WorkerData /* Empty Base Class Optimization */ {
         Worker(SharedState &shared_state, std::size_t idx): start_{false}, quit_{false} {
             thread_ = std::thread([&, idx] {
                 DEBUG_WORKER("start_worker");
