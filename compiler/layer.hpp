@@ -37,9 +37,9 @@ class Layer {
         bool is_scheduled;
         int start_round;
         int end_round;
-        list<Layer*>* dependencies;
+        list<string>* dependencies;
 
-        Layer(string, tile_dim_map*, tile_dim_map*, tuple<int, int, int>, tuple<int, int>, tuple<int, int>, list<Layer*>*);
+        Layer(string, tile_dim_map*, tile_dim_map*, tuple<int, int, int>, tuple<int, int>, tuple<int, int>, list<string>*);
         ~Layer();
         
         void create_main_ops();
@@ -49,6 +49,7 @@ class Layer {
         map<tuple<int, int>, list<AggrOp*>> post_ops;
 
         MultOp* get_mainop_by_index(tuple<int, int, int> index);
+        Layer create_copy(string);
 
     private:
         
@@ -67,8 +68,10 @@ class Layers{
         Layer* get_layer_by_name(string layer_name);
         friend ostream& operator<<(ostream& os, const Layers& layers);
         
-    private:
         list<Layer>* layer_list;
+
+    private:
+        
 };
 
 #endif /* LAYER_HPP */

@@ -90,7 +90,7 @@ int main(int ac, char* av[]){
     compiler->compile(layers);
 
     int no_repeat = jin["no_repeat"].get<int>();
-    compiler->duplicate_schedule(no_repeat);
+    compiler->duplicate_schedule(layers, no_repeat);
 
     compiler->run_cycle_model();
 

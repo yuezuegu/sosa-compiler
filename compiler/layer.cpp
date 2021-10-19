@@ -9,7 +9,7 @@ Layer::Layer(string layer_name,
                 tuple<int, int, int> no_tiles, 
                 tuple<int, int> input_size, 
                 tuple<int, int> weight_size,
-                list<Layer*>* dependencies){
+                list<string>* dependencies){
     this->layer_name = layer_name;
     this->x_tile_dims = x_tile_dims;
     this->w_tile_dims = w_tile_dims;
@@ -23,6 +23,59 @@ Layer::Layer(string layer_name,
     this->x_tiles = new map<tuple<int, int>, X_Tile*>();
     this->w_tiles = new map<tuple<int, int>, W_Tile*>();
     this->p_tiles = new map<tuple<int, int, int>, P_Tile*>();
+}
+
+Layer Layer::create_copy(string suffix){
+    string layer_name = this->layer_name + suffix;
+
+    list<string>* dependencies = new list<string>();
+    for(auto it_dep = this->dependencies->begin(); it_dep != this->dependencies->end(); it_dep++){
+        string dep_name = *it_dep + suffix;
+        dependencies->push_back(dep_name);
+    }
+
+    Layer new_layer(layer_name, this->x_tile_dims, this->w_tile_dims, this->no_tiles, this->input_size, this->weight_size, dependencies);
+
+    for(auto tile_it = this->x_tiles->begin(); tile_it != this->x_tiles->end(); tile_it++){
+        tuple<int, int> ind = tile_it->first;
+        X_Tile* x_tile_orig = tile_it->second;
+
+        X_Tile* x_tile_new = new X_Tile(new_layer.layer_name, x_tile_orig->id, x_tile_orig->dims, x_tile_orig->precision);
+        (*new_layer.x_tiles)[ind] = x_tile_new;                
+    }
+
+    for(auto tile_it = this->w_tiles->begin(); tile_it != this->w_tiles->end(); tile_it++){
+        tuple<int, int> ind = tile_it->first;
+        W_Tile* w_tile_orig = tile_it->second;
+
+        W_Tile* w_tile_new = new W_Tile(new_layer.layer_name, w_tile_orig->id, w_tile_orig->dims, w_tile_orig->precision);
+        (*new_layer.w_tiles)[ind] = w_tile_new;                
+    }
+
+    for(auto tile_it = this->p_tiles->begin(); tile_it != this->p_tiles->end(); tile_it++){
+        tuple<int, int, int> ind = tile_it->first;
+        P_Tile* p_tile_orig = tile_it->second;
+
+        P_Tile* p_tile_new = new P_Tile(new_layer.layer_name, p_tile_orig->id, p_tile_orig->dims, p_tile_orig->precision);
+        (*new_layer.p_tiles)[ind] = p_tile_new;                
+    }
+
+    for(auto op_it = this->main_ops.begin(); op_it != this->main_ops.end(); op_it++ ){
+        tuple<int, int, int> op_ind = op_it->first;
+
+        int i = get<0>(op_ind);
+        int j = get<1>(op_ind);
+        int k = get<2>(op_ind);
+
+        X_Tile* x_tile = (*new_layer.x_tiles)[make_tuple(i,j)];
+        W_Tile* w_tile = (*new_layer.w_tiles)[make_tuple(j,k)];
+        P_Tile* pout_tile = (*new_layer.p_tiles)[make_tuple(i,j,k)];
+
+        MultOp* op_new = new MultOp(new_layer.layer_name, op_ind, x_tile, w_tile, pout_tile);
+        new_layer.main_ops[make_tuple(i,j,k)] = op_new;
+    }
+
+    return new_layer;
 }
 
 Layer::~Layer(){}
@@ -71,13 +124,14 @@ void Layers::import_layers(json j){
             weight_size = make_tuple(gemm_op["weight_size"][0].get<int>(), gemm_op["weight_size"][1].get<int>());
         }
 
-        list<Layer*>* dependencies = new list<Layer*>();
+        list<string>* dependencies = new list<string>();
         for(auto it_dep = deps.begin(); it_dep != deps.end(); it_dep++){
             string dep_name = it_dep->get<string>(); // remove 
-            Layer* dep_layer = this->get_layer_by_name(dep_name);
-            if (dep_layer != nullptr){
-                dependencies->push_back(dep_layer);
-            }   
+            dependencies->push_back(dep_name);
+            //Layer* dep_layer = this->get_layer_by_name(dep_name);
+            // if (dep_layer != nullptr){
+            //     dependencies->push_back(dep_layer);
+            // }   
         }
 
         Layer layer(layer_name, x_tile_dim, w_tile_dim, no_tiles, input_size, weight_size, dependencies);
@@ -202,12 +256,6 @@ void Layer::init_banks(Banks* banks){
         for (int i = 0; i < get<0>(this->no_tiles); i++){
             (*this->x_tiles)[make_tuple(i,j)]->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::X));
             bank_cnt = (bank_cnt+1) % banks->no_banks;
-
-            // for (int k = 0; k < get<2>(this->no_tiles); k++){
-            //     MultOp* op = this->get_mainop_by_index(make_tuple(i,j,k));
-            //     op->x_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::X));
-            //     bank_cnt = (bank_cnt+1) % banks->no_banks;
-            // }
         }
     }
 
@@ -216,9 +264,6 @@ void Layer::init_banks(Banks* banks){
         for (int k = 0; k < get<2>(this->no_tiles); k++){
             (*this->w_tiles)[make_tuple(j,k)]->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::W));
             bank_cnt = (bank_cnt+1) % banks->no_banks;
-            // MultOp* op = this->get_mainop_by_index(make_tuple(i,j,k));
-            // op->w_tile->assign_bank(banks->get_bank_by_id(bank_cnt, data_type::W));
-            // bank_cnt = (bank_cnt+1) % banks->no_banks;
         }
     }
 }
