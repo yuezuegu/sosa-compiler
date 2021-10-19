@@ -3,6 +3,88 @@
 
 using namespace std;
 
+#ifdef COMPILER_MULTITHREADING
+
+struct Compiler::WorkerData {
+    // interconnects should not be shared among different threads
+    // have your own copy.
+    Interconnects interconnects;
+
+    list<Bank *> *avail_x_banks;
+    list<Bank *> *avail_w_banks;
+    list<Bank *> *avail_pout_banks;
+
+    Op *in_op1;
+    Op *in_op2;
+};
+
+struct Compiler::PlacementClosure {
+    // is this a placement operation for the postpp?
+    bool pp = false;
+
+    // job-specific data
+    list<Array *>::iterator sa_it;
+    list<Bank *>::iterator x_bank_it;
+    list<Bank *>::iterator w_bank_it;
+    list<Bank *>::iterator p_bank_it;
+
+    list<PostProcessor *>::iterator pp_it;
+    list<Bank *>::iterator pout_it;
+
+    bool operator()(std::size_t idx, const WorkerData &wd) {
+        if (pp) {
+            // closure for postprocessor op placement
+            if (!wd.interconnects.pp_in1_interconnect->is_route_free(wd.in_op1->pout_tile->bank, *pp_it)){
+                return false;
+            }
+            if (!wd.interconnects.pp_in2_interconnect->is_route_free(wd.in_op2->pout_tile->bank, *pp_it)){
+                return false;
+            }
+
+            for (auto pout_it = wd.avail_pout_banks->begin(); pout_it != wd.avail_pout_banks->end(); pout_it++){
+                if (!wd.interconnects.pp_out_interconnect->is_route_free(*pout_it, *pp_it)){
+                    continue;
+                }
+
+                this->pout_it = pout_it;
+                
+                return true;
+            }
+
+            return false ;
+        }
+        else {
+            // closure for op placement
+            for(auto x_bank_it = wd.avail_x_banks->begin(); x_bank_it != wd.avail_x_banks->end(); x_bank_it++){
+                if (!wd.interconnects.x_interconnect->is_route_free(*x_bank_it, *sa_it)){
+                    continue;
+                }
+
+                for(auto w_bank_it = wd.avail_w_banks->begin(); w_bank_it != wd.avail_w_banks->end(); w_bank_it++){
+                    if (!wd.interconnects.w_interconnect->is_route_free(*w_bank_it, *sa_it)){
+                        continue;
+                    }
+
+                    for(auto p_bank_it = wd.avail_pout_banks->begin(); p_bank_it != wd.avail_pout_banks->end(); p_bank_it++){
+                        if (!wd.interconnects.pout_interconnect->is_route_free(*p_bank_it, *sa_it)){
+                            continue;
+                        }
+
+                        x_bank_it = x_bank_it;
+                        w_bank_it = w_bank_it;
+                        p_bank_it = p_bank_it;
+
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
+};
+
+#endif
 
 Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, PostProcessors* post_processors, Dram* dram){
     this->arrays = arrays;
@@ -151,6 +233,47 @@ void Compiler::post_op_placement(int r, AggrOp* op){
     this->interconnects->pp_in2_interconnect->apply_permute(pin2_permute.get());
     this->interconnects->pp_out_interconnect->apply_permute(pout_permute.get());
 
+#ifdef COMPILER_MULTITHREADING
+    if (pls_){
+        for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
+            auto &wd = pls_->worker_data(i);
+            wd.interconnects.copy_from(this->interconnects);
+            wd.avail_pout_banks = avail_pout_banks.get();
+            wd.in_op1 = in_op1;
+            wd.in_op2 = in_op2;
+        }
+
+        pls_->begin();
+
+        for (auto pp_it = avail_pps->begin(); pp_it != avail_pps->end() && (!pls_ || pls_->should_continue()); pp_it++){
+            pls_->append_job(PlacementClosure{
+                true,
+                {}, // sa_it
+                {}, // x_bank_it
+                {}, // w_bank_it
+                {}, // p_bank_it
+                pp_it, // pp_it
+                {} // pout_it
+            });
+        }
+        pls_->end();
+        auto result = pls_->result();
+
+        if (result) {
+            op->pout_tile->assign_bank(*result->closure.pout_it);
+            (*result->closure.pp_it)->assign_op(r, op);
+            
+            BOOST_LOG_TRIVIAL(info) <<
+                "Post-op placed: layer_name: " << op->layer_name <<
+                "\tround: " << r << "\tsa: " << (*result->closure.pp_it)->id <<
+                "\tpout_bank: " << (*result->closure.pout_it)->id;
+            return ;
+        }
+
+        return ;
+    }
+#endif
+
     for (auto pp_it = avail_pps->begin(); pp_it != avail_pps->end(); pp_it++){
         if (!this->interconnects->pp_in1_interconnect->is_route_free(in_op1->pout_tile->bank, *pp_it)){
             continue;
@@ -167,7 +290,9 @@ void Compiler::post_op_placement(int r, AggrOp* op){
             op->pout_tile->assign_bank(*pout_it);
             (*pp_it)->assign_op(r, op);
             
-            BOOST_LOG_TRIVIAL(info) <<"Post-op placed: layer_name: " << op->layer_name << "\tround: " << r << "\tsa: " << (*pp_it)->id << "\tpout_bank: " << (*pout_it)->id;
+            BOOST_LOG_TRIVIAL(info) <<
+                "Post-op placed: layer_name: " << op->layer_name <<
+                "\tround: " << r << "\tsa: " << (*pp_it)->id << "\tpout_bank: " << (*pout_it)->id;
 
             return;
         }
@@ -253,6 +378,55 @@ void Compiler::op_placement(int r, MultOp* op){
     this->interconnects->w_interconnect->apply_permute(w_permute.get());    
 
     //random_shuffle(avail_arrays.begin(), avail_arrays.end(), *this->random_generator);
+    
+#ifdef COMPILER_MULTITHREADING
+    if (pls_) {
+        for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
+            auto &wd = pls_->worker_data(i);
+            wd.interconnects.copy_from(this->interconnects);
+            wd.avail_x_banks = avail_x_banks.get();
+            wd.avail_w_banks = avail_w_banks.get();
+            wd.avail_pout_banks = avail_pout_banks.get();
+        }
+
+        pls_->begin();
+
+        for(auto sa_it = avail_arrays->begin(); sa_it != avail_arrays->end() && (!pls_ || pls_->should_continue()); sa_it++){
+            pls_->append_job(PlacementClosure{
+                true,
+                sa_it, // sa_it
+                {}, // x_bank_it
+                {}, // w_bank_it
+                {}, // p_bank_it
+                {}, // pp_it
+                {} // pout_it
+            });
+        }
+
+        pls_->end();
+        auto result = pls_->result();
+
+        if (result) {
+            op->x_tile->assign_bank(*result->closure.x_bank_it);
+            op->w_tile->assign_bank(*result->closure.w_bank_it);
+            op->pout_tile->assign_bank(*result->closure.p_bank_it);
+            (*result->closure.sa_it)->assign_op(r, op);
+
+            BOOST_LOG_TRIVIAL(info) <<
+                "Op placed: layer_name: " << op->layer_name <<
+                "\tind: " <<  get<0>(op->op_ind) <<
+                "-" << get<1>(op->op_ind) <<
+                "-" << get<2>(op->op_ind) <<
+                "\tround: " << r <<
+                "\tsa: " << (*result->closure.sa_it)->id <<
+                "\tx bank id: " << (op->x_tile->bank->id);
+
+            return ;
+        }
+    }
+
+#endif
+
     for(auto sa_it = avail_arrays->begin(); sa_it != avail_arrays->end(); sa_it++){
         for(auto x_bank_it = avail_x_banks->begin(); x_bank_it != avail_x_banks->end(); x_bank_it++){
             if (!this->interconnects->x_interconnect->is_route_free(*x_bank_it, *sa_it)){
@@ -281,7 +455,6 @@ void Compiler::op_placement(int r, MultOp* op){
             }
         }
     }
-
 }
 
 
@@ -483,4 +656,118 @@ void Compiler::run_cycle_model(){
     }
 
     this->no_cycles = arr_cycle > pp_cycle ? arr_cycle : pp_cycle;
+}
+
+
+int Compiler::no_main_rounds(){
+    int max_rounds = 0;
+    for(auto it = this->arrays->array_map->begin(); it != this->arrays->array_map->end(); it++ ){
+        if (it->second->last_no_round > max_rounds){
+            max_rounds = it->second->last_no_round;
+        }
+    }
+    return max_rounds;
+}
+
+int Compiler::no_post_rounds(){
+    int max_rounds = 0;
+    for(auto it = this->post_processors->pp_map->begin(); it != this->post_processors->pp_map->end(); it++ ){
+        if (it->second->last_no_round > max_rounds){
+            max_rounds = it->second->last_no_round;
+        }
+    }
+    return max_rounds;
+}
+
+
+void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
+    int no_layers = layers->layer_list->size();
+
+    int no_main_rounds = this->no_main_rounds();
+    int no_post_rounds = this->no_post_rounds();
+    int max_no_rounds = no_main_rounds > no_post_rounds ? no_main_rounds : no_post_rounds;
+
+    int new_r;
+
+    for (int i = 1; i < no_repeat; i++){
+
+        auto layer_it = layers->begin();
+        for(int l = 0; l < no_layers; l++){
+            string suffix =  "_copy" + to_string(i);
+            
+            Layer new_layer =  layer_it->create_copy(suffix);
+
+            layers->layer_list->push_back(new_layer);
+            layer_it++;
+        }
+        
+
+        for (int r = 0; r < no_main_rounds; r++){
+            new_r = r+i*max_no_rounds+1;
+
+
+
+
+
+
+
+            // list<MultOp*>* sch = this->arrays->get_schedule(r);
+            // for (auto it = sch->begin(); it != sch->end(); it++){
+            //     if (*it == nullptr) continue;
+
+                
+            //     tuple<int, int, int> op_ind = (*it)->op_ind;
+
+
+            //     MultOp* new_op = new MultOp(layer_name,  op_ind, X_Tile* x_tile, W_Tile* w_tile, P_Tile* pout_tile);
+
+            //     // MultOp* new_op = new MultOp(*(*it));
+            //     // new_op->layer_name = new_op->layer_name + "_copy" + to_string(i);
+            //     if ((*it)->pin_op != nullptr){
+            //         new_op->assign_pin((*it)->pin_op);
+            //     }
+            //     (*it)->array_placed->assign_op(new_r, new_op);
+                
+            // }
+
+            // delete sch;
+        }
+        for (int r = 0; r < no_post_rounds; r++){
+            new_r = r+i*max_no_rounds+1;
+
+            list<AggrOp*>* sch = this->post_processors->get_schedule(r);
+            for (auto it = sch->begin(); it != sch->end(); it++){
+                if (*it == nullptr) continue;
+                
+                AggrOp* new_op = new AggrOp(*(*it));
+                new_op->layer_name = new_op->layer_name + "_copy" + to_string(i);
+                (*it)->pp_placed->assign_op(new_r, new_op);
+            }
+
+            delete sch;
+        }
+    }
+}
+
+#ifdef COMPILER_MULTITHREADING
+
+void Compiler::enable_multithreading(std::size_t num_workers) {
+    pls_ = std::make_unique<multithreading::ParallelLinearSearch<PlacementClosure, WorkerData>>(num_workers);
+    for (std::size_t i = 0; i < num_workers; ++i) {
+        pls_->worker_data(i).interconnects.construct(interconnects->N, interconnects->type);
+    }
+}
+
+void Compiler::disable_multithreading() {
+    pls_ = nullptr;
+}
+
+#endif
+
+Compiler::~Compiler() {
+    #ifdef COMPILER_MULTITHREADING
+    for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
+        delete std::any_cast<Interconnects *>(pls_->worker_data(i));
+    }
+    #endif
 }

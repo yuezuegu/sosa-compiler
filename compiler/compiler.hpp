@@ -14,6 +14,9 @@
 #include "post_processor.hpp"
 #include "dram.hpp"
 
+#include "parallel_linear_search.hpp"
+#include <memory>
+
 #include <boost/log/trivial.hpp>
 
 using namespace std;
@@ -37,8 +40,26 @@ class Compiler{
         int no_post_rounds();
         void create_memory_fifo();
         void run_cycle_model();
+
         void duplicate_schedule(Layers* layers, int no_repeat);
+
+        #ifdef COMPILER_MULTITHREADING
+
+        void enable_multithreading(std::size_t num_workers);
+        void disable_multithreading();
+
+        #endif
+
+        ~Compiler();
     private:
+        #ifdef COMPILER_MULTITHREADING
+
+        struct PlacementClosure;
+        struct WorkerData;
+        
+        std::unique_ptr<multithreading::ParallelLinearSearch<PlacementClosure, WorkerData>> pls_;
+        
+        #endif
 };
 
 #endif /* COMPILER_HPP */

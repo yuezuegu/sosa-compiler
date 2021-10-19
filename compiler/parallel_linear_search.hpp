@@ -111,13 +111,19 @@ private:
     std::condition_variable cv_;
 };
 
+struct Empty {};
+
 /**
  *
  * Implements a parallelized version of the linear search algorithm.
  * It outputs exactly the same result as the sequential linear search.
  * 
  */
+template <typename ClosureType, typename WorkerData = Empty>
 struct ParallelLinearSearch {
+    // closure type should have:
+    //   - bool operator()(std::size_t idx, WorkerData const &worker_data)
+
     ParallelLinearSearch(std::size_t num_workers):
         shared_state_{num_workers},
         num_workers_{num_workers} {
@@ -127,14 +133,29 @@ struct ParallelLinearSearch {
         }
     }
 
+    // returns the number of workers.
+    std::size_t num_workers() const {
+        return workers_.size();
+    }
+
+    // gets the worker specific data
+    WorkerData &worker_data(std::size_t i) {
+        return (WorkerData &) workers_[i];
+    }
+
+    WorkerData const &worker_data(std::size_t i) const {
+        return (WorkerData const &) workers_[i];
+    }
+
     // whether or not continue (false if success)
     bool should_continue() const {
         return !shared_state_.success();
     }
 
     // Assigns a new job to workers.
-    void append_job(std::function<bool (std::size_t)> f, std::any data = nullptr) {
-        shared_state_.task_queue.emplace_back(Task{std::move(f), num_tasks_, false, std::move(data)});
+    template <typename T>
+    void append_job(T &&t) {
+        shared_state_.task_queue.emplace_back(Task{std::move(t), false, num_tasks_});
         ++num_tasks_;
     }
 
@@ -149,20 +170,20 @@ struct ParallelLinearSearch {
     void end() {
         // add invalid jobs that stop the worker
         for (std::size_t i = 0; i < num_workers_; ++i)
-            shared_state_.task_queue.emplace_back(Task{ nullptr, 0, true, nullptr });
+            shared_state_.task_queue.emplace_back(Task{{}, true, 0});
         
         shared_state_.join_workers();
     }
 
-    struct result_type {
-        std::size_t index;
-        std::any data;
+    struct ResultType {
+        std::size_t idx;
+        ClosureType closure;
     };
 
     // Get the result
-    std::optional<result_type> result() {
+    std::optional<ResultType> result() {
         if (shared_state_.success()) {
-            return result_type{shared_state_.success_idx(), std::move(shared_state_.success_data())};
+            return ResultType{shared_state_.success_idx(), std::move(shared_state_.success_data())};
         }
         return {};
     }
@@ -172,17 +193,14 @@ struct ParallelLinearSearch {
     }
 private:
     struct Task {
-        // the function object handling this task
-        std::function<bool (std::size_t)> f;
-
-        // ID of the task
-        std::size_t idx;
+        // closure for the task
+        ClosureType closure;
 
         // Flag if invalid
         bool invalid = false;
 
-        // Associated data
-        std::any data;
+        // index of the task
+        std::size_t idx = 0;
     };
 
     struct SharedState {
@@ -205,7 +223,7 @@ private:
 
         // informs the shared state that one of the workers have found a result
         // sets the done flag if it can judge the execution is complete
-        void inform_completion(std::size_t idx, std::any data, bool r) {
+        void inform_completion(std::size_t idx, ClosureType &&closure, bool r) {
             std::lock_guard<std::mutex> lock{mtx_};
 
             // append -1 until the size is good to go
@@ -219,7 +237,7 @@ private:
                 if (!success_ || success_idx_ > idx) {
                     success_ = true;
                     success_idx_ = idx;
-                    success_data_ = std::move(data);
+                    success_closure_ = std::move(closure);
                 }
             }
 
@@ -252,9 +270,9 @@ private:
             return success_idx_;
         }
 
-        std::any success_data() const {
+        ClosureType &success_data() {
             // no need for locks here
-            return std::move(success_data_);
+            return success_closure_;
         }
 
         void join_workers() {
@@ -283,7 +301,7 @@ private:
         bool done_;
         bool success_;
         std::size_t success_idx_;
-        std::any success_data_;
+        ClosureType success_closure_;
         std::mutex mtx_;
 
         // for joining the workers
@@ -295,7 +313,7 @@ private:
     // For synchronization among workers.
     SharedState shared_state_;
 
-    struct Worker {
+    struct Worker: WorkerData {
         Worker(SharedState &shared_state, std::size_t idx): start_{false}, quit_{false} {
             thread_ = std::thread([&, idx] {
                 DEBUG_WORKER("start_worker");
@@ -322,8 +340,8 @@ private:
 
                             DEBUG_WORKER_TASK();
 
-                            bool r = task->f(task->idx);
-                            shared_state.inform_completion(task->idx, std::move(task->data), r);
+                            bool r = task->closure(task->idx, *this);
+                            shared_state.inform_completion(task->idx, std::move(task->closure), r);
 
                             DEBUG_WORKER_TASK("task_done");
 
