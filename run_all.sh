@@ -48,13 +48,13 @@ done
 
 # Activate conda
 eval "$(conda shell.bash hook)"
-conda activate sosa-compiler || { echo "conda ctivate environment failed."; exit 1; }
+conda activate sosa-compiler || fail_msg "conda activate environment failed."
 
 # Rebuild
 if [[ ! "$skip_rebuild" = true ]]
 then
     pushd ./build
-    make -j 10 || { echo "build failed."; exit 1; }
+    make -j 10 || fail_msg "build failed."
     popd
 else
     echo "Skipping rebuild."
@@ -95,7 +95,7 @@ do
                 --batch_size=1 \
                 --sentence_len=100 \
                 --array_size ${r} ${c} \
-                --out_dir=experiments/${dir}/${hash}
+                --out_dir=experiments/${dir}/${hash} || fail_msg "precompile failed."
 
             ${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d experiments/${dir}/${hash} &
             pids[${cnt}]=$!
@@ -120,7 +120,7 @@ do
                 --model=${model} \
                 --batch_size=1 \
                 --array_size ${r} ${c} \
-                --out_dir=experiments/${dir}/${hash}
+                --out_dir=experiments/${dir}/${hash} || fail_msg "precompile failed."
 
             ${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d experiments/${dir}/${hash} &
             pids[${cnt}]=$!

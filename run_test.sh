@@ -58,13 +58,13 @@ done
 
 # Activate conda
 eval "$(conda shell.bash hook)"
-conda activate sosa-compiler || { echo "conda ctivate environment failed."; exit 1; }
+conda activate sosa-compiler || fail_msg "conda activate environment failed."
 
 # Rebuild
 if [[ ! "$skip_rebuild" = true ]]
 then
     pushd ./build
-    make -j 10 || { echo "build failed."; exit 1; }
+    make -j 10 || fail_msg "build failed."
     popd
 else
     echo "Skipping rebuild."
@@ -93,12 +93,12 @@ then
         --batch_size=1 \
         --sentence_len=100 \
         --array_size ${r} ${c} \
-        --out_dir="$DIR"
+        --out_dir="$DIR" || fail_msg "precompile failed."
 else
     echo "Skipping precompiler."
 fi
 
-${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d "$DIR"
+${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d "$DIR" || fail_msg "compile failed."
 
 end_time=$(date +%s)
 elapsed=$(( end_time - start_time ))
