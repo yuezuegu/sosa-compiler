@@ -40,7 +40,8 @@ class Compiler{
         int no_post_rounds();
         void create_memory_fifo();
         void run_cycle_model();
-        void duplicate_schedule(int no_repeat);
+
+        void duplicate_schedule(Layers* layers, int no_repeat);
 
         #ifdef COMPILER_MULTITHREADING
 

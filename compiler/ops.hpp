@@ -23,6 +23,8 @@ class Op{
         P_Tile* pout_tile;
         Op* pair_op;
 
+        bool retired;
+        
         bool is_placed();
     protected:
         bool is_placed_;
@@ -46,6 +48,8 @@ class MultOp: public Op{
 
         void assign_pin(MultOp* pin_op);
         void assign_to_array(int r, Array* array);
+
+        void retire();
 };
 
 class AggrOp: public Op{

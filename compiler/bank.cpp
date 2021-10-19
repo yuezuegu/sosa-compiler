@@ -3,36 +3,47 @@
 #include "tiles.hpp"
 
 
-Bank::Bank(int id, data_type type){
+Bank::Bank(int id, data_type type, int capacity){
     this->id = id;
     this->type = type;
+    this->capacity = capacity;
+    this->capacity_used = 0;
 }
 
 Bank::~Bank(){
     
 }
 
-
-int Bank::alloc_tile(Tile* tile){
-    int addr = this->next_virt_addr;
-    this->allocated_tiles[tile] = addr;
-    this->next_virt_addr += tile->get_mem_height();
-    return addr;
+bool Bank::alloc_tile(Tile* tile){
+    if (this->capacity_used + tile->memory_size <= this->capacity){
+        this->capacity_used += tile->memory_size;
+        return true;
+    }
+    else{
+        return false;
+    }
 }
 
-Banks::Banks(int no_banks){
+void Bank::free_tile(Tile* tile){
+    this->capacity_used -= tile->memory_size;
+    if (this->capacity_used < 0){
+        throw runtime_error("Usage cannot be negative, something is wrong!");
+    }
+}
+
+Banks::Banks(int no_banks, int bank_size){
     this->no_banks = no_banks;
     this->x_banks = new list<Bank*>();
     this->w_banks = new list<Bank*>();
     this->p_banks = new list<Bank*>();
     for(int i = 0; i < no_banks; i++){
-        this->x_banks->push_back(new Bank(i, data_type::X));
+        this->x_banks->push_back(new Bank(i, data_type::X, bank_size));
     }
     for(int i = 0; i < no_banks; i++){
-        this->w_banks->push_back(new Bank(i, data_type::W));
+        this->w_banks->push_back(new Bank(i, data_type::W, bank_size));
     }
     for(int i = 0; i < no_banks; i++){
-        this->p_banks->push_back(new Bank(i, data_type::P));
+        this->p_banks->push_back(new Bank(i, data_type::P, bank_size));
     }
 }
 

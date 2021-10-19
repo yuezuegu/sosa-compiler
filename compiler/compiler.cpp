@@ -1,7 +1,5 @@
 
-
 #include "compiler.hpp"
-
 
 using namespace std;
 
@@ -22,13 +20,14 @@ void Compiler::compile(Layers* layers){
             bool all_deps_scheduled = true;
             int init_round = 0;
             for(auto it_dep = it->dependencies->begin(); it_dep != it->dependencies->end(); it_dep++){
-                if (!(*it_dep)->is_scheduled){
+                Layer* layer = layers->get_layer_by_name((*it_dep));
+                if (!layer->is_scheduled){
                     all_deps_scheduled = false;
                     break;
                 }
 
-                if ((*it_dep)->end_round >= init_round){
-                    init_round = (*it_dep)->end_round+1;
+                if (layer->end_round >= init_round){
+                    init_round = layer->end_round+1;
                 }
             }
 
@@ -594,7 +593,9 @@ int Compiler::no_post_rounds(){
 }
 
 
-void Compiler::duplicate_schedule(int no_repeat){
+void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
+    int no_layers = layers->layer_list->size();
+
     int no_main_rounds = this->no_main_rounds();
     int no_post_rounds = this->no_post_rounds();
     int max_no_rounds = no_main_rounds > no_post_rounds ? no_main_rounds : no_post_rounds;
@@ -602,23 +603,47 @@ void Compiler::duplicate_schedule(int no_repeat){
     int new_r;
 
     for (int i = 1; i < no_repeat; i++){
+
+        auto layer_it = layers->begin();
+        for(int l = 0; l < no_layers; l++){
+            string suffix =  "_copy" + to_string(i);
+            
+            Layer new_layer =  layer_it->create_copy(suffix);
+
+            layers->layer_list->push_back(new_layer);
+            layer_it++;
+        }
+        
+
         for (int r = 0; r < no_main_rounds; r++){
             new_r = r+i*max_no_rounds+1;
 
-            list<MultOp*>* sch = this->arrays->get_schedule(r);
-            for (auto it = sch->begin(); it != sch->end(); it++){
-                if (*it == nullptr) continue;
 
-                MultOp* new_op = new MultOp(*(*it));
-                new_op->layer_name = new_op->layer_name + "_copy" + to_string(i);
-                if ((*it)->pin_op != nullptr){
-                    new_op->assign_pin((*it)->pin_op);
-                }
-                (*it)->array_placed->assign_op(new_r, new_op);
+
+
+
+
+
+            // list<MultOp*>* sch = this->arrays->get_schedule(r);
+            // for (auto it = sch->begin(); it != sch->end(); it++){
+            //     if (*it == nullptr) continue;
+
                 
-            }
+            //     tuple<int, int, int> op_ind = (*it)->op_ind;
 
-            delete sch;
+
+            //     MultOp* new_op = new MultOp(layer_name,  op_ind, X_Tile* x_tile, W_Tile* w_tile, P_Tile* pout_tile);
+
+            //     // MultOp* new_op = new MultOp(*(*it));
+            //     // new_op->layer_name = new_op->layer_name + "_copy" + to_string(i);
+            //     if ((*it)->pin_op != nullptr){
+            //         new_op->assign_pin((*it)->pin_op);
+            //     }
+            //     (*it)->array_placed->assign_op(new_r, new_op);
+                
+            // }
+
+            // delete sch;
         }
         for (int r = 0; r < no_post_rounds; r++){
             new_r = r+i*max_no_rounds+1;

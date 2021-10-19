@@ -32,6 +32,7 @@ class Array{
         BUF_STATE buf_state;
         W_Tile* curr_w_tile;
         W_Tile* next_w_tile;
+        MultOp* curr_op;
         int buf_cnt;
 
         ARR_STATE arr_state;

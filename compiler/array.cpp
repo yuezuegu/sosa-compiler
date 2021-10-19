@@ -17,6 +17,7 @@ Array::Array(int id, int no_rows, int no_cols){
     this->arr_state = ARR_STATE::idle;
     this->x_tile = nullptr;
     this->exec_cnt = 0;
+    this->curr_op = nullptr;
 }
 
 Array::~Array(){
@@ -39,6 +40,7 @@ void Array::update(){
         }
         else{
             this->arr_state = ARR_STATE::done;
+            this->curr_op->retire();
         }
     }
 }
@@ -78,9 +80,11 @@ void Array::init_tile_op(int r){
 
     this->exec_cnt = 0;
     this->arr_state = ARR_STATE::processing;
-    this->x_tile = this->get_op(r)->x_tile;
+
+    this->curr_op = this->get_op(r);
+    this->x_tile = this->curr_op->x_tile;
     this->curr_w_tile = this->next_w_tile;
-    this->next_w_tile = nullptr;    
+    this->next_w_tile = nullptr;
 }
 
 bool Array::is_tile_op_done(int r){

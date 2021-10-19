@@ -18,13 +18,15 @@ class Bank{
         int id;
         data_type type;
         map<Tile*, int> allocated_tiles;
+        int capacity; //in terms of bytes
 
-        Bank(int id, data_type type);
+        Bank(int id, data_type type, int capacity);
         ~Bank();
         
-        int alloc_tile(Tile* tile);
+        bool alloc_tile(Tile* tile);
+        void free_tile(Tile* tile);
     private:
-        int next_virt_addr;
+        int capacity_used;
 };
 
 
@@ -32,7 +34,7 @@ class Banks{
     public:
         int no_banks;
 
-        Banks(int no_banks);
+        Banks(int no_banks, int bank_size);
         ~Banks();
 
         Bank* get_bank_by_id(int id, data_type type);

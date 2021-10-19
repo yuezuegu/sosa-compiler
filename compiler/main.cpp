@@ -24,6 +24,8 @@ int main(int ac, char* av[]){
     logger_setup();
 
     int no_array, no_rows, no_cols;
+    int bank_size;
+    float bandwidth;
     InterconnectType interconnect_type;
     string work_dir;
 
@@ -33,6 +35,8 @@ int main(int ac, char* av[]){
         ("no_rows,r", po::value<int>(&no_rows)->default_value(32), "number of rows in a systolic array")
         ("no_cols,c", po::value<int>(&no_cols)->default_value(32), "number of columns in a systolic array")
         ("no_array,N", po::value<int>(&no_array)->default_value(8), "number of systolic arrays")
+        ("memory_bw,M", po::value<float>(&bandwidth)->default_value(100), "memory bandwidth in GB/s")
+        ("bank_size,S", po::value<int>(&bank_size)->default_value(1<<19), "SRAM bank size")
         ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::crossbar), "interconnect type (see enum members)")
         ("work_dir,d", po::value<string>(&work_dir)->default_value("experiments/tmp"), "directory for input/output files")
     ;
@@ -70,14 +74,13 @@ int main(int ac, char* av[]){
 
     Arrays* arrays = new Arrays(no_array, no_rows, no_cols);
     PostProcessors* post_processors = new PostProcessors(no_array);
-    Banks* banks = new Banks(no_array);
+    Banks* banks = new Banks(no_array, bank_size);
 
     Interconnects* interconnects = new Interconnects(no_array, interconnect_type);
     cout << "interconnects->x_interconnect->name() = " << interconnects->x_interconnect->name() << endl;
 
-    float bandwidth = (float)10 * (1 << 30); //100GB/s
     float freq = 1e9;
-    bandwidth = bandwidth / freq; // Bytes per cycle
+    bandwidth = bandwidth * ((1 << 30) / freq);
 
     Dram* dram = new Dram(bandwidth);
 
@@ -92,7 +95,7 @@ int main(int ac, char* av[]){
     compiler->compile(layers);
 
     int no_repeat = jin["no_repeat"].get<int>();
-    compiler->duplicate_schedule(no_repeat);
+    compiler->duplicate_schedule(layers, no_repeat);
 
     compiler->run_cycle_model();
 
@@ -103,7 +106,7 @@ int main(int ac, char* av[]){
     cout << "Total no. of cycles: " << compiler->no_cycles << endl;
 
     ofstream output_file;
-    string ofname = work_dir + "/results.json";
+    string ofname = work_dir + "/sim_results.json";
     output_file.open(ofname, ofstream::out);
     if(!output_file.is_open()){
         cout << "Output file " << ofname << " cannot be opened." << endl;
