@@ -23,8 +23,10 @@ struct job {
     double duration;
     bool result;
 
-    bool operator()(std::size_t idx) {
+    bool operator()(std::size_t idx, std::any &data, std::any & worker_data) {
         (void) idx;
+        (void) data;
+        (void) worker_data;
         std::this_thread::sleep_for(std::chrono::duration<double>(duration * 1e-3));
         if (idx % 200 == 0)
             print(cout_mt()).ln("done ", idx);

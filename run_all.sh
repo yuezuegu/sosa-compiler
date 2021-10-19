@@ -2,14 +2,14 @@
 
 # Activate conda
 eval "$(conda shell.bash hook)"
-conda activate sosa-compiler
+conda activate sosa-compiler || { echo "conda ctivate environment failed."; exit 1; }
 
 # Rebuild
 pushd ./build
-make
+make -j 10 || { echo "build failed."; exit 1; }
 popd
 
-COMPILER="${COMPILER:-./build/compiler}"
+COMPILER="${COMPILER:-./build/compiler_mt}"
 echo "Using COMPILER=${COMPILER}"
 
 start_time=$(date +%s)

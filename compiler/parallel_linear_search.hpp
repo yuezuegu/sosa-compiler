@@ -117,6 +117,7 @@ private:
  * It outputs exactly the same result as the sequential linear search.
  * 
  */
+template <typename ClosureType, typename WorkerData>
 struct ParallelLinearSearch {
     ParallelLinearSearch(std::size_t num_workers):
         shared_state_{num_workers},
@@ -127,13 +128,28 @@ struct ParallelLinearSearch {
         }
     }
 
+    // sets the worker specific data
+    void set_worker_data(std::size_t i, std::any d) {
+        workers_[i]->data = std::move(d);
+    }
+
+    // returns the number of workers.
+    std::size_t num_workers() const {
+        return workers_.size();
+    }
+
+    // gets the worker specific data
+    std::any &get_worker_data(std::size_t i) {
+        return workers_[i]->data;
+    }
+
     // whether or not continue (false if success)
     bool should_continue() const {
         return !shared_state_.success();
     }
 
     // Assigns a new job to workers.
-    void append_job(std::function<bool (std::size_t)> f, std::any data = nullptr) {
+    void append_job(std::function<bool (std::size_t, std::any &, std::any &)> f, std::any data = nullptr) {
         shared_state_.task_queue.emplace_back(Task{std::move(f), num_tasks_, false, std::move(data)});
         ++num_tasks_;
     }
@@ -173,7 +189,7 @@ struct ParallelLinearSearch {
 private:
     struct Task {
         // the function object handling this task
-        std::function<bool (std::size_t)> f;
+        std::function<bool (std::size_t, std::any &, std::any &)> f;
 
         // ID of the task
         std::size_t idx;
@@ -296,6 +312,8 @@ private:
     SharedState shared_state_;
 
     struct Worker {
+        std::any data;
+
         Worker(SharedState &shared_state, std::size_t idx): start_{false}, quit_{false} {
             thread_ = std::thread([&, idx] {
                 DEBUG_WORKER("start_worker");
@@ -322,7 +340,7 @@ private:
 
                             DEBUG_WORKER_TASK();
 
-                            bool r = task->f(task->idx);
+                            bool r = task->f(task->idx, task->data, data);
                             shared_state.inform_completion(task->idx, std::move(task->data), r);
 
                             DEBUG_WORKER_TASK("task_done");

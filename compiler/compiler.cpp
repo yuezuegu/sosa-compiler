@@ -152,6 +152,86 @@ void Compiler::post_op_placement(int r, AggrOp* op){
     this->interconnects->pp_in2_interconnect->apply_permute(pin2_permute.get());
     this->interconnects->pp_out_interconnect->apply_permute(pout_permute.get());
 
+#ifdef COMPILER_MULTITHREADING
+    struct job_data {
+        decltype(avail_pps->begin()) pp_it;
+        decltype(avail_pout_banks->begin()) pout_it;
+    };
+
+    if (pls_) {
+        for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
+            auto interconnects = std::any_cast<Interconnects *>(pls_->get_worker_data(i));
+            interconnects->pp_in1_interconnect->apply_permute(pin1_permute.get());
+            interconnects->pp_in2_interconnect->apply_permute(pin2_permute.get());
+            interconnects->pp_out_interconnect->apply_permute(pout_permute.get());
+        }
+        pls_->begin();
+    }
+    
+    auto on_success = [&](std::any &data) {
+        auto &x = std::any_cast<job_data &>(data);
+
+        op->pout_tile->assign_bank(*x.pout_it);
+        (*x.pp_it)->assign_op(r, op);
+        
+        BOOST_LOG_TRIVIAL(info) <<
+            "Post-op placed: layer_name: " << op->layer_name <<
+            "\tround: " << r << "\tsa: " << (*x.pp_it)->id <<
+            "\tpout_bank: " << (*x.pout_it)->id;
+    };
+
+    for (auto pp_it = avail_pps->begin(); pp_it != avail_pps->end() && (!pls_ || pls_->should_continue()); pp_it++){
+        auto job_gen = [&] {
+            return [&](std::size_t idx, std::any &data, std::any &worker_data) -> bool {
+                auto &xx = std::any_cast<job_data &>(data);
+                (void) idx;
+
+                auto interconnects = std::any_cast<Interconnects *>(worker_data);
+
+                if (!interconnects->pp_in1_interconnect->is_route_free(in_op1->pout_tile->bank, *(xx.pp_it))){
+                    return false;
+                }
+                if (!interconnects->pp_in2_interconnect->is_route_free(in_op2->pout_tile->bank, *(xx.pp_it))){
+                    return false;
+                }
+
+                for (auto pout_it = avail_pout_banks->begin(); pout_it != avail_pout_banks->end(); pout_it++){
+                    if (!interconnects->pp_out_interconnect->is_route_free(*pout_it, *(xx.pp_it))){
+                        continue;
+                    }
+
+                    xx.pout_it = pout_it;
+                    
+                    return true;
+                }
+
+                return false ;
+            };
+        };
+
+        if (pls_) {
+            pls_->append_job(job_gen(), std::make_any<job_data>(job_data{pp_it, {}}));
+        }
+        else {
+            auto data = std::make_any<job_data>(job_data{pp_it, {}});
+            auto worker_data = std::make_any<Interconnects *>(this->interconnects);
+            if (job_gen()(0, data, worker_data)) {
+                on_success(data);
+                return ;
+            }
+        }
+    }
+
+    if (pls_) {
+        pls_->end();
+        auto result = pls_->result();
+
+        if (result) {
+            on_success(result->data);
+            return ;
+        }
+    }
+#else
     for (auto pp_it = avail_pps->begin(); pp_it != avail_pps->end(); pp_it++){
         if (!this->interconnects->pp_in1_interconnect->is_route_free(in_op1->pout_tile->bank, *pp_it)){
             continue;
@@ -173,6 +253,7 @@ void Compiler::post_op_placement(int r, AggrOp* op){
             return;
         }
     }
+#endif
 }
 
 void Compiler::op_placement(int r, MultOp* op){
@@ -254,6 +335,106 @@ void Compiler::op_placement(int r, MultOp* op){
     this->interconnects->w_interconnect->apply_permute(w_permute.get());    
 
     //random_shuffle(avail_arrays.begin(), avail_arrays.end(), *this->random_generator);
+    
+#ifdef COMPILER_MULTITHREADING
+    struct job_data {
+        decltype(avail_arrays->begin()) sa_it;
+        decltype(avail_x_banks->begin()) x_bank_it;
+        decltype(avail_w_banks->begin()) w_bank_it;
+        decltype(avail_pout_banks->begin()) p_bank_it;
+    };
+    
+    if (pls_) {
+        for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
+            auto interconnects = std::any_cast<Interconnects *>(pls_->get_worker_data(i));
+            interconnects->pout_interconnect->apply_permute(pout_permute.get());
+            interconnects->x_interconnect->apply_permute(x_permute.get());    
+            interconnects->w_interconnect->apply_permute(w_permute.get());    
+        }
+
+        pls_->begin();
+    }
+    
+    auto on_success = [&](std::any &data) {
+        auto &x = std::any_cast<job_data &>(data);
+
+        op->x_tile->assign_bank(*x.x_bank_it);
+        op->w_tile->assign_bank(*x.w_bank_it);
+        op->pout_tile->assign_bank(*x.p_bank_it);
+        (*x.sa_it)->assign_op(r, op);
+
+        BOOST_LOG_TRIVIAL(info) <<
+            "Op placed: layer_name: " << op->layer_name <<
+            "\tind: " <<  get<0>(op->op_ind) <<
+            "-" << get<1>(op->op_ind) <<
+            "-" << get<2>(op->op_ind) <<
+            "\tround: " << r <<
+            "\tsa: " << (*x.sa_it)->id <<
+            "\tx bank id: " << (op->x_tile->bank->id);
+    
+    };
+
+    for(auto sa_it = avail_arrays->begin(); sa_it != avail_arrays->end() && (!pls_ || pls_->should_continue()); sa_it++){
+
+        auto job_gen = [&] {
+            return [&](std::size_t idx, std::any &data, std::any &worker_data) -> bool {
+                auto &xx = std::any_cast<job_data &>(data);
+                (void) idx; // idx is not used
+
+                auto interconnects = std::any_cast<Interconnects *>(worker_data);
+
+                for(auto x_bank_it = avail_x_banks->begin(); x_bank_it != avail_x_banks->end(); x_bank_it++){
+                    if (!interconnects->x_interconnect->is_route_free(*x_bank_it, *(xx.sa_it))){
+                        continue;
+                    }
+
+                    for(auto w_bank_it = avail_w_banks->begin(); w_bank_it != avail_w_banks->end(); w_bank_it++){
+                        if (!interconnects->w_interconnect->is_route_free(*w_bank_it, *(xx.sa_it))){
+                            continue;
+                        }
+
+                        for(auto p_bank_it = avail_pout_banks->begin(); p_bank_it != avail_pout_banks->end(); p_bank_it++){
+                            if (!interconnects->pout_interconnect->is_route_free(*p_bank_it, *(xx.sa_it))){
+                                continue;
+                            }
+
+                            xx.x_bank_it = x_bank_it;
+                            xx.w_bank_it = w_bank_it;
+                            xx.p_bank_it = p_bank_it;
+
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            };
+        };
+
+        if (pls_) {
+            pls_->append_job(job_gen(), std::make_any<job_data>(job_data{sa_it, {}, {}, {}}));
+        }
+        else {
+            auto data = std::make_any<job_data>(job_data{sa_it, {}, {}, {}});
+            auto worker_data = std::make_any<Interconnects *>(this->interconnects);
+            if (job_gen()(0, data, worker_data)) {
+                on_success(data);
+                return ;
+            }
+        }
+    }
+
+    if (pls_) {
+        pls_->end();
+        auto result = pls_->result();
+
+        if (result) {
+            on_success(result->data);
+            return ;
+        }
+    }
+
+#else
     for(auto sa_it = avail_arrays->begin(); sa_it != avail_arrays->end(); sa_it++){
         for(auto x_bank_it = avail_x_banks->begin(); x_bank_it != avail_x_banks->end(); x_bank_it++){
             if (!this->interconnects->x_interconnect->is_route_free(*x_bank_it, *sa_it)){
@@ -282,7 +463,7 @@ void Compiler::op_placement(int r, MultOp* op){
             }
         }
     }
-
+#endif
 }
 
 
@@ -454,4 +635,27 @@ void Compiler::duplicate_schedule(int no_repeat){
             delete sch;
         }
     }
+}
+
+#ifdef COMPILER_MULTITHREADING
+
+void Compiler::enable_multithreading(std::size_t num_workers) {
+    pls_ = std::make_unique<multithreading::ParallelLinearSearch>(num_workers);
+    for (std::size_t i = 0; i < num_workers; ++i) {
+        pls_->set_worker_data(i, std::make_any<Interconnects *>(interconnects->clone()));
+    }
+}
+
+void Compiler::disable_multithreading() {
+    pls_ = nullptr;
+}
+
+#endif
+
+Compiler::~Compiler() {
+    #ifdef COMPILER_MULTITHREADING
+    for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
+        delete std::any_cast<Interconnects *>(pls_->get_worker_data(i));
+    }
+    #endif
 }

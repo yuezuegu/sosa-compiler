@@ -36,8 +36,13 @@ class Interconnects{
         InterconnectBase * pp_in2_interconnect;
         InterconnectBase * pp_out_interconnect;
         
+        Interconnects();
         Interconnects(int N, InterconnectType interconnect_type);
         float tdp(int switch_width);
+
+        Interconnects *clone() const;
+
+        ~Interconnects();
     private:
 
 

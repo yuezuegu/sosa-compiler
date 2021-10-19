@@ -15,9 +15,8 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(Boost 1.68 REQUIRED log program_options)
 # find_package(nlohmann_json 3.2.0 REQUIRED)
 
-add_executable(
-    compiler
-    # sources
+set(
+    COMPILER_SRCS
     compiler/main.cpp
     compiler/layer.cpp
     compiler/ops.cpp
@@ -30,15 +29,24 @@ add_executable(
     compiler/dram.cpp
 )
 
-target_include_directories(compiler PRIVATE compiler/)
-target_link_libraries(
-    compiler
-    PRIVATE
+set(
+    COMPILER_LIBS
     # nlohmann_json::nlohmann_json
     Boost::boost
     Boost::log
     Boost::program_options
 )
+
+# multi-threaded compiler target
+add_executable(compiler_mt ${COMPILER_SRCS})
+target_include_directories(compiler_mt PRIVATE compiler/)
+target_link_libraries(compiler_mt PRIVATE ${COMPILER_LIBS})
+target_compile_definitions(compiler_mt PRIVATE COMPILER_MULTITHREADING)
+
+# single-threaded compiler target
+add_executable(compiler_st ${COMPILER_SRCS})
+target_include_directories(compiler_st PRIVATE compiler/)
+target_link_libraries(compiler_st PRIVATE ${COMPILER_LIBS})
 
 add_executable(
     test_pls

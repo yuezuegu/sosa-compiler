@@ -23,6 +23,16 @@ InterconnectBase *generate_interconnect(UnsignedInt n, InterconnectType type) {
     return nullptr;
 }
 
+Interconnects::Interconnects() {
+    x_interconnect = nullptr;
+    w_interconnect = nullptr;
+    pin_interconnect = nullptr;
+    pout_interconnect = nullptr;
+    pp_in1_interconnect = nullptr;
+    pp_in2_interconnect = nullptr;
+    pp_out_interconnect = nullptr;
+}
+
 Interconnects::Interconnects(int N, InterconnectType interconnect_type) {
     // TODO find a more efficient algo for this
     int n = std::ceil(std::log2(N));
@@ -87,4 +97,30 @@ std::ostream &operator<<(std::ostream &out, InterconnectType interconnect_type) 
         out.setstate(std::ios_base::failbit);
     }
     return out;
+}
+
+Interconnects *Interconnects::clone() const {
+    Interconnects *r = new Interconnects;
+#define CLONE(x) r->x = this->x->clone();
+    CLONE(x_interconnect)
+    CLONE(w_interconnect)
+    CLONE(pin_interconnect)
+    CLONE(pout_interconnect)
+    CLONE(pp_in1_interconnect)
+    CLONE(pp_in2_interconnect)
+    CLONE(pp_out_interconnect)
+#undef CLONE
+    return r;
+}
+
+Interconnects::~Interconnects() {
+#define DELETE(x) delete this->x;
+    DELETE(x_interconnect)
+    DELETE(w_interconnect)
+    DELETE(pin_interconnect)
+    DELETE(pout_interconnect)
+    DELETE(pp_in1_interconnect)
+    DELETE(pp_in2_interconnect)
+    DELETE(pp_out_interconnect)
+#undef DELETE
 }
