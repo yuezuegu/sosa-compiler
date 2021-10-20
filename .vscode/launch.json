@@ -63,7 +63,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build-Debug/test_pls",
             "args": [
-                "--log_level", "all"
+                "--log_level=all"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
