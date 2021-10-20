@@ -68,6 +68,7 @@ vector<Bank*> Banks::get_p_banks(){
 }
 
 Bank* Banks::get_bank_by_id(int id, data_type type){
+    // simply use std::vector<>::operator[]
     if (type == data_type::X){
         return this->x_banks[id];
     }
