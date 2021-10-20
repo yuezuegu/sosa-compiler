@@ -60,7 +60,7 @@ else
     echo "Skipping rebuild."
 fi
 
-COMPILER="${COMPILER:-./build/compiler}"
+COMPILER="${COMPILER:-./build-Release/compiler}"
 
 if [[ "$use_multithreading" = true ]]
 then
