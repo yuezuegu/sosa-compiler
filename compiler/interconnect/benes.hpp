@@ -238,6 +238,7 @@ struct Benes {
 
   bool looping_multicast(Int const *inverse_mapping, Int k = 16) {
     // randomness
+    // it must be the same throughout the same round for routing consistency
     static std::mt19937_64 mt(
         0
         // std::chrono::high_resolution_clock::now().time_since_epoch().count()

@@ -124,18 +124,20 @@ struct ParallelLinearSearch {
     // closure type should have:
     //   - bool operator()(std::size_t idx, WorkerData const &worker_data)
 
+    /**
+     * @param num_workers Number of worker threads running in parallel.
+     */
     ParallelLinearSearch(std::size_t num_workers):
-        shared_state_{num_workers},
-        num_workers_{num_workers} {
+        shared_state_{num_workers} {
         // generate the workers
-        for (std::size_t i = 0; i < num_workers_; ++i) {
+        for (std::size_t i = 0; i < num_workers; ++i) {
             workers_.emplace_back(std::make_unique<Worker>(shared_state_, i));
         }
     }
 
     // returns the number of workers.
     std::size_t num_workers() const {
-        return workers_.size();
+        return shared_state_.num_workers();
     }
 
     // gets the worker specific data
@@ -169,7 +171,7 @@ struct ParallelLinearSearch {
     // Sets the end of the queue and waits for the execution to complete.
     void end() {
         // add invalid jobs that stop the worker
-        for (std::size_t i = 0; i < num_workers_; ++i)
+        for (std::size_t i = 0; i < num_workers(); ++i)
             shared_state_.task_queue.emplace_back(Task{{}, true, 0});
         
         shared_state_.join_workers();
@@ -286,6 +288,11 @@ private:
             cv_join_.notify_all();
         }
 
+        std::size_t num_workers() const {
+            // no need for locks here
+            return num_workers_;
+        }
+
     private:
         std::size_t num_workers_;
 
@@ -319,6 +326,7 @@ private:
                 DEBUG_WORKER("start_worker");
 
                 while (true) {
+
                     // wait until started or quit requested
                     std::unique_lock<std::mutex> lock{mtx_};
                     cv_.wait(lock, [this] { return start_ || quit_; });
@@ -400,7 +408,6 @@ private:
         bool quit_;
     };
 
-    std::size_t num_workers_;
     std::size_t num_tasks_;
     std::vector<std::unique_ptr<Worker>> workers_;
 };

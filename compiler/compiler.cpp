@@ -1,6 +1,9 @@
 
 #include "compiler.hpp"
 
+#include "print.hpp"
+#include "ostream_mt.hpp"
+
 using namespace std;
 
 #ifdef COMPILER_MULTITHREADING
@@ -229,9 +232,12 @@ void Compiler::post_op_placement(int r, AggrOp* op){
     }
     if(avail_pout_banks->empty()) return;
 
-    this->interconnects->pp_in1_interconnect->apply_permute(pin1_permute.get());
-    this->interconnects->pp_in2_interconnect->apply_permute(pin2_permute.get());
-    this->interconnects->pp_out_interconnect->apply_permute(pout_permute.get());
+    if (!interconnects->pp_in1_interconnect->apply_permute(pin1_permute.get()))
+        throw std::runtime_error("pin1_permute inconsistent");
+    if (!interconnects->pp_in2_interconnect->apply_permute(pin2_permute.get()))
+        throw std::runtime_error("pin2_permute inconsistent");
+    if (!interconnects->pp_out_interconnect->apply_permute(pout_permute.get()))
+        throw std::runtime_error("pout_permute inconsistent");
 
 #ifdef COMPILER_MULTITHREADING
     if (pls_){
@@ -373,9 +379,12 @@ void Compiler::op_placement(int r, MultOp* op){
     }
     if(avail_w_banks->empty()) return;
 
-    this->interconnects->pout_interconnect->apply_permute(pout_permute.get());
-    this->interconnects->x_interconnect->apply_permute(x_permute.get());    
-    this->interconnects->w_interconnect->apply_permute(w_permute.get());    
+    if (!interconnects->pout_interconnect->apply_permute(pout_permute.get()))
+        throw std::runtime_error("pout_permute is not consistent");
+    if (!interconnects->x_interconnect->apply_permute(x_permute.get()))
+        throw std::runtime_error("x_permute is not consistent");
+    if (!interconnects->w_interconnect->apply_permute(w_permute.get()))
+        throw std::runtime_error("w_permute is not consistent");
 
     //random_shuffle(avail_arrays.begin(), avail_arrays.end(), *this->random_generator);
     
