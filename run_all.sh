@@ -50,17 +50,18 @@ done
 eval "$(conda shell.bash hook)"
 conda activate sosa-compiler || fail_msg "conda activate environment failed."
 
+COMPILER="${COMPILER:-./build-Release/compiler}"
+
 # Rebuild
 if [[ ! "$skip_rebuild" = true ]]
 then
-    pushd ./build
-    make -j 10 || fail_msg "build failed."
+    BUILD_DIR=$(dirname "$COMPILER")
+    pushd "$BUILD_DIR"
+    make -j 10 || fail_msg "build failed. maybe run cmake first?"
     popd
 else
     echo "Skipping rebuild."
 fi
-
-COMPILER="${COMPILER:-./build-Release/compiler}"
 
 if [[ "$use_multithreading" = true ]]
 then
