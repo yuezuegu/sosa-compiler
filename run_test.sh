@@ -4,7 +4,7 @@ r=32
 c=32
 N=512
 model="bert_large"
-interconn="benes_vanilla" # benes_vanilla or so
+interconn="banyan" # benes_vanilla or so
 
 function fail_msg() {
     echo "$1" >&2

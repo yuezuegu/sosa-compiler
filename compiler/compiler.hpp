@@ -23,6 +23,7 @@ using namespace std;
 
 class Compiler{
     public:
+        // do not use pointers
         Arrays* arrays;
         Banks* banks;
         Interconnects* interconnects;
@@ -32,6 +33,8 @@ class Compiler{
         int no_cycles;
 
         Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, PostProcessors* post_processors, Dram* dram);
+        // in-place construction
+        // Compiler(int no_arrays, int no_rows, int no_cols, int bank_size, );
         void compile(Layers* layers);
         void compile_layer(Layer* layer, int init_round);
         void op_placement(int r, MultOp* op);

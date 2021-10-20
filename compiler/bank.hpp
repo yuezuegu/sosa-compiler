@@ -42,7 +42,7 @@ class Banks{
         list<Bank*>* get_w_banks();
         list<Bank*>* get_p_banks();
     private:
-        list<Bank*>* x_banks;
+        list<Bank*>* x_banks; // TODO use vectors, no pointers
         list<Bank*>* w_banks;
         list<Bank*>* p_banks;
 
