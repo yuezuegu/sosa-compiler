@@ -42,7 +42,7 @@ set(
 add_executable(compiler_mt ${COMPILER_SRCS})
 target_include_directories(compiler_mt PRIVATE compiler/)
 target_link_libraries(compiler_mt PRIVATE ${COMPILER_LIBS})
-target_compile_definitions(compiler_mt PRIVATE COMPILER_MULTITHREADING)
+# target_compile_definitions(compiler_mt PRIVATE COMPILER_MULTITHREADING)
 
 # single-threaded compiler target
 add_executable(compiler_st ${COMPILER_SRCS})

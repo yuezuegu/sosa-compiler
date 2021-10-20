@@ -1,8 +1,10 @@
 {
     "files.associations": {
         "iosfwd": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "new": "cpp"
     },
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
-    "cmake.buildDirectory": "${workspaceFolder}/build-${buildType}"
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.cmakePath": "/home/yuezuegu/.local/bin/cmake"
 }

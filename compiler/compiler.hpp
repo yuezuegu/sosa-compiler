@@ -1,7 +1,6 @@
 #ifndef COMPILER_HPP
 #define COMPILER_HPP
 
-
 #include <list>
 #include <iostream>
 #include <algorithm>
