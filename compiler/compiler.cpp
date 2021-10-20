@@ -428,7 +428,9 @@ void Compiler::op_placement(int r, MultOp* op){
                 "-" << get<2>(op->op_ind) <<
                 "\tround: " << r <<
                 "\tsa: " << (*result->closure.sa_it)->id <<
-                "\tx bank id: " << (op->x_tile->bank->id);
+                "\tx bank id: " << (op->x_tile->bank->id) <<
+                "\tw bank id: " << (op->w_tile->bank->id) <<
+                "\tp bank id: " << (op->pout_tile->bank->id);
 
             return ;
         }
@@ -457,7 +459,16 @@ void Compiler::op_placement(int r, MultOp* op){
                     op->pout_tile->assign_bank(*p_bank_it);
                     (*sa_it)->assign_op(r, op);
 
-                    BOOST_LOG_TRIVIAL(info) << "Op placed: layer_name: " << op->layer_name << "\tind: " <<  get<0>(op->op_ind) << "-" << get<1>(op->op_ind) << "-" << get<2>(op->op_ind) << "\tround: " << r << "\tsa: " << (*sa_it)->id << "\tx bank id: " << (op->x_tile->bank->id);
+                    BOOST_LOG_TRIVIAL(info) <<
+                        "Op placed: layer_name: " << op->layer_name <<
+                        "\tind: " <<  get<0>(op->op_ind) <<
+                        "-" << get<1>(op->op_ind) <<
+                        "-" << get<2>(op->op_ind) <<
+                        "\tround: " << r <<
+                        "\tsa: " << (*sa_it)->id <<
+                        "\tx bank id: " << (op->x_tile->bank->id) <<
+                        "\tw bank id: " << (op->w_tile->bank->id) <<
+                        "\tp bank id: " << (op->pout_tile->bank->id);;
 
                     return;
                 }

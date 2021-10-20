@@ -21,12 +21,11 @@ using namespace std;
 namespace po = boost::program_options;
 
 int main(int ac, char* av[]){
-    logger_setup();
-
     int no_array, no_rows, no_cols;
     int bank_size;
     float bandwidth;
     InterconnectType interconnect_type;
+    boost::log::trivial::severity_level log_level;
     string work_dir;
 
     po::options_description desc("Allowed options");
@@ -38,7 +37,8 @@ int main(int ac, char* av[]){
         ("memory_bw,M", po::value<float>(&bandwidth)->default_value(100), "memory bandwidth in GB/s")
         ("bank_size,S", po::value<int>(&bank_size)->default_value(1<<19), "SRAM bank size")
         ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::crossbar), "interconnect type (see enum members)")
-        ("work_dir,d", po::value<string>(&work_dir)->default_value("experiments/tmp"), "directory for input/output files");
+        ("work_dir,d", po::value<string>(&work_dir)->default_value("experiments/tmp"), "directory for input/output files")
+        ("log_level,l", po::value<boost::log::trivial::severity_level>(&log_level)->default_value(boost::log::trivial::severity_level::error), "log level");
     po::variables_map vm;
     po::store(po::parse_command_line(ac, av, desc), vm);
     po::notify(vm);
@@ -48,13 +48,16 @@ int main(int ac, char* av[]){
         return 1;
     }
 
+    logger_setup(log_level);
+
     std::cout << (unsigned) interconnect_type << "\n";
 
     std::cout << "Running with: " <<
         "no_array = " << no_array << " " <<
         "no_rows = " << no_rows << " " <<
         "no_cols = " << no_cols << " " <<
-        "interconnect_type = " << interconnect_type <<
+        "interconnect_type = " << interconnect_type << " " <<
+        "log_level = " << log_level <<
         "\n";
 
     json jin;

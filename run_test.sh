@@ -99,7 +99,7 @@ else
     echo "Skipping precompiler."
 fi
 
-${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d "$DIR" || fail_msg "compile failed."
+${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d "$DIR" -l info || fail_msg "compile failed."
 
 end_time=$(date +%s)
 elapsed=$(( end_time - start_time ))

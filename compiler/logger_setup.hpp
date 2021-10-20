@@ -19,12 +19,11 @@ namespace src = boost::log::sources;
 namespace sinks = boost::log::sinks;
 namespace keywords = boost::log::keywords;
 
-void logger_setup(){
+inline void logger_setup(logging::trivial::severity_level const &l){
     logging::add_file_log("cpp.log");
     logging::core::get()->set_filter
     (
-        // logging::trivial::severity >= logging::trivial::debug
-        logging::trivial::severity >= logging::trivial::error
+        logging::trivial::severity >= l
     );
 }
 
