@@ -1,0 +1,82 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+
+    // Build configurations to facilitate debugging
+    // Execute them *after* precompilation.
+    "configurations": [
+        {
+            "name": "(gdb) Multi Threaded Compiler Execution",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build-Debug/compiler_mt",
+            "args": [
+                "-r", "32",
+                "-c", "32",
+                "-N", "1024",
+                "-I", "benes_vanilla",
+                "-d", "experiments/test"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Single Threaded Compiler Execution",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build-Debug/compiler_st",
+            "args": [
+                "-r", "32",
+                "-c", "32",
+                "-N", "256",
+                "-I", "benes_vanilla",
+                "-d", "experiments/test"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Parallel Sequential Search tester",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build-Debug/test_pls",
+            "args": [
+                "--log_level", "all"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}
