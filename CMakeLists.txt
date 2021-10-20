@@ -12,7 +12,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(Boost 1.68 REQUIRED log program_options)
+find_package(Boost 1.68 REQUIRED log program_options serialization)
 # find_package(nlohmann_json 3.2.0 REQUIRED)
 
 set(
@@ -36,6 +36,7 @@ set(
     Boost::boost
     Boost::log
     Boost::program_options
+    Boost::serialization
 )
 
 # multi-threaded compiler target
@@ -55,7 +56,6 @@ add_executable(
     compiler/ostream_mt.cpp # should be initialized first (or else segfault)
     compiler/parallel_linear_search.cpp
 )
-
 target_include_directories(test_pls PRIVATE compiler/)
 target_link_libraries(
     test_pls
@@ -64,6 +64,32 @@ target_link_libraries(
     Boost::boost
     Boost::log
     Boost::program_options
+    Boost::serialization
+)
+
+add_executable(
+    run_cycle_model
+    #sources
+    compiler/cycle_model.cpp
+    compiler/layer.cpp
+    compiler/ops.cpp
+    compiler/compiler.cpp
+    compiler/tiles.cpp
+    compiler/bank.cpp
+    compiler/array.cpp
+    compiler/interconnect.cpp
+    compiler/post_processor.cpp
+    compiler/dram.cpp    
+)
+target_include_directories(run_cycle_model PRIVATE compiler/)
+target_link_libraries(
+    run_cycle_model
+    PRIVATE
+    # nlohmann_json::nlohmann_json
+    Boost::boost
+    Boost::log
+    Boost::program_options
+    Boost::serialization
 )
 
 add_test(NAME test_pls COMMAND test_pls)

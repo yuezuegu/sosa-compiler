@@ -6,6 +6,12 @@
 #include <list>
 
 #include "helper.hpp"
+#include "serialize_tuple.h"
+
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/list.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 class Bank;
 class Op;
@@ -25,10 +31,6 @@ class Tile{
 
         list<Op*>* input_of;
 
-        int bank_id;
-        int virt_bank_addr;
-        int phys_bank_addr;
-
         Bank* bank;
 
         void assign_bank(Bank* bank);
@@ -38,6 +40,21 @@ class Tile{
         void fetch_from_memory(int bytes);
         void try_free();
 
+        friend class boost::serialization::access;
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & this->layer_name;   
+            ar & this->type; 
+            ar & this->dims; 
+            ar & this->precision; 
+            ar & this->memory_size; 
+            ar & this->bytes_fetched_from_memory; 
+            ar & this->input_of;
+            ar & this->bank;
+            ar & this->is_allocated_on_sram;
+        }
+
     protected:
         bool is_allocated_on_sram;
 };
@@ -46,24 +63,75 @@ class X_Tile: public Tile{
     public:
         tuple<int, int> id;
         
+        X_Tile(){};
         X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int precision = 1);
         X_Tile(const X_Tile& x_tile) = default;
+
+        friend class boost::serialization::access;
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & this->layer_name;   
+            ar & this->type; 
+            ar & this->dims; 
+            ar & this->precision; 
+            ar & this->memory_size; 
+            ar & this->bytes_fetched_from_memory; 
+            ar & this->input_of;
+            ar & this->bank;
+            ar & this->is_allocated_on_sram;
+            ar & this->id;
+        }
 };
 
 class W_Tile: public Tile{
     public:
         tuple<int, int> id;
 
+        W_Tile(){};
         W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int precision = 1);
         W_Tile(const W_Tile& w_tile) = default;
+
+        friend class boost::serialization::access;
+        
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & this->layer_name;   
+            ar & this->type; 
+            ar & this->dims; 
+            ar & this->precision; 
+            ar & this->memory_size; 
+            ar & this->bytes_fetched_from_memory; 
+            ar & this->input_of;
+            ar & this->bank;
+            ar & this->is_allocated_on_sram;
+            ar & this->id;
+        }     
 };
 
 class P_Tile: public Tile{
     public:
         tuple<int, int, int> id;
         
+        P_Tile(){};
         P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims, int precision = 2);
         P_Tile(const P_Tile& p_tile) = default;
+
+        friend class boost::serialization::access;
+        
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & this->layer_name;   
+            ar & this->type; 
+            ar & this->dims; 
+            ar & this->precision; 
+            ar & this->memory_size; 
+            ar & this->bytes_fetched_from_memory; 
+            ar & this->input_of;
+            ar & this->bank;
+            ar & this->is_allocated_on_sram;
+            ar & this->id;
+        }
 };
 
 

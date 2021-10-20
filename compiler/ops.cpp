@@ -17,7 +17,7 @@ MultOp::MultOp(string layer_name, tuple<int, int, int> op_ind, X_Tile* x_tile, W
     this->round_placed = -1;
     this->is_placed_ = false;
     this->pair_op = nullptr;
-    this->exec_cycles = get<0>(x_tile->dims);
+
     this->weight_buffer_cycles = get<0>(w_tile->dims);
     this->retired = false;
     this->is_multop = true;
@@ -37,7 +37,7 @@ MultOp::MultOp(const MultOp& mult_op){
     this->round_placed = -1;
     this->is_placed_ = false;
     this->pair_op = nullptr;
-    this->exec_cycles = get<0>(this->x_tile->dims);
+
     this->weight_buffer_cycles = get<0>(this->w_tile->dims);
     this->retired = false;
     this->is_multop = true;

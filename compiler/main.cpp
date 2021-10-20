@@ -15,6 +15,8 @@
 
 #include <boost/log/trivial.hpp>
 #include <boost/program_options.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 using namespace std;
 
@@ -42,6 +44,8 @@ int main(int ac, char* av[]){
     po::variables_map vm;
     po::store(po::parse_command_line(ac, av, desc), vm);
     po::notify(vm);
+
+    assert((log_level > boost::log::trivial::severity_level::info) && "For some reason, logger corrupts Boost serialization file");
 
     if (vm.count("help")) {
         cout << desc << "\n";
@@ -98,6 +102,15 @@ int main(int ac, char* av[]){
 
     int no_repeat = jin["no_repeat"].get<int>();
     compiler->duplicate_schedule(layers, no_repeat);
+
+    ofstream ofs("../experiments/tmp/schedule.dat");
+    {
+        boost::archive::text_oarchive oa(ofs);
+        // write class instance to archive
+        oa << compiler;
+    	// archive and stream closed when destructors are called
+    }
+    ofs.close();
 
     compiler->run_cycle_model();
 

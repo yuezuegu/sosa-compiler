@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <memory>
 #include <queue>
+#include <fstream>
 
 #include "layer.hpp"
 #include "array.hpp"
@@ -19,10 +20,15 @@
 
 #include <boost/log/trivial.hpp>
 
+#include <boost/serialization/map.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
 using namespace std;
 
 class Compiler{
     public:
+
         Arrays* arrays;
         Banks* banks;
         Interconnects* interconnects;
@@ -30,7 +36,10 @@ class Compiler{
         Dram* dram;
 
         int no_cycles;
+        int sram_round_trip;
+        int pp_latency_offset;
 
+        Compiler(){};
         Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, PostProcessors* post_processors, Dram* dram);
         void compile(Layers* layers);
         void compile_layer(Layer* layer, int init_round);
@@ -42,6 +51,20 @@ class Compiler{
         void run_cycle_model();
 
         void duplicate_schedule(Layers* layers, int no_repeat);
+
+        friend class boost::serialization::access;
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & this->no_cycles;
+            ar & this->arrays;
+            ar & this->banks;
+            ar & this->post_processors;
+            //ar & this->interconnects;
+            ar & this->dram;
+            ar & this->sram_round_trip;
+            ar & this->pp_latency_offset;
+        }
 
         #ifdef COMPILER_MULTITHREADING
 

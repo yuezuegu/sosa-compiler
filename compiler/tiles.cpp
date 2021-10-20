@@ -15,9 +15,7 @@ X_Tile::X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int 
     this->bytes_fetched_from_memory = 0;
 
     this->is_allocated_on_sram = false;
-    this->bank_id = -1;
-    this->virt_bank_addr = -1;
-    this->phys_bank_addr = -1;
+
     this->bank = nullptr;
     this->input_of = new list<Op*>();
 }
@@ -32,9 +30,7 @@ W_Tile::W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int 
     this->bytes_fetched_from_memory = 0;
 
     this->is_allocated_on_sram = false;
-    this->bank_id = -1;
-    this->virt_bank_addr = -1;
-    this->phys_bank_addr = -1;
+
     this->bank = nullptr;
     this->input_of = new list<Op*>();
 }
@@ -49,9 +45,7 @@ P_Tile::P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims,
     this->bytes_fetched_from_memory = 0;
 
     this->is_allocated_on_sram = false;
-    this->bank_id = -1;
-    this->virt_bank_addr = -1;
-    this->phys_bank_addr = -1;
+
     this->bank = nullptr;
     this->input_of = new list<Op*>();
 }
@@ -59,7 +53,6 @@ P_Tile::P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims,
 void Tile::assign_bank(Bank* bank){
     assert((this->type == bank->type && "Tile type and bank type do not match!"));
     this->bank = bank;
-    this->bank_id = bank->id;
 }
 
 void Tile::try_free(){

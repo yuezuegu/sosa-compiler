@@ -8,6 +8,10 @@
 #include "ops.hpp"
 #include "interconnect.hpp"
 
+#include <boost/serialization/map.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
 using namespace std;
 
 enum class BUF_STATE{
@@ -41,6 +45,7 @@ class Array{
 
         int last_no_round;
 
+        Array(){};
         Array(int id, int no_rows, int no_cols);
         ~Array();
 
@@ -55,14 +60,38 @@ class Array{
         bool is_idle();
 
         void update();
+
+        friend class boost::serialization::access;
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & this->id;
+            ar & this->no_rows;
+            ar & this->no_cols;
+            ar & this->pipeline_cycles;
+            ar & this->last_no_round;
+            ar & this->schedule;
+            ar & this->buf_state;
+            ar & this->curr_w_tile;
+            ar & this->next_w_tile;
+            ar & this->curr_op;
+            ar & this->buf_cnt;
+            ar & this->arr_state;
+            ar & this->x_tile;
+            ar & this->exec_cnt;
+        }
+
     private:
         map<int, MultOp*> schedule;
 };
 
 class Arrays{
     public:
-        int no_arrays;
 
+        int no_arrays;
+        map<int, Array*>* array_map;
+
+        Arrays(){};
         Arrays(int no_arrays, int no_rows, int no_cols);
         ~Arrays();
 
@@ -70,8 +99,6 @@ class Arrays{
         list<X_Tile*>* get_x_tiles(int r);
         list<W_Tile*>* get_w_tiles(int r);
 
-
-        list<int>* get_exec_cycles(int r);
         map<Array*, Bank*>* get_x_permute(int r);
         map<Array*, Bank*>* get_w_permute(int r);
         map<Array*, Bank*>* get_pout_permute(int r);
@@ -90,7 +117,15 @@ class Arrays{
         bool is_idle();
 
         void update();
-        map<int, Array*>* array_map;
+
+        friend class boost::serialization::access;
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & this->no_arrays;
+            ar & this->array_map;
+        }
+
     private:
     
         

@@ -6,6 +6,10 @@
 
 #include "ops.hpp"
 
+#include <boost/serialization/map.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
 using namespace std;
 
 class AggrOp;
@@ -21,6 +25,7 @@ class PostProcessor{
         int id;
         int last_no_round;
 
+        PostProcessor(){};
         PostProcessor(int id);
 
         void assign_op(int r, AggrOp* op);
@@ -36,6 +41,15 @@ class PostProcessor{
         bool is_idle();
 
         void update();
+
+        friend class boost::serialization::access;
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & this->id;
+            ar & this->last_no_round;
+            ar & this->schedule;
+        }
     private:
         map<int, AggrOp*> schedule;
 };
@@ -44,6 +58,7 @@ class PostProcessors{
     public:
         int no_pps;
 
+        PostProcessors(){};
         PostProcessors(int no_pps);
         ~PostProcessors();
         
@@ -62,6 +77,14 @@ class PostProcessors{
         bool is_tile_op_done(int r);
 
         void update();
+
+        friend class boost::serialization::access;
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & this->no_pps;
+            ar & this->pp_map;
+        }
     private:
 
         

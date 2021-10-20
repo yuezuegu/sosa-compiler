@@ -8,10 +8,29 @@
     // Execute them *after* precompilation.
     "configurations": [
     {
-        "name": "(gdb) Launch",
+        "name": "(gdb) compiler_st",
         "type": "cppdbg",
         "request": "launch",
         "program": "${workspaceFolder}/build/compiler_st",
+        "args": [],
+        "stopAtEntry": false,
+        "cwd": "${fileDirname}",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ]
+    },
+    {
+        "name": "(gdb) run_cycle_model",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/build/run_cycle_model",
         "args": [],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",

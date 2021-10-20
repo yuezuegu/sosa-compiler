@@ -92,6 +92,9 @@ Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, P
     this->interconnects = interconnects;
     this->post_processors = post_processors;
     this->dram = dram;
+
+    this->sram_round_trip = this->interconnects->x_interconnect->data_req_latency() + this->interconnects->x_interconnect->data_read_latency();
+    this->pp_latency_offset = this->interconnects->pout_interconnect->data_write_latency();
 }
 
 void Compiler::compile(Layers* layers){
@@ -560,11 +563,8 @@ void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
     }
 }
 
-
-
 void Compiler::run_cycle_model(){
     this->create_memory_fifo();
-    int sram_round_trip = this->interconnects->x_interconnect->data_req_latency() + this->interconnects->x_interconnect->data_read_latency();
 
     int main_rounds = this->no_main_rounds();
     int post_rounds = this->no_post_rounds();
@@ -594,7 +594,7 @@ void Compiler::run_cycle_model(){
     }
     delete x_tiles;
     
-    pp_cycle = arr_cycle + this->interconnects->pout_interconnect->data_write_latency();
+    pp_cycle = arr_cycle + this->pp_latency_offset;
 
     int memory_stall = 0;
     int max_mem_size;
@@ -621,7 +621,7 @@ void Compiler::run_cycle_model(){
         if (this->arrays->is_tile_op_done(r) && 
             this->arrays->is_weights_buffered(r+1) && 
             this->post_processors->is_tile_op_done(r) && 
-            round_clk >= sram_round_trip){
+            round_clk >= this->sram_round_trip){
 
             list<W_Tile*>* w_tiles = this->arrays->get_w_tiles(r+2);
             list<X_Tile*>* x_tiles = this->arrays->get_x_tiles(r+1);
