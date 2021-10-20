@@ -1,8 +1,10 @@
 #ifndef BANK_HPP
 #define BANK_HPP
 
+
+
+
 #include <list>
-#include <vector>
 #include <map>
 
 #include "helper.hpp"
@@ -36,13 +38,13 @@ class Banks{
         ~Banks();
 
         Bank* get_bank_by_id(int id, data_type type);
-        vector<Bank*> get_x_banks();
-        vector<Bank*> get_w_banks();
-        vector<Bank*> get_p_banks();
+        list<Bank*>* get_x_banks();
+        list<Bank*>* get_w_banks();
+        list<Bank*>* get_p_banks();
     private:
-        vector<Bank*> x_banks{};
-        vector<Bank*> w_banks{};
-        vector<Bank*> p_banks{};
+        list<Bank*>* x_banks;
+        list<Bank*>* w_banks;
+        list<Bank*>* p_banks;
 
 };
 

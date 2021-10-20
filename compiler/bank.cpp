@@ -2,6 +2,7 @@
 #include "bank.hpp"
 #include "tiles.hpp"
 
+
 Bank::Bank(int id, data_type type, int capacity){
     this->id = id;
     this->type = type;
@@ -32,50 +33,77 @@ void Bank::free_tile(Tile* tile){
 
 Banks::Banks(int no_banks, int bank_size){
     this->no_banks = no_banks;
-    this->x_banks.resize(this->no_banks);
-    this->w_banks.resize(this->no_banks);
-    this->p_banks.resize(this->no_banks);
-
+    this->x_banks = new list<Bank*>();
+    this->w_banks = new list<Bank*>();
+    this->p_banks = new list<Bank*>();
     for(int i = 0; i < no_banks; i++){
-        this->x_banks[i] = new Bank(i, data_type::X, bank_size);
+        this->x_banks->push_back(new Bank(i, data_type::X, bank_size));
     }
     for(int i = 0; i < no_banks; i++){
-        this->w_banks[i] = new Bank(i, data_type::W, bank_size);
+        this->w_banks->push_back(new Bank(i, data_type::W, bank_size));
     }
     for(int i = 0; i < no_banks; i++){
-        this->p_banks[i] = new Bank(i, data_type::P, bank_size);
+        this->p_banks->push_back(new Bank(i, data_type::P, bank_size));
     }
 }
 
 Banks::~Banks(){
-    for(int i = 0; i < no_banks; i++){
-        delete this->x_banks[i];
-        delete this->w_banks[i];
-        delete this->p_banks[i];
+    for (auto it = this->x_banks->begin(); it != this->x_banks->end(); it++){
+        delete *it;
     }
+    delete this->x_banks;
+
+    for (auto it = this->w_banks->begin(); it != this->w_banks->end(); it++){
+        delete *it;
+    }
+    delete this->w_banks;
+
+    for (auto it = this->p_banks->begin(); it != this->p_banks->end(); it++){
+        delete *it;
+    }
+    delete this->p_banks;
 }
 
-vector<Bank*> Banks::get_x_banks(){
+list<Bank*>* Banks::get_x_banks(){
     return this->x_banks;
 }
 
-vector<Bank*> Banks::get_w_banks(){
+list<Bank*>* Banks::get_w_banks(){
     return this->w_banks;
 }
 
-vector<Bank*> Banks::get_p_banks(){
+list<Bank*>* Banks::get_p_banks(){
     return this->p_banks;
 }
 
+
+
 Bank* Banks::get_bank_by_id(int id, data_type type){
-    // simply use std::vector<>::operator[]
     if (type == data_type::X){
-        return this->x_banks[id];
+        auto it = this->x_banks->begin();
+        
+        for (int i = 0; i < id; i++){
+            it++;
+        }
+
+        return *it;
     }
     else if (type == data_type::W){
-        return this->w_banks[id];
+        auto it = this->w_banks->begin();
+        
+        for (int i = 0; i < id; i++){
+            it++;
+        }
+
+        return *it;
     }
     else{
-        return this->p_banks[id];
+        auto it = this->p_banks->begin();
+        
+        for (int i = 0; i < id; i++){
+            it++;
+        }
+
+        return *it;
     }
 }

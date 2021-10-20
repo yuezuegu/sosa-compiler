@@ -1,9 +1,6 @@
 
 #include "compiler.hpp"
 
-#include "print.hpp"
-#include "ostream_mt.hpp"
-
 using namespace std;
 
 #ifdef COMPILER_MULTITHREADING
@@ -73,9 +70,9 @@ struct Compiler::PlacementClosure {
                             continue;
                         }
 
-                        this->x_bank_it = x_bank_it;
-                        this->w_bank_it = w_bank_it;
-                        this->p_bank_it = p_bank_it;
+                        x_bank_it = x_bank_it;
+                        w_bank_it = w_bank_it;
+                        p_bank_it = p_bank_it;
 
                         return true;
                     }
@@ -216,29 +213,25 @@ void Compiler::post_op_placement(int r, AggrOp* op){
 
     unique_ptr< map<PostProcessor*, Bank*> > pout_permute (this->post_processors->get_pout_permute(r));
     
-    unique_ptr< vector<Bank*> > avail_pout_banks;
+    unique_ptr< list<Bank*> > avail_pout_banks;
     if (op->pout_tile->bank != nullptr){
         if(this->post_processors->check_pout_bank_conflict(r, op->pout_tile)){
             return;
         }
-        avail_pout_banks = unique_ptr< vector<Bank*> >(new vector<Bank*>());
+        avail_pout_banks = unique_ptr< list<Bank*> >(new list<Bank*>());
         avail_pout_banks->push_back(op->pout_tile->bank);
     }
     else{
-        avail_pout_banks = unique_ptr< vector<Bank*> >(new vector<Bank*>(this->banks->get_p_banks()));
+        avail_pout_banks = unique_ptr< list<Bank*> >(new list<Bank*>(*this->banks->get_p_banks()));
         for (auto it = pout_permute->begin(); it != pout_permute->end(); it++){
-
-            avail_pout_banks->erase(avail_pout_banks->begin() + it->second->id); //Remove the bank from avail_pout_banks 
+            avail_pout_banks->remove(it->second);
         }
     }
     if(avail_pout_banks->empty()) return;
 
-    if (!interconnects->pp_in1_interconnect->apply_permute(pin1_permute.get()))
-        throw std::runtime_error("pin1_permute inconsistent");
-    if (!interconnects->pp_in2_interconnect->apply_permute(pin2_permute.get()))
-        throw std::runtime_error("pin2_permute inconsistent");
-    if (!interconnects->pp_out_interconnect->apply_permute(pout_permute.get()))
-        throw std::runtime_error("pout_permute inconsistent");
+    this->interconnects->pp_in1_interconnect->apply_permute(pin1_permute.get());
+    this->interconnects->pp_in2_interconnect->apply_permute(pin2_permute.get());
+    this->interconnects->pp_out_interconnect->apply_permute(pout_permute.get());
 
 #ifdef COMPILER_MULTITHREADING
     if (pls_){
@@ -315,19 +308,19 @@ void Compiler::op_placement(int r, MultOp* op){
 
     unique_ptr< map<Array*, Bank*> > pout_permute (this->arrays->get_pout_permute(r));
 
-    unique_ptr< vector<Bank*> > avail_pout_banks;
+    unique_ptr< list<Bank*> > avail_pout_banks;
     if (op->pout_tile->bank != nullptr){
         if (this->arrays->check_pout_bank_conflict(r, op->pout_tile)){
             return;
         }
 
-        avail_pout_banks = unique_ptr< vector<Bank*> >(new vector<Bank*>());
+        avail_pout_banks = unique_ptr< list<Bank*> >(new list<Bank*>());
         avail_pout_banks->push_back(op->pout_tile->bank);
     }
     else{
-        avail_pout_banks = unique_ptr< vector<Bank*> >(new vector<Bank*>(this->banks->get_p_banks()));
+        avail_pout_banks = unique_ptr< list<Bank*> >(new list<Bank*>(*this->banks->get_p_banks()));
         for (auto it = pout_permute->begin(); it != pout_permute->end(); it++){
-            avail_pout_banks->erase(avail_pout_banks->begin() + it->second->id);
+            avail_pout_banks->remove(it->second);
         }
     }
     if(avail_pout_banks->empty()) return;
@@ -345,47 +338,44 @@ void Compiler::op_placement(int r, MultOp* op){
         return oss.str();
     }();
 
-    unique_ptr< vector<Bank*> > avail_x_banks;
+    unique_ptr< list<Bank*> > avail_x_banks;
     if (op->x_tile->bank != nullptr){
         if (this->arrays->check_x_bank_conflict(r, op->x_tile)){
             return;
         }
         
-        avail_x_banks = unique_ptr< vector<Bank*> >(new vector<Bank*>());
+        avail_x_banks = unique_ptr< list<Bank*> >(new list<Bank*>());
         avail_x_banks->push_back(op->x_tile->bank);
     }
     else{
-        avail_x_banks = unique_ptr< vector<Bank*> >(new vector<Bank*>(this->banks->get_x_banks()));
+        avail_x_banks = unique_ptr< list<Bank*> >(new list<Bank*>(*this->banks->get_x_banks()));
         for (auto it = x_permute->begin(); it != x_permute->end(); it++){
-            avail_x_banks->erase(avail_x_banks->begin() + it->second->id);
+            avail_x_banks->remove(it->second);
         }
     }
     if(avail_x_banks->empty()) return;
     
     unique_ptr< map<Array*, Bank*> > w_permute (this->arrays->get_w_permute(r));
-    unique_ptr< vector<Bank*> > avail_w_banks;
+    unique_ptr< list<Bank*> > avail_w_banks;
     if (op->w_tile->bank != nullptr){
         if (this->arrays->check_w_bank_conflict(r, op->w_tile)){
             return;
         }
 
-        avail_w_banks = unique_ptr< vector<Bank*> >(new vector<Bank*>());
+        avail_w_banks = unique_ptr< list<Bank*> >(new list<Bank*>());
         avail_w_banks->push_back(op->w_tile->bank);
     }
     else{
-        avail_w_banks = unique_ptr< vector<Bank*> >(new vector<Bank*>(this->banks->get_w_banks()));
+        avail_w_banks = unique_ptr< list<Bank*> >(new list<Bank*>(*this->banks->get_w_banks()));
         for (auto it = w_permute->begin(); it != w_permute->end(); it++){
-            avail_w_banks->erase(avail_w_banks->begin() + it->second->id);
+            avail_w_banks->remove(it->second);
         }
     }
     if(avail_w_banks->empty()) return;
 
-    if (!interconnects->pout_interconnect->apply_permute(pout_permute.get()))
-        throw std::runtime_error("pout_permute is not consistent");
-    if (!interconnects->x_interconnect->apply_permute(x_permute.get()))
-        throw std::runtime_error("x_permute is not consistent");
-    if (!interconnects->w_interconnect->apply_permute(w_permute.get()))
-        throw std::runtime_error("w_permute is not consistent");
+    this->interconnects->pout_interconnect->apply_permute(pout_permute.get());
+    this->interconnects->x_interconnect->apply_permute(x_permute.get());    
+    this->interconnects->w_interconnect->apply_permute(w_permute.get());    
 
     //random_shuffle(avail_arrays.begin(), avail_arrays.end(), *this->random_generator);
     
@@ -403,7 +393,7 @@ void Compiler::op_placement(int r, MultOp* op){
 
         for(auto sa_it = avail_arrays->begin(); sa_it != avail_arrays->end() && (!pls_ || pls_->should_continue()); sa_it++){
             pls_->append_job(PlacementClosure{
-                false,
+                true,
                 sa_it, // sa_it
                 {}, // x_bank_it
                 {}, // w_bank_it
@@ -429,9 +419,7 @@ void Compiler::op_placement(int r, MultOp* op){
                 "-" << get<2>(op->op_ind) <<
                 "\tround: " << r <<
                 "\tsa: " << (*result->closure.sa_it)->id <<
-                "\tx bank id: " << (op->x_tile->bank->id) <<
-                "\tw bank id: " << (op->w_tile->bank->id) <<
-                "\tp bank id: " << (op->pout_tile->bank->id);
+                "\tx bank id: " << (op->x_tile->bank->id);
 
             return ;
         }
@@ -460,16 +448,7 @@ void Compiler::op_placement(int r, MultOp* op){
                     op->pout_tile->assign_bank(*p_bank_it);
                     (*sa_it)->assign_op(r, op);
 
-                    BOOST_LOG_TRIVIAL(info) <<
-                        "Op placed: layer_name: " << op->layer_name <<
-                        "\tind: " <<  get<0>(op->op_ind) <<
-                        "-" << get<1>(op->op_ind) <<
-                        "-" << get<2>(op->op_ind) <<
-                        "\tround: " << r <<
-                        "\tsa: " << (*sa_it)->id <<
-                        "\tx bank id: " << (op->x_tile->bank->id) <<
-                        "\tw bank id: " << (op->w_tile->bank->id) <<
-                        "\tp bank id: " << (op->pout_tile->bank->id);;
+                    BOOST_LOG_TRIVIAL(info) << "Op placed: layer_name: " << op->layer_name << "\tind: " <<  get<0>(op->op_ind) << "-" << get<1>(op->op_ind) << "-" << get<2>(op->op_ind) << "\tround: " << r << "\tsa: " << (*sa_it)->id << "\tx bank id: " << (op->x_tile->bank->id);
 
                     return;
                 }
@@ -581,6 +560,8 @@ void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
     }
 }
 
+
+
 void Compiler::run_cycle_model(){
     this->create_memory_fifo();
     int sram_round_trip = this->interconnects->x_interconnect->data_req_latency() + this->interconnects->x_interconnect->data_read_latency();
@@ -681,7 +662,7 @@ void Compiler::run_cycle_model(){
 
 void Compiler::enable_multithreading(std::size_t num_workers) {
     pls_ = std::make_unique<multithreading::ParallelLinearSearch<PlacementClosure, WorkerData>>(num_workers);
-    for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
+    for (std::size_t i = 0; i < num_workers; ++i) {
         pls_->worker_data(i).interconnects.construct(interconnects->N, interconnects->type);
     }
 }
@@ -693,4 +674,9 @@ void Compiler::disable_multithreading() {
 #endif
 
 Compiler::~Compiler() {
+    #ifdef COMPILER_MULTITHREADING
+    for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
+        delete std::any_cast<Interconnects *>(pls_->worker_data(i));
+    }
+    #endif
 }
