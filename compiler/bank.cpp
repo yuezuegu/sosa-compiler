@@ -2,6 +2,7 @@
 #include "bank.hpp"
 #include "tiles.hpp"
 
+#include <boost/log/trivial.hpp>
 
 Bank::Bank(int id, data_type type, int capacity){
     this->id = id;
@@ -17,6 +18,7 @@ Bank::~Bank(){
 bool Bank::alloc_tile(Tile* tile){
     if (this->capacity_used + tile->memory_size <= this->capacity){
         this->capacity_used += tile->memory_size;
+        BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " new tile allocated, usage: " << this->capacity_used;
         return true;
     }
     else{
@@ -26,6 +28,7 @@ bool Bank::alloc_tile(Tile* tile){
 
 void Bank::free_tile(Tile* tile){
     this->capacity_used -= tile->memory_size;
+    BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " tile is freed, usage: " << this->capacity_used;
     if (this->capacity_used < 0){
         throw runtime_error("Usage cannot be negative, something is wrong!");
     }

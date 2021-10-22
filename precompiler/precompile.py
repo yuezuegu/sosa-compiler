@@ -106,9 +106,9 @@ def precompile_model(model, array_size=[512,512], partition_size=None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, required=False, default='bert_tiny')
+    parser.add_argument('--model', type=str, required=False, default='bert_small')
     parser.add_argument('--batch_size', type=int, required=False, default=1, help='Batch size')
-    parser.add_argument('--sentence_len', type=int, required=False, default=60, help='Sentence length for transformer model')
+    parser.add_argument('--sentence_len', type=int, required=False, default=100, help='Sentence length for transformer model')
     parser.add_argument('--imsize', type=int, required=False, default=299)  
     parser.add_argument('--array_size', type=int, nargs='+', required=False, default=[32,32], help='Array size')
     parser.add_argument('--out_dir', type=str, required=False, default="experiments/tmp")

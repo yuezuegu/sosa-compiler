@@ -45,7 +45,8 @@ int main(int ac, char* av[]){
     po::store(po::parse_command_line(ac, av, desc), vm);
     po::notify(vm);
 
-    assert((log_level > boost::log::trivial::severity_level::info) && "For some reason, logger corrupts Boost serialization file");
+    // TODO: Fix this
+    // assert((log_level > boost::log::trivial::severity_level::info) && "For some reason, logger corrupts Boost serialization file");
 
     if (vm.count("help")) {
         cout << desc << "\n";

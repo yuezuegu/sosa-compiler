@@ -25,16 +25,16 @@ class PostProcessor{
         int id;
         int last_no_round;
 
+        PP_STATE state;
+        int exec_cnt;
+        P_Tile* curr_tile;
+
         PostProcessor(){};
         PostProcessor(int id);
 
         void assign_op(int r, AggrOp* op);
         AggrOp* get_op(int r);
         bool is_schedule_empty(int r);
-
-        PP_STATE state;
-        int exec_cnt;
-        P_Tile* curr_tile;
 
         void init_tile_op(int r);
         bool is_tile_op_done(int r);
@@ -48,6 +48,9 @@ class PostProcessor{
         void serialize(Archive & ar, const unsigned int version){
             ar & this->id;
             ar & this->last_no_round;
+            ar & this->state;
+            ar & this->exec_cnt;
+            ar & this->curr_tile;
             ar & this->schedule;
         }
     private:
@@ -57,6 +60,7 @@ class PostProcessor{
 class PostProcessors{
     public:
         int no_pps;
+        map<int, PostProcessor*>* pp_map;
 
         PostProcessors(){};
         PostProcessors(int no_pps);
@@ -70,8 +74,6 @@ class PostProcessors{
         map<PostProcessor*, Bank*>* get_pin1_permute(int r);
         map<PostProcessor*, Bank*>* get_pin2_permute(int r);
         map<PostProcessor*, Bank*>* get_pout_permute(int r);
-        
-        map<int, PostProcessor*>* pp_map;
 
         void init_tile_op(int r);
         bool is_tile_op_done(int r);

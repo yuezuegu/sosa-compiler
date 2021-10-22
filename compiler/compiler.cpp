@@ -637,6 +637,9 @@ void Compiler::run_cycle_model(){
             }
             else{
                 memory_stall++;
+
+                BOOST_LOG_TRIVIAL(info) << "Memory stalling: " << memory_stall << " at r: " << r << " clk: " << arr_cycle;
+
                 max_mem_size = accumulate(w_tiles->begin(), w_tiles->end(), 0.0, [](const int a, const W_Tile* b){return a + b->memory_size;});
                 max_mem_size += accumulate(x_tiles->begin(), x_tiles->end(), 0.0, [](const int a, const X_Tile* b){return a + b->memory_size;});
 
