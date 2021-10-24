@@ -8,21 +8,19 @@
 Dram::Dram(float bandwidth){
     this->bandwidth = bandwidth; //bytes per cycle
 
-    this->memory_queue = new queue<Tile*>();
-
+    this->request_queue = new list<Tile*>();
+    this->evict_queue = new list<Tile*>();
+    this->prefetch_iter = this->request_queue->begin();
 }
 
 void Dram::update(){
+    if (this->request_queue->empty()) return;
 
-    if (this->memory_queue->empty()) return;
-
-    Tile* front = this->memory_queue->front();
-    while (front->is_allocated()){
-        this->memory_queue->pop();
-        if (this->memory_queue->empty()) return;
-        
-        front = this->memory_queue->front();
+    while((*this->prefetch_iter)->is_allocated() && this->prefetch_iter != this->request_queue->end()){
+        this->prefetch_iter++;
     }
 
-    front->fetch_from_memory(this->bandwidth);
+    if (this->prefetch_iter == this->request_queue->end()) return;
+
+    (*this->prefetch_iter)->fetch_from_memory(this->bandwidth);
 }

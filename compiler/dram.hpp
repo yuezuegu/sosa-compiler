@@ -15,7 +15,10 @@ using namespace std;
 class Dram{
     public:
         float bandwidth;
-        queue<Tile*>* memory_queue;
+        list<Tile*>* request_queue;
+        list<Tile*>* evict_queue;
+
+        list<Tile*>::iterator prefetch_iter;
 
         Dram(){};
         Dram(float bandwidth);
@@ -28,7 +31,8 @@ class Dram{
         template<class Archive>
         void serialize(Archive & ar, const unsigned int version){
             ar & this->bandwidth;
-            ar & this->memory_queue;
+            ar & this->request_queue;
+            ar & this->evict_queue;
         }
 
     private:

@@ -67,19 +67,25 @@ void Tile::try_free(){
     this->bank->free_tile(this);
 }
 
-void Tile::fetch_from_memory(int bytes){
+int Tile::fetch_from_memory(int bytes){
+    int usage;
+
     if (this->bytes_fetched_from_memory == 0){
         if (!this->bank->alloc_tile(this)){
-            return;
+            return 0; 
         }
     }
 
     if (this->bytes_fetched_from_memory+bytes>=this->memory_size){
+        usage = this->memory_size - this->bytes_fetched_from_memory;
         this->bytes_fetched_from_memory = this->memory_size;
         this->is_allocated_on_sram = true;
+        return usage;
     }
     else{
         this->bytes_fetched_from_memory += bytes;
+        usage = bytes;
+        return usage;
     }
 }
 

@@ -37,7 +37,7 @@ class Tile{
         bool is_allocated();
         int get_mem_width();
         int get_mem_height();
-        void fetch_from_memory(int bytes);
+        int fetch_from_memory(int bytes);
         void try_free();
 
         friend class boost::serialization::access;

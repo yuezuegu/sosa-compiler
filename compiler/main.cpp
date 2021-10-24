@@ -38,6 +38,7 @@ int main(int ac, char* av[]){
         ("no_array,N", po::value<int>(&no_array)->default_value(8), "number of systolic arrays")
         ("memory_bw,M", po::value<float>(&bandwidth)->default_value(100), "memory bandwidth in GB/s")
         ("bank_size,S", po::value<int>(&bank_size)->default_value(1<<19), "SRAM bank size")
+        //crossbar, benes_copy, benes_vanilla, banyan_exp_0, banyan_exp_1, banyan_exp_2, banyan_exp_3, banyan_exp_4
         ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::crossbar), "interconnect type (see enum members)")
         ("work_dir,d", po::value<string>(&work_dir)->default_value("../experiments/tmp"), "directory for input/output files")
         ("log_level,l", po::value<boost::log::trivial::severity_level>(&log_level)->default_value(boost::log::trivial::severity_level::error), "log level");
@@ -104,13 +105,17 @@ int main(int ac, char* av[]){
     int no_repeat = jin["no_repeat"].get<int>();
     compiler->duplicate_schedule(layers, no_repeat);
 
-    ofstream ofs("../experiments/tmp/schedule.dat");
-    {
-        boost::archive::text_oarchive oa(ofs);
-        // write class instance to archive
-        oa << compiler;
-    	// archive and stream closed when destructors are called
+    ofstream ofs;
+    string ofname = work_dir + "/schedule.dat";
+    ofs.open(ofname, ofstream::out);
+    if(!ofs.is_open()){
+        cout << "Output file " << ofname << " cannot be opened." << endl;
+        exit(1);
     }
+    boost::archive::text_oarchive oa(ofs);
+    // write class instance to archive
+    oa << compiler;
+    // archive and stream closed when destructors are called
     ofs.close();
 
     compiler->run_cycle_model();
@@ -122,7 +127,7 @@ int main(int ac, char* av[]){
     cout << "Total no. of cycles: " << compiler->no_cycles << endl;
 
     ofstream output_file;
-    string ofname = work_dir + "/sim_results.json";
+    ofname = work_dir + "/sim_results.json";
     output_file.open(ofname, ofstream::out);
     if(!output_file.is_open()){
         cout << "Output file " << ofname << " cannot be opened." << endl;

@@ -470,17 +470,18 @@ void Compiler::create_memory_fifo(){
 
         for (auto it = sch->begin(); it != sch->end(); it++){
             if (*it == nullptr) continue;
-            this->dram->memory_queue->push((*it)->w_tile);
+            this->dram->request_queue->push_back((*it)->w_tile);
         }
 
         for (auto it = sch->begin(); it != sch->end(); it++){
             if (*it == nullptr) continue;
-            this->dram->memory_queue->push((*it)->x_tile);
+            this->dram->request_queue->push_back((*it)->x_tile);
         }
 
         delete sch;
         r++;
     }
+    this->dram->prefetch_iter = this->dram->request_queue->begin();
 }
 
 
@@ -643,9 +644,10 @@ void Compiler::run_cycle_model(){
                 max_mem_size = accumulate(w_tiles->begin(), w_tiles->end(), 0.0, [](const int a, const W_Tile* b){return a + b->memory_size;});
                 max_mem_size += accumulate(x_tiles->begin(), x_tiles->end(), 0.0, [](const int a, const X_Tile* b){return a + b->memory_size;});
 
-                if(memory_stall > (float)max_mem_size / this->dram->bandwidth){
+                if(memory_stall > 10 * (float)max_mem_size / this->dram->bandwidth){
                     cout << "Execution is deadlocked because of not enough SRAM memory" << endl;
-                    exit(1);
+                    this->no_cycles = -1;
+                    return;
                 }
             }
             delete x_tiles;
