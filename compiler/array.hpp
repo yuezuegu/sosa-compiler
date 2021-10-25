@@ -7,6 +7,7 @@
 
 #include "ops.hpp"
 #include "interconnect.hpp"
+#include "bank.hpp"
 
 #include <boost/serialization/map.hpp>
 #include <boost/archive/text_oarchive.hpp>
@@ -41,6 +42,8 @@ class Array{
 
         ARR_STATE arr_state;
         X_Tile* x_tile;
+        P_Tile* pin_tile;
+        P_Tile* pout_tile;
         int exec_cnt;
 
         int last_no_round;
@@ -98,6 +101,8 @@ class Arrays{
         list<MultOp*>* get_schedule(int r);
         list<X_Tile*>* get_x_tiles(int r);
         list<W_Tile*>* get_w_tiles(int r);
+        list<P_Tile*>* get_pin_tiles(int r);
+        list<P_Tile*>* get_pout_tiles(int r);
 
         map<Array*, Bank*>* get_x_permute(int r);
         map<Array*, Bank*>* get_w_permute(int r);

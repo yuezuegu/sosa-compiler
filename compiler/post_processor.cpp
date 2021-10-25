@@ -7,16 +7,23 @@ PostProcessor::PostProcessor(int id){
     this->last_no_round = 0;
     this->state = PP_STATE::idle;
     this->exec_cnt = 0;
-    this->curr_tile = nullptr;
+    this->pin1_tile = nullptr;
+    this->pin2_tile = nullptr;
+    this->pout_tile = nullptr;
+    this->curr_op = nullptr;
 }
 
 void PostProcessor::update(){
     if (this->state == PP_STATE::processing){
-        if (this->exec_cnt < get<0>(this->curr_tile->dims)){
+        if (this->exec_cnt < get<0>(this->pout_tile->dims)){
+            assert(this->pin1_tile->is_allocated() && "Pin1 is not on sram");
+            assert(this->pin1_tile->is_allocated() && "Pin2 is not on sram");
+            assert(this->pout_tile->is_allocated() && "Pout is not on sram");
             this->exec_cnt++;
         }
         else{
             this->state = PP_STATE::done;
+            this->curr_op->retire();
         }
     }
 }
@@ -30,7 +37,10 @@ void PostProcessor::init_tile_op(int r){
 
     this->exec_cnt = 0;
     this->state = PP_STATE::processing;
-    this->curr_tile = this->get_op(r)->pin1_tile;
+    this->curr_op = this->get_op(r);
+    this->pin1_tile = this->curr_op->pin1_tile;
+    this->pin2_tile = this->curr_op->pin2_tile;
+    this->pout_tile = this->curr_op->pout_tile;
 }
 
 bool PostProcessor::is_tile_op_done(int r){
@@ -215,4 +225,40 @@ void PostProcessors::update(){
     for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
         it->second->update();
     }
+}
+
+list<P_Tile*>* PostProcessors::get_pin1_tiles(int r){
+    list<P_Tile*>* pin1_tiles = new list<P_Tile*>();
+
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        AggrOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        pin1_tiles->push_back(op->pin1_tile);
+    }    
+
+    return pin1_tiles;
+}
+
+list<P_Tile*>* PostProcessors::get_pin2_tiles(int r){
+    list<P_Tile*>* pin2_tiles = new list<P_Tile*>();
+
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        AggrOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        pin2_tiles->push_back(op->pin2_tile);
+    }    
+
+    return pin2_tiles;
+}
+
+list<P_Tile*>* PostProcessors::get_pout_tiles(int r){
+    list<P_Tile*>* pout_tiles = new list<P_Tile*>();
+
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        AggrOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        pout_tiles->push_back(op->pout_tile);
+    }    
+
+    return pout_tiles;
 }

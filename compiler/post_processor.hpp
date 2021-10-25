@@ -27,7 +27,11 @@ class PostProcessor{
 
         PP_STATE state;
         int exec_cnt;
-        P_Tile* curr_tile;
+        P_Tile* pin1_tile;
+        P_Tile* pin2_tile;
+        P_Tile* pout_tile;
+
+        AggrOp* curr_op;
 
         PostProcessor(){};
         PostProcessor(int id);
@@ -39,7 +43,7 @@ class PostProcessor{
         void init_tile_op(int r);
         bool is_tile_op_done(int r);
         bool is_idle();
-
+        
         void update();
 
         friend class boost::serialization::access;
@@ -50,7 +54,9 @@ class PostProcessor{
             ar & this->last_no_round;
             ar & this->state;
             ar & this->exec_cnt;
-            ar & this->curr_tile;
+            ar & this->pin1_tile;
+            ar & this->pin2_tile;
+            ar & this->pout_tile;
             ar & this->schedule;
         }
     private:
@@ -74,6 +80,10 @@ class PostProcessors{
         map<PostProcessor*, Bank*>* get_pin1_permute(int r);
         map<PostProcessor*, Bank*>* get_pin2_permute(int r);
         map<PostProcessor*, Bank*>* get_pout_permute(int r);
+
+        list<P_Tile*>* get_pin1_tiles(int r);
+        list<P_Tile*>* get_pin2_tiles(int r);
+        list<P_Tile*>* get_pout_tiles(int r);
 
         void init_tile_op(int r);
         bool is_tile_op_done(int r);

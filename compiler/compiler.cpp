@@ -187,6 +187,31 @@ void Compiler::compile_layer(Layer* layer, int init_round){
                     }
                 }
             }
+
+            if (post_op_list->empty()){
+                int max_round = -1;
+                MultOp* final_op = nullptr;
+                for (int j = 0; j < get<1>(layer->no_tiles); j++){
+                    MultOp* mult_op = layer->get_mainop_by_index(make_tuple(i,j,k));
+                    if (mult_op->round_placed > max_round){
+                        final_op = mult_op;
+                        max_round = mult_op->round_placed;
+                    }
+                }
+                final_op->is_finalop = true;
+            }
+            else{
+                int max_round = -1;
+                Op* final_op = nullptr;
+                for (auto it = post_op_list->begin(); it != post_op_list->end(); it++){
+                    if ((*it)->round_placed > max_round){
+                        final_op = *it;
+                        max_round = (*it)->round_placed;
+                    }
+                }
+                final_op->is_finalop = true;
+                final_op->pair_op->is_finalop = true;
+            }
         }
     }
 
@@ -460,28 +485,41 @@ void Compiler::op_placement(int r, MultOp* op){
     }
 }
 
-
 void Compiler::create_memory_fifo(){
-    int main_rounds = this->no_main_rounds();
+    int no_rounds = this->no_main_rounds();
+    if (this->no_post_rounds() > no_rounds) no_rounds = this->no_post_rounds();
 
     int r = 0;
-    while(r <= main_rounds){
+    while(r <= no_rounds){
         list<MultOp*>* sch = this->arrays->get_schedule(r);
 
         for (auto it = sch->begin(); it != sch->end(); it++){
             if (*it == nullptr) continue;
-            this->dram->request_queue->push_back((*it)->w_tile);
+            (*it)->pout_tile->bank->spawn_queue->push_back(make_pair(r,(*it)->pout_tile));
+            //this->dram->store_queue->push_back(make_pair(r,(*it)->pout_tile));
         }
 
         for (auto it = sch->begin(); it != sch->end(); it++){
             if (*it == nullptr) continue;
-            this->dram->request_queue->push_back((*it)->x_tile);
+            this->dram->load_queue->push_back(make_pair(r,(*it)->w_tile));
+        }
+
+        for (auto it = sch->begin(); it != sch->end(); it++){
+            if (*it == nullptr) continue;
+            this->dram->load_queue->push_back(make_pair(r,(*it)->x_tile));
+        }
+
+        list<AggrOp*>* postops = this->post_processors->get_schedule(r);
+        for (auto it = postops->begin(); it != postops->end(); it++){
+            if (*it == nullptr) continue;
+            //this->dram->store_queue->push_back(make_pair(r,(*it)->pout_tile));
+            (*it)->pout_tile->bank->spawn_queue->push_back(make_pair(r,(*it)->pout_tile));
         }
 
         delete sch;
+        delete postops;
         r++;
     }
-    this->dram->prefetch_iter = this->dram->request_queue->begin();
 }
 
 
@@ -584,13 +622,15 @@ void Compiler::run_cycle_model(){
         delete w_tiles;
 
         this->arrays->update();
-        this->dram->update();
+        this->dram->update(this->banks->get_p_banks());
         arr_cycle++;
     }
 
+    //this->dram->store(r);
+    this->banks->spawn(r);
     list<X_Tile*>* x_tiles = this->arrays->get_x_tiles(r);
     while(!all_of(x_tiles->begin(), x_tiles->end(), [](X_Tile* x_tile){ return x_tile->is_allocated(); })){
-        this->dram->update();
+        this->dram->update(this->banks->get_p_banks());
         arr_cycle++;        
     }
     delete x_tiles;
@@ -599,6 +639,7 @@ void Compiler::run_cycle_model(){
 
     int memory_stall = 0;
     int max_mem_size;
+
 
     int round_clk = 0;
     bool new_round = true;
@@ -612,23 +653,43 @@ void Compiler::run_cycle_model(){
             this->post_processors->init_tile_op(r);
 
             new_round = false;
+
+            if ( r % 10 == 0){
+                cout << "Round: " << r << " completed with at array clock cycle: " << arr_cycle << " pp clock cycle: " << pp_cycle << endl;
+            }
         }
 
         //Propagate clock
         this->arrays->update();
         this->post_processors->update();
-        this->dram->update();
+        this->dram->update(this->banks->get_p_banks());
 
         if (this->arrays->is_tile_op_done(r) && 
             this->arrays->is_weights_buffered(r+1) && 
             this->post_processors->is_tile_op_done(r) && 
             round_clk >= this->sram_round_trip){
 
+            //this->dram->store(r+1);
+            this->banks->spawn(r+1);
+            
             list<W_Tile*>* w_tiles = this->arrays->get_w_tiles(r+2);
             list<X_Tile*>* x_tiles = this->arrays->get_x_tiles(r+1);
+            list<P_Tile*>* pout_tiles = this->arrays->get_pout_tiles(r+1);
+            list<P_Tile*>* pin_tiles = this->arrays->get_pin_tiles(r+1);
+
+            list<P_Tile*>* pp_pin1_tiles = this->post_processors->get_pin1_tiles(r+1);
+            list<P_Tile*>* pp_pin2_tiles = this->post_processors->get_pin2_tiles(r+1);
+            list<P_Tile*>* pp_pout_tiles = this->post_processors->get_pout_tiles(r+1);
 
             if( all_of(w_tiles->begin(), w_tiles->end(), [](W_Tile* w_tile){ return w_tile->is_allocated(); }) &&
-                all_of(x_tiles->begin(), x_tiles->end(), [](X_Tile* x_tile){ return x_tile->is_allocated(); })     ){
+                all_of(x_tiles->begin(), x_tiles->end(), [](X_Tile* x_tile){ return x_tile->is_allocated(); }) &&
+                all_of(pout_tiles->begin(), pout_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); }) &&
+                all_of(pin_tiles->begin(), pin_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); }) &&
+                all_of(pp_pin1_tiles->begin(), pp_pin1_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); }) &&
+                all_of(pp_pin2_tiles->begin(), pp_pin2_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); }) &&
+                all_of(pp_pout_tiles->begin(), pp_pout_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); })    ){
+
+                this->banks->garbage_collect(r);
 
                 r++;
                 new_round = true;
@@ -643,8 +704,15 @@ void Compiler::run_cycle_model(){
 
                 max_mem_size = accumulate(w_tiles->begin(), w_tiles->end(), 0.0, [](const int a, const W_Tile* b){return a + b->memory_size;});
                 max_mem_size += accumulate(x_tiles->begin(), x_tiles->end(), 0.0, [](const int a, const X_Tile* b){return a + b->memory_size;});
+                max_mem_size += accumulate(pout_tiles->begin(), pout_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
+                max_mem_size += accumulate(pin_tiles->begin(), pin_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
+                max_mem_size += accumulate(pp_pin1_tiles->begin(), pp_pin1_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
+                max_mem_size += accumulate(pp_pin2_tiles->begin(), pp_pin2_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
+                max_mem_size += accumulate(pp_pout_tiles->begin(), pp_pout_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
 
-                if(memory_stall > 10 * (float)max_mem_size / this->dram->bandwidth){
+                float memory_timeout = 10000 * (float)max_mem_size / this->dram->bandwidth;
+
+                if(memory_stall > memory_timeout){
                     cout << "Execution is deadlocked because of not enough SRAM memory" << endl;
                     this->no_cycles = -1;
                     return;
@@ -652,7 +720,8 @@ void Compiler::run_cycle_model(){
             }
             delete x_tiles;
             delete w_tiles;
-
+            delete pout_tiles;
+            delete pin_tiles;
         }
 
         arr_cycle++;

@@ -21,6 +21,7 @@ MultOp::MultOp(string layer_name, tuple<int, int, int> op_ind, X_Tile* x_tile, W
     this->weight_buffer_cycles = get<0>(w_tile->dims);
     this->retired = false;
     this->is_multop = true;
+    this->is_finalop = false;
 }
 
 MultOp::MultOp(const MultOp& mult_op){
@@ -45,10 +46,12 @@ MultOp::MultOp(const MultOp& mult_op){
 
 void MultOp::retire(){
     this->retired = true;
-
-    this->x_tile->try_free();
-    this->w_tile->try_free();
-
+    if (this->pin_op != nullptr){
+        this->pin_op->pout_tile->remove_from_sram();
+    }
+    if (this->is_finalop){
+        this->pout_tile->bank->write_back_queue->push_back(this->pout_tile);
+    }
 }
 
 void MultOp::assign_pin(MultOp* pin_op){
@@ -80,6 +83,8 @@ AggrOp::AggrOp(string layer_name, tuple<int, int, int> op_ind, Op* operand1, Op*
     this->is_placed_ = false;
     this->pair_op = nullptr;
     this->is_multop = false;
+    this->retired = false;
+    this->is_finalop = false;
 
     assert((this->pin1_tile->dims == this->pin2_tile->dims && "Input dimensions do not match!"));
     if (pout_tile == nullptr){
@@ -105,6 +110,17 @@ Op* AggrOp::get_op2(){
     }
     else{
         return this->operand2;
+    }
+}
+
+void AggrOp::retire(){
+    this->retired = true;
+    if (this->pair_op->retired){
+        this->pin1_tile->remove_from_sram();
+        this->pin2_tile->remove_from_sram();
+        if(this->is_finalop){
+            this->pout_tile->bank->write_back_queue->push_back(this->pout_tile);
+        }
     }
 }
 

@@ -13,6 +13,7 @@ X_Tile::X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int 
     this->precision = precision;
     this->memory_size = get<0>(dims) * get<1>(dims) * precision;
     this->bytes_fetched_from_memory = 0;
+    this->bytes_written_to_memory = 0;
 
     this->is_allocated_on_sram = false;
 
@@ -55,20 +56,33 @@ void Tile::assign_bank(Bank* bank){
     this->bank = bank;
 }
 
-void Tile::try_free(){
-    for(auto it = this->input_of->begin(); it != this->input_of->end(); it++){
-        if (!(*it)->retired){
-            return;
-        }
-    }
-
+void Tile::remove_from_sram(){
     this->is_allocated_on_sram = false;
     this->bytes_fetched_from_memory = 0;
     this->bank->free_tile(this);
 }
 
-int Tile::fetch_from_memory(int bytes){
-    int usage;
+float Tile::write_to_memory(float bytes){
+    float usage;
+
+    if (this->bytes_written_to_memory+bytes>=this->memory_size){
+        usage = this->memory_size - this->bytes_written_to_memory;
+        this->bytes_written_to_memory = this->memory_size;
+
+        this->bank->write_back_queue->pop_front();
+
+        this->remove_from_sram();
+        return usage;
+    }
+    else{
+        this->bytes_written_to_memory += bytes;
+        usage = bytes;
+        return usage;
+    }
+}
+
+float Tile::fetch_from_memory(int target_round, float bytes){
+    float usage;
 
     if (this->bytes_fetched_from_memory == 0){
         if (!this->bank->alloc_tile(this)){
@@ -80,6 +94,7 @@ int Tile::fetch_from_memory(int bytes){
         usage = this->memory_size - this->bytes_fetched_from_memory;
         this->bytes_fetched_from_memory = this->memory_size;
         this->is_allocated_on_sram = true;
+        this->bank->push_evict_queue(target_round, this);
         return usage;
     }
     else{
@@ -87,6 +102,16 @@ int Tile::fetch_from_memory(int bytes){
         usage = bytes;
         return usage;
     }
+}
+
+bool Tile::allocate_on_sram(int target_round){
+    if (!this->bank->alloc_tile(this)){
+        return false; 
+    }
+
+    this->is_allocated_on_sram = true;
+    this->bank->push_evict_queue(target_round, this);
+    return true;
 }
 
 int Tile::get_mem_height(){

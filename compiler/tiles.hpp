@@ -26,7 +26,8 @@ class Tile{
         tuple<int, int> dims;
         int precision; //In terms of number of bytes
         
-        int bytes_fetched_from_memory; //In terms of number of bytes
+        float bytes_fetched_from_memory; //In terms of number of bytes
+        float bytes_written_to_memory; //In terms of number of bytes
         int memory_size; //In terms of number of bytes
 
         list<Op*>* input_of;
@@ -37,8 +38,10 @@ class Tile{
         bool is_allocated();
         int get_mem_width();
         int get_mem_height();
-        int fetch_from_memory(int bytes);
-        void try_free();
+        float fetch_from_memory(int r, float bytes);
+        float write_to_memory(float bytes);
+        bool allocate_on_sram(int r);
+        void remove_from_sram();
 
         friend class boost::serialization::access;
 

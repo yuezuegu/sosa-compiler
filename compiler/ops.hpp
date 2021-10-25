@@ -29,6 +29,8 @@ class Op{
         tuple<int, int, int> op_ind;
 
         bool is_multop;
+        bool is_finalop;
+
 
         P_Tile* pout_tile;
         Op* pair_op;
@@ -114,6 +116,8 @@ class AggrOp: public Op{
         AggrOp(){};
         AggrOp(string layer_name, tuple<int, int, int> op_ind, Op* operand1, Op* operand2, P_Tile* pout_tile, bool flip);
         AggrOp(const AggrOp&) = default;
+
+        void retire();
 
         void assign_to_pp(int r, PostProcessor* pp);
         Op* get_op1();

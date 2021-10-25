@@ -23,11 +23,18 @@ class Bank{
         map<Tile*, int> allocated_tiles;
         int capacity; //in terms of bytes
 
+        list<pair<int, Tile*>>* evict_queue;
+        list<pair<int, Tile*>>* spawn_queue;
+        list<Tile*>* write_back_queue;
+
         Bank(){};
         Bank(int id, data_type type, int capacity);
         ~Bank();
         
+        void spawn(int r);
         bool alloc_tile(Tile* tile);
+        void push_evict_queue(int r, Tile* tile);
+        void garbage_collect(int r);
         void free_tile(Tile* tile);
 
         friend class boost::serialization::access;
@@ -58,6 +65,9 @@ class Banks{
         list<Bank*>* get_x_banks();
         list<Bank*>* get_w_banks();
         list<Bank*>* get_p_banks();
+
+        void garbage_collect(int r);
+        void spawn(int r);
 
         friend class boost::serialization::access;
 

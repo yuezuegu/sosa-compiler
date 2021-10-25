@@ -16,6 +16,8 @@ Array::Array(int id, int no_rows, int no_cols){
 
     this->arr_state = ARR_STATE::idle;
     this->x_tile = nullptr;
+    this->pin_tile = nullptr;
+    this->pout_tile = nullptr;
     this->exec_cnt = 0;
     this->curr_op = nullptr;
 }
@@ -27,6 +29,7 @@ Array::~Array(){
 void Array::update(){
     if (this->buf_state == BUF_STATE::buffering) {
         if (this->buf_cnt < get<0>(this->next_w_tile->dims)){
+            assert(this->next_w_tile->is_allocated() && "Next_W tile is not on sram");
             this->buf_cnt++;
         }
         else{
@@ -36,6 +39,9 @@ void Array::update(){
 
     if (this->arr_state == ARR_STATE::processing){
         if (this->exec_cnt < get<0>(this->x_tile->dims)){
+            assert(this->x_tile->is_allocated() && "X tile is not on sram");
+            assert(this->curr_w_tile->is_allocated() && "Curr_W_tile is not on sram");
+            assert(this->pout_tile->is_allocated() && "Pout is not on sram");
             this->exec_cnt++;
         }
         else{
@@ -83,6 +89,15 @@ void Array::init_tile_op(int r){
 
     this->curr_op = this->get_op(r);
     this->x_tile = this->curr_op->x_tile;
+    this->pout_tile = this->curr_op->pout_tile;
+
+    if (this->curr_op->pin_op != nullptr){
+        this->pin_tile = this->curr_op->pin_op->pout_tile;
+    }
+    else{
+        this->pin_tile = nullptr;
+    }
+    
     this->curr_w_tile = this->next_w_tile;
     this->next_w_tile = nullptr;
 }
@@ -300,6 +315,31 @@ list<W_Tile*>* Arrays::get_w_tiles(int r){
     }    
 
     return w_tiles;
+}
+
+list<P_Tile*>* Arrays::get_pout_tiles(int r){
+    list<P_Tile*>* pout_tiles = new list<P_Tile*>();
+
+    for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
+        MultOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        pout_tiles->push_back(op->pout_tile);
+    }    
+
+    return pout_tiles;
+}
+
+list<P_Tile*>* Arrays::get_pin_tiles(int r){
+    list<P_Tile*>* pin_tiles = new list<P_Tile*>();
+
+    for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
+        MultOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        if (op->pin_op == nullptr) continue;
+        pin_tiles->push_back(op->pin_op->pout_tile);
+    }    
+
+    return pin_tiles;
 }
 
 

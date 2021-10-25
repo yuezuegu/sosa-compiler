@@ -4,6 +4,7 @@
 #include <queue>
 
 #include "tiles.hpp"
+#include "bank.hpp"
 
 #include <boost/serialization/deque.hpp>
 #include <boost/serialization/queue.hpp>
@@ -15,24 +16,23 @@ using namespace std;
 class Dram{
     public:
         float bandwidth;
-        list<Tile*>* request_queue;
-        list<Tile*>* evict_queue;
-
-        list<Tile*>::iterator prefetch_iter;
+        list<pair<int, Tile*>>* load_queue;
+        //list<pair<int, Tile*>>* store_queue;
 
         Dram(){};
         Dram(float bandwidth);
         ~Dram(){};
 
-        void update();
+        void update(list<Bank*>* p_banks);
+        //void store(int r);
+        // void retire_requests(int r);
 
         friend class boost::serialization::access;
 
         template<class Archive>
         void serialize(Archive & ar, const unsigned int version){
             ar & this->bandwidth;
-            ar & this->request_queue;
-            ar & this->evict_queue;
+            ar & this->load_queue;
         }
 
     private:
