@@ -16,6 +16,11 @@ using namespace std;
 class Dram{
     public:
         float bandwidth;
+
+        float x_tiles_bw_usage;
+        float w_tiles_bw_usage;
+        float p_tiles_bw_usage;
+
         list<pair<int, Tile*>>* load_queue;
         //list<pair<int, Tile*>>* store_queue;
 

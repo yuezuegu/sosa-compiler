@@ -12,7 +12,7 @@
         "type": "cppdbg",
         "request": "launch",
         "program": "${workspaceFolder}/build/compiler_st",
-        "args": [],
+        "args": ["-N","128","-M","10000","-S","1000000"],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",
         "environment": [],

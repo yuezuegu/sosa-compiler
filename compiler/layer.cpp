@@ -194,14 +194,14 @@ void Layers::import_layers(json j){
 void Layer::create_main_ops(){
     for (int j = 0; j < get<1>(this->no_tiles); j++){
         for (int i = 0; i < get<0>(this->no_tiles); i++){
-            X_Tile* x_tile = new X_Tile(this->layer_name, make_tuple(i,j), (*this->x_tile_dims)[make_tuple(i, j)]);
+            X_Tile* x_tile = new X_Tile(this->layer_name, make_tuple(i,j), (*this->x_tile_dims)[make_tuple(i, j)], 1);
             (*this->x_tiles)[make_tuple(i,j)] = x_tile;
         }
     }
 
     for (int j = 0; j < get<1>(this->no_tiles); j++){
         for (int k = 0; k < get<2>(this->no_tiles); k++){
-            W_Tile* w_tile = new W_Tile(this->layer_name, make_tuple(j,k), (*this->w_tile_dims)[make_tuple(j, k)]);
+            W_Tile* w_tile = new W_Tile(this->layer_name, make_tuple(j,k), (*this->w_tile_dims)[make_tuple(j, k)], 1);
             (*this->w_tiles)[make_tuple(j,k)] = w_tile;
         }
     }
@@ -212,7 +212,7 @@ void Layer::create_main_ops(){
                 P_Tile* pout_tile = new P_Tile(this->layer_name, 
                                                 make_tuple(i,j,k), 
                                                 make_tuple(get<0>((*this->x_tile_dims)[make_tuple(i, j)]), 
-                                                            get<1>((*this->w_tile_dims)[make_tuple(j, k)])));
+                                                            get<1>((*this->w_tile_dims)[make_tuple(j, k)])), 2);
                 (*this->p_tiles)[make_tuple(i,j,k)] = pout_tile;
             }
         }

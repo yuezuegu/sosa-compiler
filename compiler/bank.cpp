@@ -37,7 +37,8 @@ void Bank::spawn(int r){
 bool Bank::alloc_tile(Tile* tile){
     if (this->capacity_used + tile->memory_size <= this->capacity){
         this->capacity_used += tile->memory_size;
-        BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " new tile allocated, usage: " << this->capacity_used;
+
+        BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " new tile of type "<< PRINT_TYPE(tile->type) << " allocated, usage: " << this->capacity_used;
         return true;
     }
     else{
@@ -70,7 +71,7 @@ void Bank::push_evict_queue(int r, Tile* tile){
 
 void Bank::free_tile(Tile* tile){
     this->capacity_used -= tile->memory_size;
-    BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " tile is freed, usage: " << this->capacity_used;
+    BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " tile of type "<< PRINT_TYPE(tile->type) <<" is freed, usage: " << this->capacity_used;
     if (this->capacity_used < 0){
         throw runtime_error("Usage cannot be negative, something is wrong!");
     }

@@ -202,7 +202,7 @@ void Compiler::compile_layer(Layer* layer, int init_round){
             }
             else{
                 int max_round = -1;
-                Op* final_op = nullptr;
+                AggrOp* final_op = nullptr;
                 for (auto it = post_op_list->begin(); it != post_op_list->end(); it++){
                     if ((*it)->round_placed > max_round){
                         final_op = *it;
@@ -602,6 +602,77 @@ void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
     }
 }
 
+
+int calc_max_required_memory(Arrays* arrays, PostProcessors* post_processors, int r){
+    list<W_Tile*>* w_tiles = arrays->get_w_tiles(r+1);
+    list<X_Tile*>* x_tiles = arrays->get_x_tiles(r);
+    list<P_Tile*>* pout_tiles = arrays->get_pout_tiles(r);
+    list<P_Tile*>* pin_tiles = arrays->get_pin_tiles(r);
+    list<P_Tile*>* pp_pin1_tiles = post_processors->get_pin1_tiles(r);
+    list<P_Tile*>* pp_pin2_tiles = post_processors->get_pin2_tiles(r);
+    list<P_Tile*>* pp_pout_tiles = post_processors->get_pout_tiles(r);
+
+    int max_mem_size;
+    max_mem_size = accumulate(w_tiles->begin(), w_tiles->end(), 0.0, [](const int a, const W_Tile* b){return a + b->memory_size;});
+    max_mem_size += accumulate(x_tiles->begin(), x_tiles->end(), 0.0, [](const int a, const X_Tile* b){return a + b->memory_size;});
+    max_mem_size += accumulate(pout_tiles->begin(), pout_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
+    max_mem_size += accumulate(pin_tiles->begin(), pin_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
+    max_mem_size += accumulate(pp_pin1_tiles->begin(), pp_pin1_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
+    max_mem_size += accumulate(pp_pin2_tiles->begin(), pp_pin2_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
+    max_mem_size += accumulate(pp_pout_tiles->begin(), pp_pout_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
+
+    delete w_tiles;
+    delete x_tiles;
+    delete pout_tiles;
+    delete pin_tiles;
+    delete pp_pin1_tiles;
+    delete pp_pin2_tiles;
+    delete pp_pout_tiles;
+
+    return max_mem_size;
+}
+
+bool check_if_data_ready(Arrays* arrays, PostProcessors* post_processors, int r){
+    bool is_ready;
+
+    list<W_Tile*>* w_tiles = arrays->get_w_tiles(r+1);
+    is_ready = all_of(w_tiles->begin(), w_tiles->end(), [](W_Tile* w_tile){ return w_tile->is_allocated(); });
+    if (!is_ready) return false;
+    delete w_tiles;
+
+    list<X_Tile*>* x_tiles = arrays->get_x_tiles(r);
+    is_ready = all_of(x_tiles->begin(), x_tiles->end(), [](X_Tile* x_tile){ return x_tile->is_allocated(); });
+    if (!is_ready) return false;
+    delete x_tiles;
+
+    list<P_Tile*>* pout_tiles = arrays->get_pout_tiles(r);
+    is_ready = all_of(pout_tiles->begin(), pout_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); });
+    if (!is_ready) return false;
+    delete pout_tiles;
+    
+    list<P_Tile*>* pin_tiles = arrays->get_pin_tiles(r);
+    is_ready = all_of(pin_tiles->begin(), pin_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); });
+    if (!is_ready) return false;
+    delete pin_tiles;
+
+    list<P_Tile*>* pp_pin1_tiles = post_processors->get_pin1_tiles(r);
+    is_ready = all_of(pp_pin1_tiles->begin(), pp_pin1_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); });
+    if (!is_ready) return false;
+    delete pp_pin1_tiles;
+    
+    list<P_Tile*>* pp_pin2_tiles = post_processors->get_pin2_tiles(r);
+    is_ready = all_of(pp_pin2_tiles->begin(), pp_pin2_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); });
+    if (!is_ready) return false;
+    delete pp_pin2_tiles;
+    
+    list<P_Tile*>* pp_pout_tiles = post_processors->get_pout_tiles(r);
+    is_ready = all_of(pp_pout_tiles->begin(), pp_pout_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); });
+    if (!is_ready) return false;
+    delete pp_pout_tiles;
+    
+    return true;
+}
+
 void Compiler::run_cycle_model(){
     this->create_memory_fifo();
 
@@ -635,6 +706,13 @@ void Compiler::run_cycle_model(){
     }
     delete x_tiles;
     
+    list<W_Tile*>* w_tiles = this->arrays->get_w_tiles(r+1);
+    while(!all_of(w_tiles->begin(), w_tiles->end(), [](W_Tile* w_tile){ return w_tile->is_allocated(); })){
+        this->dram->update(this->banks->get_p_banks());
+        arr_cycle++;
+    }
+    delete w_tiles;
+
     pp_cycle = arr_cycle + this->pp_latency_offset;
 
     int memory_stall = 0;
@@ -672,22 +750,7 @@ void Compiler::run_cycle_model(){
             //this->dram->store(r+1);
             this->banks->spawn(r+1);
             
-            list<W_Tile*>* w_tiles = this->arrays->get_w_tiles(r+2);
-            list<X_Tile*>* x_tiles = this->arrays->get_x_tiles(r+1);
-            list<P_Tile*>* pout_tiles = this->arrays->get_pout_tiles(r+1);
-            list<P_Tile*>* pin_tiles = this->arrays->get_pin_tiles(r+1);
-
-            list<P_Tile*>* pp_pin1_tiles = this->post_processors->get_pin1_tiles(r+1);
-            list<P_Tile*>* pp_pin2_tiles = this->post_processors->get_pin2_tiles(r+1);
-            list<P_Tile*>* pp_pout_tiles = this->post_processors->get_pout_tiles(r+1);
-
-            if( all_of(w_tiles->begin(), w_tiles->end(), [](W_Tile* w_tile){ return w_tile->is_allocated(); }) &&
-                all_of(x_tiles->begin(), x_tiles->end(), [](X_Tile* x_tile){ return x_tile->is_allocated(); }) &&
-                all_of(pout_tiles->begin(), pout_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); }) &&
-                all_of(pin_tiles->begin(), pin_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); }) &&
-                all_of(pp_pin1_tiles->begin(), pp_pin1_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); }) &&
-                all_of(pp_pin2_tiles->begin(), pp_pin2_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); }) &&
-                all_of(pp_pout_tiles->begin(), pp_pout_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); })    ){
+            if(check_if_data_ready(this->arrays, this->post_processors, r+1)){
 
                 this->banks->garbage_collect(r);
 
@@ -702,15 +765,8 @@ void Compiler::run_cycle_model(){
 
                 BOOST_LOG_TRIVIAL(info) << "Memory stalling: " << memory_stall << " at r: " << r << " clk: " << arr_cycle;
 
-                max_mem_size = accumulate(w_tiles->begin(), w_tiles->end(), 0.0, [](const int a, const W_Tile* b){return a + b->memory_size;});
-                max_mem_size += accumulate(x_tiles->begin(), x_tiles->end(), 0.0, [](const int a, const X_Tile* b){return a + b->memory_size;});
-                max_mem_size += accumulate(pout_tiles->begin(), pout_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
-                max_mem_size += accumulate(pin_tiles->begin(), pin_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
-                max_mem_size += accumulate(pp_pin1_tiles->begin(), pp_pin1_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
-                max_mem_size += accumulate(pp_pin2_tiles->begin(), pp_pin2_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
-                max_mem_size += accumulate(pp_pout_tiles->begin(), pp_pout_tiles->end(), 0.0, [](const int a, const P_Tile* b){return a + b->memory_size;});
-
-                float memory_timeout = 10000 * (float)max_mem_size / this->dram->bandwidth;
+                max_mem_size = calc_max_required_memory(this->arrays, this->post_processors, r+1);
+                float memory_timeout = 100 * (float)max_mem_size / this->dram->bandwidth;
 
                 if(memory_stall > memory_timeout){
                     cout << "Execution is deadlocked because of not enough SRAM memory" << endl;
@@ -718,10 +774,6 @@ void Compiler::run_cycle_model(){
                     return;
                 }
             }
-            delete x_tiles;
-            delete w_tiles;
-            delete pout_tiles;
-            delete pin_tiles;
         }
 
         arr_cycle++;

@@ -51,6 +51,7 @@ void MultOp::retire(){
     }
     if (this->is_finalop){
         this->pout_tile->bank->write_back_queue->push_back(this->pout_tile);
+        this->pout_tile->remove_from_sram();
     }
 }
 
@@ -120,6 +121,7 @@ void AggrOp::retire(){
         this->pin2_tile->remove_from_sram();
         if(this->is_finalop){
             this->pout_tile->bank->write_back_queue->push_back(this->pout_tile);
+            this->pout_tile->remove_from_sram();
         }
     }
 }

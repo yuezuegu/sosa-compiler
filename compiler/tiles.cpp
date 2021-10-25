@@ -29,6 +29,7 @@ W_Tile::W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int 
     this->precision = precision;
     this->memory_size = get<0>(dims) * get<1>(dims) * precision;
     this->bytes_fetched_from_memory = 0;
+    this->bytes_written_to_memory = 0;
 
     this->is_allocated_on_sram = false;
 
@@ -44,6 +45,7 @@ P_Tile::P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims,
     this->precision = precision;
     this->memory_size = get<0>(dims) * get<1>(dims) * precision;
     this->bytes_fetched_from_memory = 0;
+    this->bytes_written_to_memory = 0;
 
     this->is_allocated_on_sram = false;
 
@@ -71,7 +73,6 @@ float Tile::write_to_memory(float bytes){
 
         this->bank->write_back_queue->pop_front();
 
-        this->remove_from_sram();
         return usage;
     }
     else{
