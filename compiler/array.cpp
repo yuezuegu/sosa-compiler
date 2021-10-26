@@ -42,6 +42,9 @@ void Array::update(){
             assert(this->x_tile->is_allocated() && "X tile is not on sram");
             assert(this->curr_w_tile->is_allocated() && "Curr_W_tile is not on sram");
             assert(this->pout_tile->is_allocated() && "Pout is not on sram");
+            if (this->pin_tile != nullptr){
+                assert(this->pin_tile->is_allocated() && "Pin is not on sram");
+            }
             this->exec_cnt++;
         }
         else{

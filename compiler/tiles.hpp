@@ -34,13 +34,15 @@ class Tile{
 
         Bank* bank;
 
+        bool is_spawn_;
+
         void assign_bank(Bank* bank);
         bool is_allocated();
         int get_mem_width();
         int get_mem_height();
-        float fetch_from_memory(int r, float bytes);
-        float write_to_memory(float bytes);
-        bool allocate_on_sram(int r);
+        float fetch_from_memory(int, int, float);
+        float write_to_memory(float);
+        bool allocate_on_sram(int, int);
         void remove_from_sram();
 
         friend class boost::serialization::access;
@@ -60,6 +62,7 @@ class Tile{
 
     protected:
         bool is_allocated_on_sram;
+        
 };
 
 class X_Tile: public Tile{

@@ -485,43 +485,6 @@ void Compiler::op_placement(int r, MultOp* op){
     }
 }
 
-void Compiler::create_memory_fifo(){
-    int no_rounds = this->no_main_rounds();
-    if (this->no_post_rounds() > no_rounds) no_rounds = this->no_post_rounds();
-
-    int r = 0;
-    while(r <= no_rounds){
-        list<MultOp*>* sch = this->arrays->get_schedule(r);
-
-        for (auto it = sch->begin(); it != sch->end(); it++){
-            if (*it == nullptr) continue;
-            (*it)->pout_tile->bank->spawn_queue->push_back(make_pair(r,(*it)->pout_tile));
-            //this->dram->store_queue->push_back(make_pair(r,(*it)->pout_tile));
-        }
-
-        for (auto it = sch->begin(); it != sch->end(); it++){
-            if (*it == nullptr) continue;
-            this->dram->load_queue->push_back(make_pair(r,(*it)->w_tile));
-        }
-
-        for (auto it = sch->begin(); it != sch->end(); it++){
-            if (*it == nullptr) continue;
-            this->dram->load_queue->push_back(make_pair(r,(*it)->x_tile));
-        }
-
-        list<AggrOp*>* postops = this->post_processors->get_schedule(r);
-        for (auto it = postops->begin(); it != postops->end(); it++){
-            if (*it == nullptr) continue;
-            //this->dram->store_queue->push_back(make_pair(r,(*it)->pout_tile));
-            (*it)->pout_tile->bank->spawn_queue->push_back(make_pair(r,(*it)->pout_tile));
-        }
-
-        delete sch;
-        delete postops;
-        r++;
-    }
-}
-
 
 
 int Compiler::no_main_rounds(){
@@ -673,6 +636,51 @@ bool check_if_data_ready(Arrays* arrays, PostProcessors* post_processors, int r)
     return true;
 }
 
+
+
+void Compiler::create_memory_fifo(){
+    int no_rounds = this->no_main_rounds();
+    if (this->no_post_rounds() > no_rounds) no_rounds = this->no_post_rounds();
+
+    int r = 0;
+    while(r <= no_rounds){
+        list<MultOp*>* sch = this->arrays->get_schedule(r);
+
+        for (auto it = sch->begin(); it != sch->end(); it++){
+            if (*it == nullptr) continue;
+            (*it)->pout_tile->bank->spawn_queue->push_back(make_pair(r,(*it)->pout_tile));
+        }
+
+        for (auto it = sch->begin(); it != sch->end(); it++){
+            if (*it == nullptr) continue;
+            this->dram->load_queue->push_back(make_pair(r,(*it)->w_tile));
+        }
+
+        for (auto it = sch->begin(); it != sch->end(); it++){
+            if (*it == nullptr) continue;
+            this->dram->load_queue->push_back(make_pair(r,(*it)->x_tile));
+        }
+
+        for (auto it = sch->begin(); it != sch->end(); it++){
+            if (*it == nullptr) continue;
+            if ((*it)->pin_op == nullptr) continue;
+            this->dram->load_queue->push_back(make_pair(r,(*it)->pin_op->pout_tile));
+        }
+
+        list<AggrOp*>* postops = this->post_processors->get_schedule(r);
+        for (auto it = postops->begin(); it != postops->end(); it++){
+            if (*it == nullptr) continue;
+            (*it)->pout_tile->bank->spawn_queue->push_back(make_pair(r,(*it)->pout_tile));
+            this->dram->load_queue->push_back(make_pair(r,(*it)->pin1_tile));
+            this->dram->load_queue->push_back(make_pair(r,(*it)->pin2_tile));
+        }
+
+        delete sch;
+        delete postops;
+        r++;
+    }
+}
+
 void Compiler::run_cycle_model(){
     this->create_memory_fifo();
 
@@ -693,7 +701,7 @@ void Compiler::run_cycle_model(){
         delete w_tiles;
 
         this->arrays->update();
-        this->dram->update(this->banks->get_p_banks());
+        this->dram->update(this->banks->get_p_banks(), r);
         arr_cycle++;
     }
 
@@ -701,14 +709,14 @@ void Compiler::run_cycle_model(){
     this->banks->spawn(r);
     list<X_Tile*>* x_tiles = this->arrays->get_x_tiles(r);
     while(!all_of(x_tiles->begin(), x_tiles->end(), [](X_Tile* x_tile){ return x_tile->is_allocated(); })){
-        this->dram->update(this->banks->get_p_banks());
+        this->dram->update(this->banks->get_p_banks(), r);
         arr_cycle++;        
     }
     delete x_tiles;
     
     list<W_Tile*>* w_tiles = this->arrays->get_w_tiles(r+1);
     while(!all_of(w_tiles->begin(), w_tiles->end(), [](W_Tile* w_tile){ return w_tile->is_allocated(); })){
-        this->dram->update(this->banks->get_p_banks());
+        this->dram->update(this->banks->get_p_banks(), r);
         arr_cycle++;
     }
     delete w_tiles;
@@ -740,7 +748,7 @@ void Compiler::run_cycle_model(){
         //Propagate clock
         this->arrays->update();
         this->post_processors->update();
-        this->dram->update(this->banks->get_p_banks());
+        this->dram->update(this->banks->get_p_banks(), r);
 
         if (this->arrays->is_tile_op_done(r) && 
             this->arrays->is_weights_buffered(r+1) && 

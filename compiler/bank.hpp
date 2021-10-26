@@ -3,6 +3,8 @@
 
 #include <list>
 #include <map>
+#include <iostream>
+#include <numeric>
 
 #include "helper.hpp"
 
@@ -10,7 +12,6 @@
 #include <boost/serialization/map.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
-
 
 using namespace std;
 
@@ -22,6 +23,7 @@ class Bank{
         data_type type;
         map<Tile*, int> allocated_tiles;
         int capacity; //in terms of bytes
+        int capacity_used;
 
         list<pair<int, Tile*>>* evict_queue;
         list<pair<int, Tile*>>* spawn_queue;
@@ -32,10 +34,12 @@ class Bank{
         ~Bank();
         
         void spawn(int r);
-        bool alloc_tile(Tile* tile);
+        bool alloc_tile(int r, Tile* tile);
+        bool evict(int r);
         void push_evict_queue(int r, Tile* tile);
         void garbage_collect(int r);
         void free_tile(Tile* tile);
+        int evict_queue_size();
 
         friend class boost::serialization::access;
 
@@ -49,7 +53,7 @@ class Bank{
         }
 
     private:
-        int capacity_used;
+        
 };
 
 
@@ -68,6 +72,8 @@ class Banks{
 
         void garbage_collect(int r);
         void spawn(int r);
+
+        void print_usage();
 
         friend class boost::serialization::access;
 

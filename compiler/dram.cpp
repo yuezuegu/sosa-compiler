@@ -14,7 +14,7 @@ Dram::Dram(float bandwidth){
     this->load_queue = new list<pair<int, Tile*>>();
 }
 
-void Dram::update(list<Bank*>* p_banks){
+void Dram::update(list<Bank*>* p_banks, int r){
     float bw_used = 0;
 
     for (auto it = p_banks->begin(); it != p_banks->end(); it++){
@@ -36,17 +36,18 @@ void Dram::update(list<Bank*>* p_banks){
         pair<int,Tile*> front = this->load_queue->front();
         while (front.second->is_allocated()){
 
-            //this is too slow
-            front.second->bank->push_evict_queue(front.first, front.second);
+            //this might be too slow, replace list with map
+            //front.second->bank->push_evict_queue(front.first, front.second);
 
             this->load_queue->pop_front();
             if (this->load_queue->empty()) return;
 
             front = this->load_queue->front();
+            
         }
 
-
-        float bw_used_ = front.second->fetch_from_memory(front.first, this->bandwidth-bw_used);
+        if (front.first - r >= prefetch_no_rounds) return;
+        float bw_used_ = front.second->fetch_from_memory(r, front.first, this->bandwidth-bw_used);
         if (bw_used_ == 0){ //bank is full, continue with processing to free the banks
             return;
         }
@@ -54,8 +55,11 @@ void Dram::update(list<Bank*>* p_banks){
         if (front.second->type == data_type::X){
             this->x_tiles_bw_usage += bw_used_;
         }
-        else{
+        else if (front.second->type == data_type::W){
             this->w_tiles_bw_usage += bw_used_;
+        }
+        else{
+            this->p_tiles_bw_usage += bw_used_;
         }
 
         bw_used += bw_used_;

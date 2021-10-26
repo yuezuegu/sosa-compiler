@@ -15,6 +15,8 @@ using namespace std;
 
 class Dram{
     public:
+        int prefetch_no_rounds = 5;
+
         float bandwidth;
 
         float x_tiles_bw_usage;
@@ -28,7 +30,7 @@ class Dram{
         Dram(float bandwidth);
         ~Dram(){};
 
-        void update(list<Bank*>* p_banks);
+        void update(list<Bank*>* p_banks, int r);
         //void store(int r);
         // void retire_requests(int r);
 
