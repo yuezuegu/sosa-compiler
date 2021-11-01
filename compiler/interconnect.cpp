@@ -13,7 +13,7 @@ InterconnectBase *generate_interconnect(UnsignedInt n, InterconnectType type) {
     XYZ(crossbar, Crossbar)
 #undef XYZ
     if (((unsigned) type) & (unsigned) InterconnectType::banyan) {
-        bool expansion = (unsigned) type & 0x0Fu;
+        unsigned expansion = (unsigned) type & 0x0Fu;
         auto banyan = new Banyan(n + expansion);
         banyan->set_expansion(expansion);
         return banyan;

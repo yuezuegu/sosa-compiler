@@ -24,7 +24,7 @@ enum class InterconnectType : unsigned {
 std::istream &operator>>(std::istream &in, InterconnectType &interconnect_type);
 std::ostream &operator<<(std::ostream &out, InterconnectType interconnect_type);
 
-InterconnectBase *generate_interconnect(InterconnectType type);
+InterconnectBase *generate_interconnect(UnsignedInt n, InterconnectType type);
 
 class Interconnects{
     public:

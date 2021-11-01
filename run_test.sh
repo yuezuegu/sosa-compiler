@@ -2,8 +2,8 @@
 
 r=32
 c=32
-N=512
-model="bert_tiny"
+N=32
+model="bert_small"
 interconn="banyan" # benes_vanilla or so
 mem_bw=1200 # memory bandwidth
 bank_sz=524288 # bank size

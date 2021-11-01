@@ -50,6 +50,8 @@ add_executable(compiler_st ${COMPILER_SRCS})
 target_include_directories(compiler_st PRIVATE compiler/)
 target_link_libraries(compiler_st PRIVATE ${COMPILER_LIBS})
 
+# Parallel Linear Search tests
+
 add_executable(
     test_pls
     # sources
@@ -61,6 +63,32 @@ target_link_libraries(
     test_pls
     PRIVATE
     # nlohmann_json::nlohmann_json
+    Boost::boost
+    Boost::log
+    Boost::program_options
+    Boost::serialization
+)
+
+# Tests for compiler
+
+add_executable(
+    compiler_tests
+    compiler/tests.cpp
+    compiler/ostream_mt.cpp
+    compiler/layer.cpp
+    compiler/ops.cpp
+    compiler/compiler.cpp
+    compiler/tiles.cpp
+    compiler/bank.cpp
+    compiler/array.cpp
+    compiler/interconnect.cpp
+    compiler/post_processor.cpp
+    compiler/dram.cpp
+)
+target_include_directories(compiler_tests PRIVATE compiler/)
+target_link_libraries(
+    compiler_tests
+    PRIVATE
     Boost::boost
     Boost::log
     Boost::program_options
