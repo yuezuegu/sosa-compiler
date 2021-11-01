@@ -3,59 +3,77 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-
     // Build configurations to facilitate debugging
     // Execute them *after* precompilation.
     "configurations": [
-    {
-        "name": "(gdb) compiler_st",
-        "type": "cppdbg",
-        "request": "launch",
-        "program": "${workspaceFolder}/build/compiler_st",
-        "args": ["-N","128","-M","1000","-S","512000"],
-        "stopAtEntry": false,
-        "cwd": "${fileDirname}",
-        "environment": [],
-        "externalConsole": false,
-        "MIMode": "gdb",
-        "setupCommands": [
-            {
-                "description": "Enable pretty-printing for gdb",
-                "text": "-enable-pretty-printing",
-                "ignoreFailures": true
-            }
-        ]
-    },
-    {
-        "name": "(gdb) run_cycle_model",
-        "type": "cppdbg",
-        "request": "launch",
-        "program": "${workspaceFolder}/build/run_cycle_model",
-        "args": [],
-        "stopAtEntry": false,
-        "cwd": "${fileDirname}",
-        "environment": [],
-        "externalConsole": false,
-        "MIMode": "gdb",
-        "setupCommands": [
-            {
-                "description": "Enable pretty-printing for gdb",
-                "text": "-enable-pretty-printing",
-                "ignoreFailures": true
-            }
-        ]
-    },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "(gdb) compiler_st",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/compiler_st",
+            "args": [
+                "-N",
+                "128",
+                "-M",
+                "1000",
+                "-S",
+                "15000"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) run_cycle_model",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/run_cycle_model",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
         {
             "name": "(gdb) Multi Threaded Compiler Execution",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build-Debug/compiler_mt",
             "args": [
-                "-r", "32",
-                "-c", "32",
-                "-N", "1024",
-                "-I", "benes_vanilla",
-                "-d", "experiments/test"
+                "-r",
+                "32",
+                "-c",
+                "32",
+                "-N",
+                "1024",
+                "-I",
+                "benes_vanilla",
+                "-d",
+                "experiments/test"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -75,8 +93,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build-Debug/compiler_st",
-            "args": [
-            ],
+            "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
