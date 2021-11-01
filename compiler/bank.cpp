@@ -37,6 +37,8 @@ void Bank::spawn(int r){
         }
 
         this->spawn_queue->pop_front();
+        if (this->spawn_queue->empty()) return;
+        
         front = this->spawn_queue->front();
     }
 }

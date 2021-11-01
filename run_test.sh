@@ -3,8 +3,10 @@
 r=32
 c=32
 N=512
-model="bert_large"
+model="bert_tiny"
 interconn="banyan" # benes_vanilla or so
+mem_bw=1200 # memory bandwidth
+bank_sz=524288 # bank size
 
 function fail_msg() {
     echo "$1" >&2
@@ -44,8 +46,29 @@ do
         skip_precompile) # Skip precompiling
             skip_precompile=true
             ;;
-        use_multithreading)
+        use_multithreading) # Should use multithreading?
             use_multithreading=true
+            ;;
+        param_r) # Execution parameter r
+            r="$OPTARG"
+            ;;
+        param_c) # Execution parameter c
+            c="$OPTARG"
+            ;;
+        param_model) # Execution parameter model
+            model="$OPTARG"
+            ;;
+        param_N) # Execution parameter N
+            N="$OPTARG"
+            ;;
+        param_interconn) # Execution parameter interconn
+            interconn="$OPTARG"
+            ;;
+        param_mem_bw) # Execution parameter mem_bw
+            mem_bw="$OPTARG"
+            ;;
+        param_bank_sz) # Execution parameter bank_sz
+            bank_sz="$OPTARG"
             ;;
         ??*)
             fail_msg "Illegal long option --$OPT"
@@ -99,7 +122,7 @@ else
     echo "Skipping precompiler."
 fi
 
-${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d "$DIR" -l info || fail_msg "compile failed."
+${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d "$DIR" -M "$mem_bw" -S "$bank_sz" -l info || fail_msg "compile failed."
 
 end_time=$(date +%s)
 elapsed=$(( end_time - start_time ))
