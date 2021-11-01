@@ -294,7 +294,7 @@ struct Banyan : InterconnectBase {
 
     int _N = 1 << this->impl.n(); 
 
-    return I_0 * _N * log2(_N) * expansion * switch_width;
+    return I_0 * _N * log2(_N) * switch_width;
   }
 
   UnsignedInt latency() const override { return impl.n() + expansion; }
