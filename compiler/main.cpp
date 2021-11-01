@@ -26,6 +26,7 @@ int main(int ac, char* av[]){
     int no_array, no_rows, no_cols;
     int bank_size;
     float bandwidth;
+    int prefetch_limit;
     InterconnectType interconnect_type;
     boost::log::trivial::severity_level log_level;
     string work_dir;
@@ -37,11 +38,12 @@ int main(int ac, char* av[]){
         ("no_cols,c", po::value<int>(&no_cols)->default_value(32), "number of columns in a systolic array")
         ("no_array,N", po::value<int>(&no_array)->default_value(128), "number of systolic arrays")
         ("memory_bw,M", po::value<float>(&bandwidth)->default_value(1000), "memory bandwidth in GB/s")
+        ("prefetch,P", po::value<int>(&prefetch_limit)->default_value(10), "No of rounds allowed for prefetching")
         ("bank_size,S", po::value<int>(&bank_size)->default_value(1<<19), "SRAM bank size")
         //crossbar, benes_copy, benes_vanilla, banyan_exp_0, banyan_exp_1, banyan_exp_2, banyan_exp_3, banyan_exp_4
         ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::crossbar), "interconnect type (see enum members)")
         ("work_dir,d", po::value<string>(&work_dir)->default_value("../experiments/tmp"), "directory for input/output files")
-        ("log_level,l", po::value<boost::log::trivial::severity_level>(&log_level)->default_value(boost::log::trivial::severity_level::info), "log level");
+        ("log_level,l", po::value<boost::log::trivial::severity_level>(&log_level)->default_value(boost::log::trivial::severity_level::error), "log level");
     po::variables_map vm;
     po::store(po::parse_command_line(ac, av, desc), vm);
     po::notify(vm);
@@ -64,6 +66,7 @@ int main(int ac, char* av[]){
         "no_cols = " << no_cols << " " <<
         "memory bandwidth = " << bandwidth << " " <<
         "bank size = " << bank_size << " " <<
+        "prefetch = " << prefetch_limit << " " <<
         "interconnect_type = " << interconnect_type << " " <<
         "log_level = " << log_level <<
         "\n";
@@ -92,7 +95,7 @@ int main(int ac, char* av[]){
     float freq = 1e9;
     bandwidth = bandwidth * ((1 << 30) / freq);
 
-    Dram* dram = new Dram(bandwidth);
+    Dram* dram = new Dram(bandwidth, prefetch_limit);
 
     Compiler* compiler = new Compiler(arrays, banks, interconnects, post_processors, dram);
 
@@ -147,6 +150,10 @@ int main(int ac, char* av[]){
     jout["x_tiles_bw_usage"] = dram->x_tiles_bw_usage;
     jout["w_tiles_bw_usage"] = dram->w_tiles_bw_usage;
     jout["p_tiles_bw_usage"] = dram->p_tiles_bw_usage;
+    jout["total_bw_usage"] = dram->x_tiles_bw_usage + dram->w_tiles_bw_usage + dram->p_tiles_bw_usage;
+    jout["total_no_ops"] = arrays->total_no_ops();
+    jout["total_sram_read_bytes"] = arrays->total_sram_read_bytes();
+    jout["total_sram_write_bytes"] = arrays->total_sram_write_bytes();
 
     cout << jout.dump() << endl;
 

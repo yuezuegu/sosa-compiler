@@ -70,7 +70,7 @@ class X_Tile: public Tile{
         tuple<int, int> id;
         
         X_Tile(){};
-        X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int precision = 1);
+        X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int precision, int memory_size);
         X_Tile(const X_Tile& x_tile) = default;
 
         friend class boost::serialization::access;
@@ -95,7 +95,7 @@ class W_Tile: public Tile{
         tuple<int, int> id;
 
         W_Tile(){};
-        W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int precision = 1);
+        W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int precision, int memory_size);
         W_Tile(const W_Tile& w_tile) = default;
 
         friend class boost::serialization::access;
@@ -120,7 +120,7 @@ class P_Tile: public Tile{
         tuple<int, int, int> id;
         
         P_Tile(){};
-        P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims, int precision = 2);
+        P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims, int precision, int memory_size);
         P_Tile(const P_Tile& p_tile) = default;
 
         friend class boost::serialization::access;

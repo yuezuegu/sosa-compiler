@@ -5,13 +5,13 @@
 #include "bank.hpp"
 #include "ops.hpp"
 
-X_Tile::X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int precision){
+X_Tile::X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int precision, int memory_size){
     this->layer_name = layer_name;
     this->type = data_type::X;
     this->id = id;
     this->dims = dims;
     this->precision = precision;
-    this->memory_size = get<0>(dims) * get<1>(dims) * precision;
+    this->memory_size = memory_size;
     this->bytes_fetched_from_memory = 0;
     this->bytes_written_to_memory = 0;
 
@@ -23,13 +23,13 @@ X_Tile::X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int 
     this->is_spawn_ = false;
 }
 
-W_Tile::W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int precision){
+W_Tile::W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int precision, int memory_size){
     this->layer_name = layer_name;
     this->type = data_type::W;
     this->id = id;
     this->dims = dims;
     this->precision = precision;
-    this->memory_size = get<0>(dims) * get<1>(dims) * precision;
+    this->memory_size = memory_size;
     this->bytes_fetched_from_memory = 0;
     this->bytes_written_to_memory = 0;
 
@@ -41,13 +41,13 @@ W_Tile::W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int 
     this->is_spawn_ = false;
 }
 
-P_Tile::P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims, int precision){
+P_Tile::P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims, int precision, int memory_size){
     this->layer_name = layer_name;
     this->type = data_type::P;
     this->id = id;
     this->dims = dims;
     this->precision = precision;
-    this->memory_size = get<0>(dims) * get<1>(dims) * precision;
+    this->memory_size = memory_size;
     this->bytes_fetched_from_memory = 0;
     this->bytes_written_to_memory = 0;
 

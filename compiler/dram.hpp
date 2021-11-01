@@ -15,7 +15,7 @@ using namespace std;
 
 class Dram{
     public:
-        int prefetch_no_rounds = 5;
+        int prefetch_limit;
 
         float bandwidth;
 
@@ -27,7 +27,7 @@ class Dram{
         //list<pair<int, Tile*>>* store_queue;
 
         Dram(){};
-        Dram(float bandwidth);
+        Dram(float bandwidth, int prefetch_limit);
         ~Dram(){};
 
         void update(list<Bank*>* p_banks, int r);

@@ -46,7 +46,10 @@ class Array{
         P_Tile* pout_tile;
         int exec_cnt;
 
-        int last_no_round;
+        long no_macs;
+        long sram_read_bytes;
+        long sram_write_bytes;
+        long last_no_round;
 
         Array(){};
         Array(int id, int no_rows, int no_cols);
@@ -122,6 +125,10 @@ class Arrays{
         bool is_idle();
 
         void update();
+
+        long total_no_ops();
+        long total_sram_read_bytes();
+        long total_sram_write_bytes();
 
         friend class boost::serialization::access;
 

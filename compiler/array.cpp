@@ -20,6 +20,10 @@ Array::Array(int id, int no_rows, int no_cols){
     this->pout_tile = nullptr;
     this->exec_cnt = 0;
     this->curr_op = nullptr;
+
+    this->no_macs = 0;
+    this->sram_read_bytes = 0;
+    this->sram_write_bytes = 0;
 }
 
 Array::~Array(){
@@ -62,6 +66,7 @@ void Array::init_weight_buffering(int r){
     this->buf_cnt = 0;
     this->buf_state = BUF_STATE::buffering;
     this->next_w_tile = this->get_op(r)->w_tile;
+    this->sram_read_bytes += this->next_w_tile->memory_size;
 }
 
 bool Array::is_weight_buffered(int r){
@@ -92,10 +97,16 @@ void Array::init_tile_op(int r){
 
     this->curr_op = this->get_op(r);
     this->x_tile = this->curr_op->x_tile;
+    this->sram_read_bytes += this->x_tile->memory_size;
+
     this->pout_tile = this->curr_op->pout_tile;
+    this->sram_write_bytes += this->pout_tile->memory_size;
+
+    this->no_macs += get<0>(this->x_tile->dims) * get<1>(this->x_tile->dims) * get<1>(this->pout_tile->dims);
 
     if (this->curr_op->pin_op != nullptr){
         this->pin_tile = this->curr_op->pin_op->pout_tile;
+        this->sram_read_bytes += this->pin_tile->memory_size;
     }
     else{
         this->pin_tile = nullptr;
@@ -389,4 +400,28 @@ bool Arrays::is_idle(){
         }
     }
     return true;    
+}
+
+long Arrays::total_no_ops(){
+    long no_ops = 0;
+    for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
+        no_ops += 2*it->second->no_macs;
+    }
+    return no_ops;
+}
+
+long Arrays::total_sram_read_bytes(){
+    long sram_read_bytes = 0;
+    for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
+        sram_read_bytes += it->second->sram_read_bytes;
+    }
+    return sram_read_bytes;
+}
+
+long Arrays::total_sram_write_bytes(){
+    long sram_write_bytes = 0;
+    for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
+        sram_write_bytes += it->second->sram_write_bytes;
+    }
+    return sram_write_bytes;
 }

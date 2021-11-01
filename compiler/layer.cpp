@@ -46,7 +46,7 @@ Layer Layer::create_copy(string suffix){
         tuple<int, int> ind = tile_it->first;
         X_Tile* x_tile_orig = tile_it->second;
 
-        X_Tile* x_tile_new = new X_Tile(new_layer.layer_name, x_tile_orig->id, x_tile_orig->dims, x_tile_orig->precision);
+        X_Tile* x_tile_new = new X_Tile(new_layer.layer_name, x_tile_orig->id, x_tile_orig->dims, x_tile_orig->precision, x_tile_orig->memory_size);
         (*new_layer.x_tiles)[ind] = x_tile_new;                
     }
 
@@ -54,7 +54,7 @@ Layer Layer::create_copy(string suffix){
         tuple<int, int> ind = tile_it->first;
         W_Tile* w_tile_orig = tile_it->second;
 
-        W_Tile* w_tile_new = new W_Tile(new_layer.layer_name, w_tile_orig->id, w_tile_orig->dims, w_tile_orig->precision);
+        W_Tile* w_tile_new = new W_Tile(new_layer.layer_name, w_tile_orig->id, w_tile_orig->dims, w_tile_orig->precision, w_tile_orig->memory_size);
         (*new_layer.w_tiles)[ind] = w_tile_new;                
     }
 
@@ -62,8 +62,8 @@ Layer Layer::create_copy(string suffix){
         tuple<int, int, int> ind = tile_it->first;
         P_Tile* p_tile_orig = tile_it->second;
 
-        P_Tile* p_tile_new = new P_Tile(new_layer.layer_name, p_tile_orig->id, p_tile_orig->dims, p_tile_orig->precision);
-        (*new_layer.p_tiles)[ind] = p_tile_new;                
+        P_Tile* p_tile_new = new P_Tile(new_layer.layer_name, p_tile_orig->id, p_tile_orig->dims, p_tile_orig->precision, p_tile_orig->memory_size);
+        (*new_layer.p_tiles)[ind] = p_tile_new;
     }
 
     for(auto op_it = this->main_ops.begin(); op_it != this->main_ops.end(); op_it++ ){
@@ -107,7 +107,9 @@ Layer Layer::create_copy(string suffix){
                 op2_new = new_layer.get_postop_by_index(op2_old->op_ind, 1);
             }
 
-            P_Tile* pout_tile = new P_Tile(new_layer.layer_name, op_id, op_old->pout_tile->dims);
+            auto dims = op_old->pout_tile->dims;
+            int memory_size = get<0>(dims) * get<1>(dims) * 2;
+            P_Tile* pout_tile = new P_Tile(new_layer.layer_name, op_id, dims, 2, memory_size);
 
             AggrOp* aggr_op1 = new AggrOp(new_layer.layer_name, op_id, op1_new, op2_new, pout_tile, 0);
             AggrOp* aggr_op2 = new AggrOp(new_layer.layer_name, op_id, op1_new, op2_new, pout_tile, 1);
@@ -194,14 +196,24 @@ void Layers::import_layers(json j){
 void Layer::create_main_ops(){
     for (int j = 0; j < get<1>(this->no_tiles); j++){
         for (int i = 0; i < get<0>(this->no_tiles); i++){
-            X_Tile* x_tile = new X_Tile(this->layer_name, make_tuple(i,j), (*this->x_tile_dims)[make_tuple(i, j)], 1);
+            int precision = 1;
+            tuple<int, int> dims = (*this->x_tile_dims)[make_tuple(i, j)];
+            int memory_size = get<0>(dims) * get<1>(dims) * precision;
+            if (this->is_conv){
+                memory_size = memory_size / (get<0>(this->conv_kernel_size) * get<1>(this->conv_kernel_size));
+            }
+
+            X_Tile* x_tile = new X_Tile(this->layer_name, make_tuple(i,j), dims, precision, memory_size);
             (*this->x_tiles)[make_tuple(i,j)] = x_tile;
         }
     }
 
     for (int j = 0; j < get<1>(this->no_tiles); j++){
         for (int k = 0; k < get<2>(this->no_tiles); k++){
-            W_Tile* w_tile = new W_Tile(this->layer_name, make_tuple(j,k), (*this->w_tile_dims)[make_tuple(j, k)], 1);
+            int precision = 1;
+            tuple<int, int> dims = (*this->w_tile_dims)[make_tuple(j, k)];
+            int memory_size = get<0>(dims) * get<1>(dims) * precision;
+            W_Tile* w_tile = new W_Tile(this->layer_name, make_tuple(j,k), dims, precision, memory_size);
             (*this->w_tiles)[make_tuple(j,k)] = w_tile;
         }
     }
@@ -209,10 +221,10 @@ void Layer::create_main_ops(){
     for (int j = 0; j < get<1>(this->no_tiles); j++){
         for (int i = 0; i < get<0>(this->no_tiles); i++){
             for (int k = 0; k < get<2>(this->no_tiles); k++){
-                P_Tile* pout_tile = new P_Tile(this->layer_name, 
-                                                make_tuple(i,j,k), 
-                                                make_tuple(get<0>((*this->x_tile_dims)[make_tuple(i, j)]), 
-                                                            get<1>((*this->w_tile_dims)[make_tuple(j, k)])), 2);
+                int precision = 2;
+                tuple<int, int> dims = make_tuple(get<0>((*this->x_tile_dims)[make_tuple(i, j)]), get<1>((*this->w_tile_dims)[make_tuple(j, k)]));
+                int memory_size = get<0>(dims) * get<1>(dims) * precision;
+                P_Tile* pout_tile = new P_Tile(this->layer_name, make_tuple(i,j,k), dims, precision, memory_size);
                 (*this->p_tiles)[make_tuple(i,j,k)] = pout_tile;
             }
         }
@@ -285,7 +297,10 @@ void Layer::create_post_ops(Arrays* arrays, Interconnects* interconnects){
                 unconsumed_ops.pop_front();
 
                 tuple<int, int, int> op_id = make_tuple(i, j, k);
-                P_Tile* pout_tile = new P_Tile(layer_name, op_id, op1->pout_tile->dims);
+                
+                auto dims = op1->pout_tile->dims;
+                int memory_size = get<0>(dims) * get<1>(dims) * 2;
+                P_Tile* pout_tile = new P_Tile(layer_name, op_id, dims, 2, memory_size);
 
                 AggrOp* aggr_op1 = new AggrOp(this->layer_name, op_id, op1, op2, pout_tile, 0);
                 unconsumed_ops.push_back(aggr_op1);

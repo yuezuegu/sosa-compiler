@@ -89,7 +89,9 @@ AggrOp::AggrOp(string layer_name, tuple<int, int, int> op_ind, Op* operand1, Op*
 
     assert((this->pin1_tile->dims == this->pin2_tile->dims && "Input dimensions do not match!"));
     if (pout_tile == nullptr){
-        this->pout_tile = new P_Tile(layer_name, make_tuple(-1, -1, -1), this->pin1_tile->dims);
+        auto dims = this->pin1_tile->dims;
+        int memory_size = get<0>(dims) * get<1>(dims) * 2;
+        this->pout_tile = new P_Tile(layer_name, make_tuple(-1, -1, -1), dims, 2, memory_size);
     }
     else{
         this->pout_tile = pout_tile;

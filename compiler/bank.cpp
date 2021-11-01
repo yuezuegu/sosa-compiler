@@ -33,9 +33,8 @@ void Bank::spawn(int r){
             if(!front.second->allocate_on_sram(r, front.first)){
                 return;
             }
+            //this->push_evict_queue(front.first, front.second);
         }
-
-        //this->push_evict_queue(front.first, front.second);
 
         this->spawn_queue->pop_front();
         front = this->spawn_queue->front();
@@ -51,7 +50,6 @@ bool Bank::alloc_tile(int target_round, Tile* tile){
         this->push_evict_queue(target_round, tile);
         tile->is_spawn_ = true;
         
-        //assert(this->capacity_used == this->evict_queue_size());
 
         BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " new tile of type "<< PRINT_TYPE(tile->type) << " allocated, usage: " << this->capacity_used; //<< " evict_queue_size: " << this->evict_queue_size();
         return true;
@@ -97,7 +95,7 @@ bool Bank::evict(int r){
 void Bank::free_tile(Tile* tile){
     this->capacity_used -= tile->memory_size;
     
-    //assert(this->capacity_used == this->evict_queue_size());
+    assert(this->capacity_used == this->evict_queue_size());
 
     BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " tile of type "<< PRINT_TYPE(tile->type) <<" is freed, usage: " << this->capacity_used; // << " evict_queue_size: " << this->evict_queue_size();
     if (this->capacity_used < 0){
@@ -120,6 +118,7 @@ void Bank::push_evict_queue(int r, Tile* tile){
         }
     }
     this->evict_queue->push_back(make_pair(target_round, tile));
+    assert(this->capacity_used == this->evict_queue_size());
 }
 
 Banks::Banks(int no_banks, int bank_size){
