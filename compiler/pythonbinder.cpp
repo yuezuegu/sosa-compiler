@@ -13,12 +13,14 @@
 using namespace std;
 
 string csim(string json_dump, int no_array, int no_rows, int no_cols, int bank_size, float bandwidth, int prefetch_limit, string ict_type) {
-    InterconnectType interconnect_type = InterconnectType::benes_copy;
-    // std::istringstream iss{ict_type};
-    // iss >> interconnect_type;
-    // if (!iss) {
-    //     return "";
-    // }
+    logger_setup(boost::log::trivial::severity_level::error);
+
+    InterconnectType interconnect_type;
+    std::istringstream iss{ict_type};
+    iss >> interconnect_type;
+    if (!iss) {
+        return "";
+    }
 
     json jin = json::parse(json_dump);
 
