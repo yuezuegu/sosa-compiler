@@ -10,7 +10,7 @@ import sys
 import scipy.stats
 sys.path.append('.')
 
-colors = ["lightcoral","tab:red","pink","steelblue","lightskyblue","plum","gray"]
+colors = ["pink","tab:red","lightcoral","mistyrose","lightsteelblue","lightskyblue","gray","steelblue",]
 markers = ["P", "o", "d", "v", "s", "p",  "X", "D", "d", "s", "p", "P"]
 lines = ['--', '-', '-.', ':', '-.', ':','--', '-.', ':','--', '-.', ':']
 
@@ -61,7 +61,7 @@ if __name__=="__main__":
             print(fname + "/sim_result.json could not be opened!")
 
     interconn_keys = [128, 129, 130, 131, 16, 32]
-    labels = ["banyan_exp_0", "banyan_exp_1", "banyan_exp_2", "banyan_exp_3", "crossbar", "benes_copy"]
+    labels = ["Butterfly-1", "Butterfly-2", "Butterfly-4", "Butterfly-8", "Crossbar", "Benes"]
 
     no_arrays = [32,64,128,256]
     array_size = [32, 32]
@@ -81,17 +81,17 @@ if __name__=="__main__":
     e_compute = 0.4e-12 #J per MAC
     freq = 1e9
 
-    def get_interconn(key):
-        return labels[interconn_keys.index(key)]
+    # def get_interconn(key):
+    #     return labels[interconn_keys.index(key)]
 
-    cnt = {get_interconn(k): 0 for k in interconn_keys}
-    for j in out_jsons:
+    # cnt = {get_interconn(k): 0 for k in interconn_keys}
+    # for j in out_jsons:
 
-        cnt[get_interconn(j["interconnect_type"])] += 1
-        print(get_interconn(j["interconnect_type"]), " no_array: {}".format(j["no_array"]), " model: {}".format(j["model"]), " no_cycles: {}".format(j["no_cycles"]))
+    #     cnt[get_interconn(j["interconnect_type"])] += 1
+    #     print(get_interconn(j["interconnect_type"]), " no_array: {}".format(j["no_array"]), " model: {}".format(j["model"]), " no_cycles: {}".format(j["no_cycles"]))
 
 
-    print(cnt)
+    #print(cnt)
 
     total_power = {}
     for interconn in interconn_keys:
@@ -150,7 +150,7 @@ if __name__=="__main__":
     plt.ylabel('Effective Throughput (TeraOps/s)')
     plt.xlabel('TDP (Watts)')
     #plt.ylim(bottom=0, top=420)
-    plt.xlim(right=750)
+    #plt.xlim(right=750)
     plt.legend(fontsize='small',frameon=False)
     plt.tight_layout()
     plt.savefig("plots/interconn_throughput.png")
