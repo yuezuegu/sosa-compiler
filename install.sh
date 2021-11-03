@@ -29,6 +29,13 @@ function fail_msg() {
     exit 1
 }
 
+# for cmd line parsing
+function usage() {
+    echo "$0 usage: "
+    grep ")\ #" "$0"
+    exit 0
+}
+
 while getopts "h-:" OPT
 do
     if [[ "$OPT" = "-" ]]
