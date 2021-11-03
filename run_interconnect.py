@@ -2,9 +2,10 @@ import os
 import time
 from datetime import datetime
 import subprocess
+import itertools 
 
 def wait_for_proc_limit(running_procs):
-    while len(running_procs) > 1000:
+    while len(running_procs) > 32:
         for proc in running_procs:
             retcode = proc.poll()
             if retcode is not None: # Process finished.
@@ -18,6 +19,20 @@ def wait_for_proc_limit(running_procs):
                 continue
     return running_procs
 
+def check_if_ended(running_procs):
+    for proc in running_procs:
+        retcode = proc.poll()
+        if retcode is not None: # Process finished.
+            print("Process {} ended with code {}".format(proc.pid, retcode))
+            if retcode != 0:
+                print("FAILED: Return code is not 0")
+            running_procs.remove(proc)
+            break
+        else: # No process is done, wait a bit and check again.
+            time.sleep(.1)
+            continue
+    return running_procs
+
 if __name__=="__main__":
     start = time.time()
 
@@ -27,21 +42,25 @@ if __name__=="__main__":
     BATCH_SIZE = 1
     IMSIZE = 299
     ARRAY_SIZE = (32, 32)
-    SENTENCE_LEN = 100
+
     MEMORY_BW = 1200
     BANK_SIZE = 1 << 19
 
-    cnn_models = ["inception", "resnet50", "densenet121"]
-    bert_models = ["bert_small", "bert_base", "bert_large"]
+    cnn_models = ["inception", "resnet50",  "resnet101",  "resnet152", "densenet121", "densenet169", "densenet201"]
+    cnn_models = list(itertools.product(cnn_models, [1]))
+
+    bert_models = ["bert_tiny", "bert_small", "bert_medium", "bert_base", "bert_large"]
+    no_seqs = [10, 20, 40, 60, 80, 100, 200, 300, 400, 500]
+    bert_models = list(itertools.product(bert_models, no_seqs))
 
     no_arrays = [32,64,128,256,512]
     
     out_dirs = []
     running_procs = []
 
-    for INTERCONN in ["banyan_exp_0", "banyan_exp_1", "banyan_exp_2", "banyan_exp_3", "benes_vanilla", "benes_copy", "crossbar"]:
+    for INTERCONN in ["banyan_exp_0", "banyan_exp_1", "banyan_exp_2", "banyan_exp_3", "benes_copy", "crossbar"]:
         for N in no_arrays:
-            for MODEL in bert_models + cnn_models:
+            for MODEL,SENTENCE_LEN in bert_models + cnn_models:
                 
                 OUT_DIR = exp_dir + "/" + datetime.today().strftime('%Y-%m-%d-%H%M%S')
                 out_dirs.append(OUT_DIR)
@@ -72,6 +91,7 @@ if __name__=="__main__":
                 time.sleep(2)
 
                 wait_for_proc_limit(running_procs)
-        
+                check_if_ended(running_procs)
+
     elapsed = time.time() - start
     os.system("echo Script is done in {} hours. Results are here: {}".format(elapsed/60/60, exp_dir))

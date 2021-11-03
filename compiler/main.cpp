@@ -85,6 +85,8 @@ int main(int ac, char* av[]){
     Layers* layers = new Layers();
     layers->import_layers(jin);
 
+    cout << "Input file " << ifname << " is successfully parsed" << endl;
+
     Arrays* arrays = new Arrays(no_array, no_rows, no_cols);
     PostProcessors* post_processors = new PostProcessors(no_array);
     Banks* banks = new Banks(no_array, bank_size);
@@ -110,18 +112,17 @@ int main(int ac, char* av[]){
     int no_repeat = jin["no_repeat"].get<int>();
     compiler->duplicate_schedule(layers, no_repeat);
 
-    ofstream ofs;
-    string ofname = work_dir + "/schedule.dat";
-    ofs.open(ofname, ofstream::out);
-    if(!ofs.is_open()){
-        cout << "Output file " << ofname << " cannot be opened." << endl;
-        exit(1);
-    }
-    boost::archive::text_oarchive oa(ofs);
-    // write class instance to archive
-    oa << compiler;
-    // archive and stream closed when destructors are called
-    ofs.close();
+    string ofname;
+    // ofstream ofs;
+    // ofname = work_dir + "/schedule.dat";
+    // ofs.open(ofname, ofstream::out);
+    // if(!ofs.is_open()){
+    //     cout << "Output file " << ofname << " cannot be opened." << endl;
+    //     exit(1);
+    // }
+    // boost::archive::text_oarchive oa(ofs);
+    // oa << compiler;
+    // ofs.close();
 
     compiler->run_cycle_model();
 

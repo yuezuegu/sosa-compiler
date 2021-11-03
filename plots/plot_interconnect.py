@@ -1,5 +1,7 @@
 import os
 import json
+import itertools 
+
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import pickle 
@@ -46,7 +48,7 @@ def get_result(target, fields, out_jsons):
 
 if __name__=="__main__":
 
-    exp_dir = "experiments/run-2021_10_30-12_31_34"
+    exp_dir = "experiments/run-2021_11_02-16_20_50"
 
     files = os.listdir(exp_dir)
 
@@ -58,15 +60,22 @@ if __name__=="__main__":
         except:
             print(fname + "/sim_result.json could not be opened!")
 
-    interconn_keys = [128, 129, 130, 131, 16, 32, 64]
-    labels = ["banyan_exp_0", "banyan_exp_1", "banyan_exp_2", "banyan_exp_3", "crossbar", "benes_copy", "benes_vanilla"]
+    interconn_keys = [128, 129, 130, 131, 16, 32]
+    labels = ["banyan_exp_0", "banyan_exp_1", "banyan_exp_2", "banyan_exp_3", "crossbar", "benes_copy"]
 
     no_arrays = [32,64,128,256]
     array_size = [32, 32]
 
-    cnn_models = ["inception", "resnet50", "densenet121"]
-    bert_models = ["bert_small", "bert_base", "bert_large"]
-    no_seq = 100
+    # cnn_models = ["inception", "resnet50", "densenet121"]
+    # bert_models = ["bert_small", "bert_base", "bert_large"]
+    # no_seq = 100
+
+    cnn_models = ["inception", "resnet50",  "resnet101",  "resnet152", "densenet121", "densenet169", "densenet201"]
+    cnn_models = list(itertools.product(cnn_models, [1]))
+
+    bert_models = ["bert_tiny", "bert_small", "bert_medium", "bert_base", "bert_large"]
+    no_seqs = [10, 20, 40, 60, 80, 100, 200, 300, 400, 500]
+    bert_models = list(itertools.product(bert_models, no_seqs))
 
     e_data = 4.1e-12 #J per byte
     e_compute = 0.4e-12 #J per MAC
@@ -100,7 +109,7 @@ if __name__=="__main__":
         for no_array in no_arrays:
             throughputs[interconn][no_array] = {}
 
-            for m in bert_models:
+            for m, no_seq in bert_models:
                 try:
                     no_cycles = get_result("no_cycles", {"no_array":no_array, "model":m, "interconnect_type":interconn, "sentence_len":no_seq}, out_jsons)
                     no_ops = get_result("no_ops", {"no_array":no_array, "model":m, "interconnect_type":interconn, "sentence_len":no_seq}, out_jsons)
@@ -111,7 +120,7 @@ if __name__=="__main__":
 
             #throughputs.append([no_ops / (n / freq) / 1e12 for n in no_cycles])
 
-            for m in cnn_models:
+            for m, no_seq in cnn_models:
                 try:
                     no_cycles = get_result("no_cycles", {"no_array":no_array, "model":m, "interconnect_type":interconn}, out_jsons)
                     no_ops = get_result("no_ops", {"no_array":no_array, "model":m, "interconnect_type":interconn}, out_jsons)
