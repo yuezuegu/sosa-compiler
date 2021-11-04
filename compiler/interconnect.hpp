@@ -9,7 +9,7 @@
 using namespace std;
 
 enum class InterconnectType : unsigned {
-    crossbar = 1 << 4, // TODO not yet implemented
+    crossbar = 1 << 4,
     benes_copy = 2 << 4,
     benes_vanilla = 4 << 4,
     banyan = 8 << 4, // Vanilla Banyan network
