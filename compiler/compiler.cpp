@@ -744,9 +744,9 @@ void Compiler::run_cycle_model(){
 
             new_round = false;
 
-            if ( r % 10 == 0){
-                cout << "Round: " << r << " completed with at array clock cycle: " << arr_cycle << " pp clock cycle: " << pp_cycle << endl;
-            }
+            // if ( r % 10 == 0){
+            //     cout << "Round: " << r << " completed with at array clock cycle: " << arr_cycle << " pp clock cycle: " << pp_cycle << endl;
+            // }
         }
 
         //Propagate clock

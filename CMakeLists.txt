@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.11)
+cmake_minimum_required (VERSION 3.10)
 
 project(sosa-compiler LANGUAGES C CXX)
 
@@ -12,7 +12,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(Boost 1.68 REQUIRED log program_options serialization)
+find_package(Boost 1.68 REQUIRED log program_options serialization thread)
 # find_package(nlohmann_json 3.2.0 REQUIRED)
 
 set(
@@ -119,6 +119,36 @@ target_link_libraries(
     Boost::program_options
     Boost::serialization
 )
+
+add_subdirectory(compiler/pybind11)
+pybind11_add_module(
+    pythonbinder 
+    compiler/pythonbinder.cpp 
+    compiler/layer.cpp
+    compiler/ops.cpp
+    compiler/compiler.cpp
+    compiler/tiles.cpp
+    compiler/bank.cpp
+    compiler/array.cpp
+    compiler/interconnect.cpp
+    compiler/post_processor.cpp
+    compiler/dram.cpp   
+    )
+
+target_include_directories(pythonbinder PRIVATE compiler/)
+target_link_libraries(
+    pythonbinder
+    PRIVATE
+    # nlohmann_json::nlohmann_json
+    Boost::thread 
+    Boost::boost
+    Boost::log
+    Boost::program_options
+    Boost::serialization
+    Boost::filesystem
+)
+
+
 
 add_test(NAME test_pls COMMAND test_pls)
 

@@ -29,6 +29,13 @@ function fail_msg() {
     exit 1
 }
 
+# for cmd line parsing
+function usage() {
+    echo "$0 usage: "
+    grep ")\ #" "$0"
+    exit 0
+}
+
 while getopts "h-:" OPT
 do
     if [[ "$OPT" = "-" ]]
@@ -143,7 +150,8 @@ function install_boost() {
         mv boost_* boost || fail_msg "mv failed."
         pushd ./boost
             # TODO change this line to build other libraries as well
-            ./bootstrap.sh --prefix="$PREFIX/" --with-libraries=log,system,program_options,serialization || \
+            ./bootstrap.sh --prefix="$PREFIX/" --with-libraries=log,system,program_options,serialization,filesystem,thread || \
+            #./bootstrap.sh --prefix="$PREFIX/" || \
                 fail_msg "bootstrap.sh failed."
             ./b2 --prefix="$PREFIX/" install -j 8 || fail_msg "b2 failed."
         popd
