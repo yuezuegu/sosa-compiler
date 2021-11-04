@@ -532,6 +532,7 @@ void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
                 op_new->w_tile->assign_bank(op_old->w_tile->bank);
                 op_new->pout_tile->assign_bank(op_old->pout_tile->bank);
 
+                //TODO: This fails when N=1
                 int old_round = op_old->round_placed;
                 int new_round = old_round + i*max_no_rounds + 1;
                 op_old->array_placed->assign_op(new_round, op_new);

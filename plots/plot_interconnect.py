@@ -153,11 +153,8 @@ if __name__=="__main__":
     #plt.xlim(right=750)
     plt.legend(fontsize='small',frameon=False)
     plt.tight_layout()
-    plt.savefig("plots/interconn_throughput.png")
-
-
-
-
+    #plt.savefig("plots/interconn_throughput.png")
+    plt.savefig("plots/interconn_throughput.pdf")
 
     exit()
 
