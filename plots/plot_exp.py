@@ -5,7 +5,8 @@ import json
 import os
 from typing import Callable, Dict, Tuple, List, Any
 from functools import reduce
-
+import scipy.stats
+import scipy
 import matplotlib.pyplot as plt
 from matplotlib import rc
 
@@ -114,6 +115,7 @@ def calculate_no_tiles(fpath: str) -> int:
             r = r + a * b * c
             # print(a, b, c)
         # print(r)
+        r = r * d["no_repeat"]
         return r
 
 def load_experiments(dir_path: str) -> Dict[ExpCfg, ExpRes]:
@@ -135,7 +137,7 @@ def load_experiments(dir_path: str) -> Dict[ExpCfg, ExpRes]:
 
 def filter_key(d: Dict, pred) -> Dict:
     """
-    Filters the given function with a predicate.
+    Filters the given dictionary with a predicate.
     """
     return { k: v for (k, v) in d.items() if pred(k) }
 
@@ -182,14 +184,14 @@ def main():
                     )
                 )
             for style, ict in zip(plot_styles, l_ict_type):
-                l_total_rounds = []
+                l_percentages = []
                 for no_array in l_no_array:
-                    print(ict, no_array)
                     x = filter_key(experiments, filter_func)
-                    no_rounds = [ xx.rounds() for xx in x.values() ]
-                    no_tiles = [ xx.no_tiles for xx in x.values() ]
-                    l_total_rounds.append(sum(no_tiles) / sum(no_rounds) / no_array * 100)
-                ax.plot(l_no_array, l_total_rounds, label=str(ict), **style)
+                    percentages = [
+                        xx.no_tiles / xx.no_main_rounds / no_array * 100
+                        for xx in x.values() ]
+                    l_percentages.append(scipy.stats.gmean(percentages))
+                ax.plot(l_no_array, l_percentages, label=str(ict), **style)
             
             ax.set_xscale("log", base=2)
             ax.set_xticks(l_no_array)
@@ -209,7 +211,7 @@ def main():
         for model in models:
             plot_active_arrays_percentage(model=model)
         plot_active_arrays_percentage(None)
-    
+
     task1()
 
 
