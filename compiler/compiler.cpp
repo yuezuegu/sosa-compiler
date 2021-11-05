@@ -534,7 +534,7 @@ void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
 
                 //TODO: This fails when N=1
                 int old_round = op_old->round_placed;
-                int new_round = old_round + i*max_no_rounds + 1;
+                int new_round = old_round + i*(max_no_rounds+1) + 1;
                 op_old->array_placed->assign_op(new_round, op_new);
 
                 if (op_old->pin_op != nullptr){
