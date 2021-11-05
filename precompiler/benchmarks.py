@@ -14,7 +14,7 @@ import pickle
 
 import time 
 
-from graph import convert_keras_to_graph
+from .graph import convert_keras_to_graph
 
 class benchmark:
 	def __init__(self, model_name, model_type, image_size=299, seq_len=128, batch_size=1):

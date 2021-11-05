@@ -25,11 +25,14 @@ logging.basicConfig(filename='logger.out', filemode='w', level=logging.INFO)
 
 import json 
 
-def split_mat(x_size, w_size, array_size, partition_size=None):
+def split_mat(x_size, w_size, array_size, tile_first_dim=None):
     no_row, no_col = array_size
 
-    if partition_size is None:
+    if tile_first_dim is None:
         partition_size = (no_row, no_row, no_col)
+    else:
+        partition_size = (tile_first_dim, no_row, no_col)
+
 
     dim1 = int(x_size[0])
     dim2 = int(w_size[0])
@@ -112,7 +115,7 @@ def main():
     parser.add_argument('--imsize', type=int, required=False, default=299)
     parser.add_argument('--array_size', type=int, nargs='+', required=False, default=[32,32], help='Array size')
     parser.add_argument('--out_dir', type=str, required=False, default="experiments/tmp")
-    parser.add_argument('--partition_size', type=int, nargs='+', required=False, default=None)
+    parser.add_argument('--partition_size', type=int, required=False, default=None)
 
     args = parser.parse_args()
 

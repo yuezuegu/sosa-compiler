@@ -186,9 +186,13 @@ def main():
                 for no_array in l_no_array:
                     print(ict, no_array)
                     x = filter_key(experiments, filter_func)
+                    print(list(x.keys()))
                     no_rounds = [ xx.rounds() for xx in x.values() ]
                     no_tiles = [ xx.no_tiles for xx in x.values() ]
                     l_total_rounds.append(sum(no_tiles) / sum(no_rounds) / no_array * 100)
+                    avg1 = sum(no_tiles) / sum(no_rounds) / no_array * 100
+                    avg2 = sum([no_tiles[i] / no_rounds[i] / no_array * 100 for i in range(len(no_tiles))]) / len(no_tiles)
+                    print(avg1, " - ", avg2)
                 ax.plot(l_no_array, l_total_rounds, label=str(ict), **style)
             
             ax.set_xscale("log", base=2)
