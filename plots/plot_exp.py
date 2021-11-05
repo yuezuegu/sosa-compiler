@@ -290,6 +290,8 @@ def main():
                 results = filter_key(experiments, filter(ict))
                 perc_active = calculate_perc_active(no_array, results.values())
                 y_pos[idx] = perc_active
+
+            print("\t".join([ f"{x:.2f}" for x in y_pos ]))
             
             ax.grid()
             ax.set_axisbelow(True)
@@ -314,6 +316,8 @@ def main():
                 results = filter_key(experiments, filter(ict))
                 perc_active = calculate_cyc_op(results.values())
                 y_pos[idx] = perc_active
+
+            print("\t".join([ f"{x:.2f}" for x in y_pos ]))
             
             ax.grid()
             ax.set_axisbelow(True)
@@ -338,13 +342,15 @@ def main():
                 for k, v in results.items():
                     y_pos[idx] = v.interconnect_tdp
                     break
+
+            print("\t".join([ f"{x:.2f}" for x in y_pos ]))
             
             ax.grid()
             ax.set_axisbelow(True)
             ax.bar(x_pos, y_pos, align="center", width=0.6, label="N = 128")
             ax.set_xticks(x_pos)
             ax.set_xticklabels(text_wrap(l_ict_type, 15), rotation=30)
-            ax.set_ylabel("Power [Watt/byte]")
+            ax.set_ylabel("Power [Watt]")
             ax.set_xlabel("Interconnect Type")
             ax.legend(loc="upper left")
 
