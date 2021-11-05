@@ -1,10 +1,11 @@
-from typing import Type, Any, Dict, Tuple, List
+from typing import Callable, Type, Any, Dict, Tuple, List, TypeVar
 from dataclasses import fields
 
 def named_zip(**kwargs: Dict[str, List[Any]]) -> List[Dict[str, Any]]:
     return [
         dict(zip(kwargs.keys(), v)) for v in zip(*kwargs.values())
     ]
+
 
 # TODO is there a better way to create dataclasses from dictionaries?
 def _from_dict():
@@ -39,3 +40,13 @@ def _from_dict():
 
 from_dict = _from_dict()
 del _from_dict
+
+U = TypeVar('U')
+T = TypeVar('T')
+
+def filter_key(d: Dict[U, T], pred: Callable[[U], bool]) -> Dict[U, T]:
+    """
+    Filters the given dictionary with a predicate.
+    """
+    return { k: v for (k, v) in d.items() if pred(k) }
+
