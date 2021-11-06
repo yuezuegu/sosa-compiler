@@ -59,7 +59,7 @@ if __name__=="__main__":
     running_procs = []
 
     for INTERCONN in ["banyan_exp_0", "banyan_exp_1", "banyan_exp_2", "banyan_exp_3", "benes_copy", "crossbar"]:
-        for N in no_arrays:
+        for no_array in no_arrays:
             for MODEL,SENTENCE_LEN in bert_models + cnn_models:
                 
                 OUT_DIR = exp_dir + "/" + datetime.today().strftime('%Y-%m-%d-%H%M%S')
@@ -78,7 +78,7 @@ if __name__=="__main__":
                 cmd = f"./build-Release/compiler_st \
                     -r {ARRAY_SIZE[0]} \
                     -c {ARRAY_SIZE[1]} \
-                    -N {N} \
+                    -N {no_array} \
                     -M {MEMORY_BW} \
                     -S {BANK_SIZE} \
                     -I {INTERCONN} \
