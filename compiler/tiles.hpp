@@ -36,6 +36,7 @@ class Tile{
         int memory_size; //In terms of number of bytes
 
         list<Op*>* input_of;
+        Op* output_of;
 
         Bank* bank;
 

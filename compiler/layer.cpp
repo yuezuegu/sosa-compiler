@@ -235,7 +235,6 @@ void Layer::create_main_ops(){
                 tuple<int, int> dims = make_tuple(get<0>((*this->x_tile_dims)[make_tuple(i, j)]), get<1>((*this->w_tile_dims)[make_tuple(j, k)]));
                 int memory_size = get<0>(dims) * get<1>(dims) * precision;
                 P_Tile* pout_tile = new P_Tile(this->layer_name, make_tuple(i,j,k), dims, precision, memory_size);
-                pout_tile->is_allocated_on_sram = true;
                 (*this->p_tiles)[make_tuple(i,j,k)] = pout_tile;
             }
         }

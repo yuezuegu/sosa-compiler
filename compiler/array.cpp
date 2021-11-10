@@ -1,4 +1,5 @@
 #include "array.hpp"
+#include "dram.hpp"
 
 Array::Array(int id, int no_rows, int no_cols){
     this->id = id;
@@ -426,7 +427,7 @@ long Arrays::total_sram_write_bytes(){
 }
 
 
-bool Arrays::is_x_tiles_ready(int r){
+bool Arrays::is_x_tiles_ready(int r, Dram* dram){
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
         MultOp* op = it->second->get_op(r);
         if (op == nullptr) continue;
@@ -437,7 +438,7 @@ bool Arrays::is_x_tiles_ready(int r){
     }
     return true;
 }
-bool Arrays::is_w_tiles_ready(int r){
+bool Arrays::is_w_tiles_ready(int r, Dram* dram){
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
         MultOp* op = it->second->get_op(r);
         if (op == nullptr) continue;
@@ -448,7 +449,7 @@ bool Arrays::is_w_tiles_ready(int r){
     }
     return true;
 }
-bool Arrays::is_pout_tiles_ready(int r){
+bool Arrays::is_pout_tiles_ready(int r, Dram* dram){
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
         MultOp* op = it->second->get_op(r);
         if (op == nullptr) continue;
@@ -459,13 +460,14 @@ bool Arrays::is_pout_tiles_ready(int r){
     }
     return true;
 }
-bool Arrays::is_pin_tiles_ready(int r){
+bool Arrays::is_pin_tiles_ready(int r, Dram* dram){
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){
         MultOp* op = it->second->get_op(r);
         if (op == nullptr) continue;
         if (op->pin_op == nullptr) continue;
         if (!op->pin_op->pout_tile->is_allocated()){
-            BOOST_LOG_TRIVIAL(info) << "Pin Tile: " << op->pin_op->pout_tile->tag << " is not allocated.";
+            dram->load_queue->push_front(make_pair(r, op->pin_op->pout_tile));
+            BOOST_LOG_TRIVIAL(info) << "Pin Tile: " << op->pin_op->pout_tile->tag << " is missed, placing it in front of the load queue";
             return false;
         }
     }

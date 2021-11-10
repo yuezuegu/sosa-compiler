@@ -19,7 +19,8 @@ X_Tile::X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int 
 
     this->bank = nullptr;
     this->input_of = new list<Op*>();
-
+    this->output_of = nullptr;
+    
     this->is_spawn_ = false;
 
     this->tag = "" + this->layer_name + ":" + to_string(get<0>(this->id)) + "-" + to_string(get<1>(this->id));
@@ -39,6 +40,7 @@ W_Tile::W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int 
 
     this->bank = nullptr;
     this->input_of = new list<Op*>();
+    this->output_of = nullptr;
 
     this->is_spawn_ = false;
 
@@ -59,7 +61,8 @@ P_Tile::P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims,
 
     this->bank = nullptr;
     this->input_of = new list<Op*>();
-
+    this->output_of = nullptr;
+    
     this->is_spawn_ = false;
     this->tag = "" + this->layer_name + ":" + to_string(get<0>(this->id)) + "-" + to_string(get<1>(this->id)) + "-" + to_string(get<2>(this->id));
 }

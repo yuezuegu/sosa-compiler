@@ -532,7 +532,6 @@ void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
                 op_new->w_tile->assign_bank(op_old->w_tile->bank);
                 op_new->pout_tile->assign_bank(op_old->pout_tile->bank);
 
-                //TODO: This fails when N=1
                 int old_round = op_old->round_placed;
                 int new_round = old_round + i*(max_no_rounds+1) + 1;
                 op_old->array_placed->assign_op(new_round, op_new);
@@ -603,17 +602,19 @@ void Compiler::check_if_livelock(list<P_Tile*>* p_tiles){
     }
 }
 
-bool Compiler::is_all_data_ready(Arrays* arrays, PostProcessors* post_processors, int r){    
-    if(!this->arrays->is_w_tiles_ready(r)) return false;
-    if(!this->arrays->is_x_tiles_ready(r)) return false;
-    if(!this->arrays->is_pout_tiles_ready(r)) return false;
-    if(!this->arrays->is_pin_tiles_ready(r)) return false;
+bool Compiler::is_all_data_ready(Arrays* arrays, PostProcessors* post_processors, int r){
+    bool is_ready = true;
 
-    if(!this->post_processors->is_pin1_ready(r)) return false;
-    if(!this->post_processors->is_pin2_ready(r)) return false;
-    if(!this->post_processors->is_pout_ready(r)) return false;
+    if(!this->arrays->is_w_tiles_ready(r, this->dram)) is_ready = false;
+    if(!this->arrays->is_x_tiles_ready(r, this->dram)) is_ready = false;
+    if(!this->arrays->is_pout_tiles_ready(r, this->dram)) is_ready = false;
+    if(!this->arrays->is_pin_tiles_ready(r, this->dram)) is_ready = false;
+ 
+    if(!this->post_processors->is_pin1_ready(r, this->dram)) is_ready = false;
+    if(!this->post_processors->is_pin2_ready(r, this->dram)) is_ready = false;
+    if(!this->post_processors->is_pout_ready(r, this->dram)) is_ready = false;
 
-    return true;
+    return is_ready;
 }
 
 void Compiler::create_memory_fifo(){
@@ -698,7 +699,7 @@ void Compiler::run_cycle_model(){
 
     int round_clk = 0;
     bool new_round = true;
-    while(r < max_rounds){
+    while(r < max_rounds || !this->banks->is_write_back_empty()){
         if (new_round){
             // Round start
             round_clk = 0;

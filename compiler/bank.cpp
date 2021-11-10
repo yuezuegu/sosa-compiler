@@ -71,11 +71,18 @@ bool Bank::evict(int r){
     auto front_it = this->evict_queue->begin();
     if (front_it->first >= r) return false;
 
-    front_it->second->remove_from_sram();
-    this->evict_queue->erase(front_it);
-    this->free_tile(front_it->second);
-    return true;
+    Tile* evict_tile = front_it->second;
 
+    if (evict_tile->output_of != nullptr){
+        if(evict_tile->output_of->is_finalop){
+            evict_tile->bank->write_back_queue->push_back(evict_tile);
+        }
+    }
+
+    evict_tile->remove_from_sram();
+    this->evict_queue->erase(front_it);
+    this->free_tile(evict_tile);
+    return true;
 }
 
 void Bank::free_tile(Tile* tile){
@@ -218,4 +225,21 @@ void Banks::print_usage(){
         cout << "bank " << (*it)->id << " : " << (*it)->capacity_used << " / " << (*it)->capacity << endl;
     }
     cout << flush;
+}
+
+
+bool Banks::is_write_back_empty(){
+    for (auto it = this->x_banks->begin(); it != this->x_banks->end(); it++){
+        if(!(*it)->write_back_queue->empty()) return false;
+    }    
+
+    for (auto it = this->w_banks->begin(); it != this->w_banks->end(); it++){
+        if(!(*it)->write_back_queue->empty()) return false;
+    }    
+
+    for (auto it = this->p_banks->begin(); it != this->p_banks->end(); it++){
+        if(!(*it)->write_back_queue->empty()) return false;
+    }    
+
+    return true;
 }
