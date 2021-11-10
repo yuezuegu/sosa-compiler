@@ -53,19 +53,19 @@ void Dram::update(list<Bank*>* p_banks, int r){
         bw_used += bw_used_;
     }
 
-    for (auto it = p_banks->begin(); it != p_banks->end(); it++){
-        while( !(*it)->write_back_queue->empty() ){
-            Tile* front_tile =  (*it)->write_back_queue->front();
-            float bw_used_ = front_tile->write_to_memory(this->bandwidth-bw_used);
-            this->p_tiles_bw_usage += bw_used_;
+    // for (auto it = p_banks->begin(); it != p_banks->end(); it++){
+    //     while( !(*it)->write_back_queue->empty() ){
+    //         Tile* front_tile =  (*it)->write_back_queue->front();
+    //         float bw_used_ = front_tile->write_to_memory(this->bandwidth-bw_used);
+    //         this->p_tiles_bw_usage += bw_used_;
 
-            bw_used += bw_used_;
+    //         bw_used += bw_used_;
 
-            if (bw_used >= this->bandwidth){
-                return;
-            }
-        }
-    }
+    //         if (bw_used >= this->bandwidth){
+    //             return;
+    //         }
+    //     }
+    // }
 } 
 
 

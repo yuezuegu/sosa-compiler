@@ -33,7 +33,7 @@ Array::~Array(){
 void Array::update(){
     if (this->buf_state == BUF_STATE::buffering) {
         if (this->buf_cnt < get<0>(this->next_w_tile->dims)){
-            assert(this->next_w_tile->is_allocated() && "Next_W tile is not on sram");
+            //assert(this->next_w_tile->is_allocated() && "Next_W tile is not on sram");
             this->buf_cnt++;
         }
         else{
@@ -43,12 +43,12 @@ void Array::update(){
 
     if (this->arr_state == ARR_STATE::processing){
         if (this->exec_cnt < get<0>(this->x_tile->dims)){
-            assert(this->x_tile->is_allocated() && "X tile is not on sram");
-            assert(this->curr_w_tile->is_allocated() && "Curr_W_tile is not on sram");
-            assert(this->pout_tile->is_allocated() && "Pout is not on sram");
-            if (this->pin_tile != nullptr){
-                assert(this->pin_tile->is_allocated() && "Pin is not on sram");
-            }
+            // assert(this->x_tile->is_allocated() && "X tile is not on sram");
+            // assert(this->curr_w_tile->is_allocated() && "Curr_W_tile is not on sram");
+            // assert(this->pout_tile->is_allocated() && "Pout is not on sram");
+            // if (this->pin_tile != nullptr){
+            //     assert(this->pin_tile->is_allocated() && "Pin is not on sram");
+            // }
             this->exec_cnt++;
         }
         else{
@@ -355,7 +355,6 @@ list<P_Tile*>* Arrays::get_pin_tiles(int r){
 
     return pin_tiles;
 }
-
 
 bool Arrays::is_weights_buffered(int r){
     for (auto it = this->array_map->begin(); it != this->array_map->end(); it++){

@@ -71,6 +71,7 @@ if __name__=="__main__":
                     --batch_size {BATCH_SIZE} \
                     --sentence_len {SENTENCE_LEN} \
                     --imsize {IMSIZE} \
+                    --array_size {ARRAY_SIZE[0]} {ARRAY_SIZE[1]} \
                     --out_dir {OUT_DIR}'
                 print(cmd)
                 subprocess.run(cmd, shell=True)

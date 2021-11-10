@@ -35,7 +35,8 @@ class Tile{
         Bank* bank;
 
         bool is_spawn_;
-
+        bool is_allocated_on_sram;
+        
         void assign_bank(Bank* bank);
         bool is_allocated();
         int get_mem_width();
@@ -60,8 +61,6 @@ class Tile{
             ar & this->is_allocated_on_sram;
         }
 
-    protected:
-        bool is_allocated_on_sram;
         
 };
 
