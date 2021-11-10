@@ -8,6 +8,8 @@
 #include "helper.hpp"
 #include "serialize_tuple.h"
 
+#include <boost/log/trivial.hpp>
+
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/list.hpp>
 #include <boost/archive/text_oarchive.hpp>
@@ -125,6 +127,8 @@ class P_Tile: public Tile{
 
         friend class boost::serialization::access;
         
+        string get_id_str();
+
         template<class Archive>
         void serialize(Archive & ar, const unsigned int version){
             ar & this->layer_name;   

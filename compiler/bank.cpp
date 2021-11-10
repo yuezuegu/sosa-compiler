@@ -52,8 +52,10 @@ bool Bank::alloc_tile(int target_round, Tile* tile){
         this->push_evict_queue(target_round, tile);
         tile->is_spawn_ = true;
         
-
-        BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " new tile of type "<< PRINT_TYPE(tile->type) << " allocated, usage: " << this->capacity_used; //<< " evict_queue_size: " << this->evict_queue_size();
+        if (tile->type == data_type::P){
+            BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " new tile of layer: " << tile->layer_name << " id: " << ((P_Tile*)tile)->get_id_str() << " of type "<< PRINT_TYPE(tile->type) << " allocated, usage: " << this->capacity_used; //<< " evict_queue_size: " << this->evict_queue_size();
+        }
+        
         return true;
     }
     else{

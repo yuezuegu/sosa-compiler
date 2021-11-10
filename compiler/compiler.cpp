@@ -604,6 +604,8 @@ void Compiler::check_if_livelock(list<P_Tile*>* p_tiles){
 }
 
 bool Compiler::check_if_data_ready(Arrays* arrays, PostProcessors* post_processors, int r){
+    return true;
+    
     bool is_ready;
 
     list<W_Tile*>* w_tiles = arrays->get_w_tiles(r+1);
@@ -678,15 +680,15 @@ void Compiler::create_memory_fifo(){
         for (auto it = sch->begin(); it != sch->end(); it++){
             if (*it == nullptr) continue;
             if ((*it)->pin_op == nullptr) continue;
-            this->dram->load_queue->push_back(make_pair(r,(*it)->pin_op->pout_tile));
+            //this->dram->load_queue->push_back(make_pair(r,(*it)->pin_op->pout_tile));
         }
 
         list<AggrOp*>* postops = this->post_processors->get_schedule(r);
         for (auto it = postops->begin(); it != postops->end(); it++){
             if (*it == nullptr) continue;
             (*it)->pout_tile->bank->spawn_queue->push_back(make_pair(r,(*it)->pout_tile));
-            this->dram->load_queue->push_back(make_pair(r,(*it)->pin1_tile));
-            this->dram->load_queue->push_back(make_pair(r,(*it)->pin2_tile));
+            //this->dram->load_queue->push_back(make_pair(r,(*it)->pin1_tile));
+            //this->dram->load_queue->push_back(make_pair(r,(*it)->pin2_tile));
         }
 
         delete sch;
