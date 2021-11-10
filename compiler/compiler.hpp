@@ -51,7 +51,7 @@ class Compiler{
         int no_post_rounds();
         void create_memory_fifo();
         void run_cycle_model();
-        bool check_if_data_ready(Arrays* arrays, PostProcessors* post_processors, int r);
+        bool is_all_data_ready(Arrays* arrays, PostProcessors* post_processors, int r);
         void check_if_livelock(list<P_Tile*>* p_tiles);
 
         void duplicate_schedule(Layers* layers, int no_repeat);

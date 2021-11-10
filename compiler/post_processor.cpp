@@ -16,9 +16,9 @@ PostProcessor::PostProcessor(int id){
 void PostProcessor::update(){
     if (this->state == PP_STATE::processing){
         if (this->exec_cnt < get<0>(this->pout_tile->dims)){
-            // assert(this->pin1_tile->is_allocated() && "Pin1 is not on sram");
-            // assert(this->pin1_tile->is_allocated() && "Pin2 is not on sram");
-            // assert(this->pout_tile->is_allocated() && "Pout is not on sram");
+            assert(this->pin1_tile->is_allocated() && "Pin1 is not on sram");
+            assert(this->pin1_tile->is_allocated() && "Pin2 is not on sram");
+            assert(this->pout_tile->is_allocated() && "Pout is not on sram");
             this->exec_cnt++;
         }
         else{
@@ -261,4 +261,46 @@ list<P_Tile*>* PostProcessors::get_pout_tiles(int r){
     }    
 
     return pout_tiles;
+}
+
+bool PostProcessors::is_pin1_ready(int r){
+
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        AggrOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        if (!op->pin1_tile->is_allocated()){
+            BOOST_LOG_TRIVIAL(info) << "Pin1 Tile: " << op->pin1_tile->tag << " is not allocated.";
+            return false;
+        }
+    }    
+
+    return true;
+}
+
+bool PostProcessors::is_pin2_ready(int r){
+
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        AggrOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        if (!op->pin2_tile->is_allocated()){
+            BOOST_LOG_TRIVIAL(info) << "Pin2 Tile: " << op->pin2_tile->tag << " is not allocated.";
+            return false;
+        }
+    }    
+
+    return true;
+}
+
+bool PostProcessors::is_pout_ready(int r){
+
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        AggrOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        if (!op->pout_tile->is_allocated()){
+            BOOST_LOG_TRIVIAL(info) << "PP_pout Tile: " << op->pout_tile->tag << " is not allocated.";
+            return false;
+        }
+    }    
+
+    return true;
 }

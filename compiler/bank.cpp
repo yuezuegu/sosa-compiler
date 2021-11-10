@@ -33,7 +33,6 @@ void Bank::spawn(int r){
             if(!front.second->allocate_on_sram(r, front.first)){
                 return;
             }
-            //this->push_evict_queue(front.first, front.second);
         }
 
         this->spawn_queue->pop_front();
@@ -49,10 +48,15 @@ bool Bank::alloc_tile(int target_round, Tile* tile){
 
     if (this->capacity_used + tile->memory_size <= this->capacity){
         this->capacity_used += tile->memory_size;
+        
+        // if (tile->type != data_type::P){ //don't evict p tiles for now
+        //     this->push_evict_queue(target_round, tile);
+        // }
+        
         this->push_evict_queue(target_round, tile);
+
         tile->is_spawn_ = true;
         
-
         BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " new tile of type "<< PRINT_TYPE(tile->type) << " allocated, usage: " << this->capacity_used; //<< " evict_queue_size: " << this->evict_queue_size();
         return true;
     }
@@ -61,31 +65,11 @@ bool Bank::alloc_tile(int target_round, Tile* tile){
     }
 }
 
-// void Bank::garbage_collect(int r){
-//     auto it = this->evict_queue->begin();
-//     while (it != this->evict_queue->end()){
-//         if (it->first > r){
-//             return;
-//         }
-
-//         if (it->second->is_allocated()){
-//             it->second->remove_from_sram();
-//         }
-        
-//         this->evict_queue->erase(it++);
-//     }
-// }
-
 bool Bank::evict(int r){
     if (this->evict_queue->empty()) return false;
 
     auto front_it = this->evict_queue->begin();
     if (front_it->first >= r) return false;
-
-    // if (!front_it->second->is_allocated()){
-    //     this->evict_queue->erase(front_it);  
-    //     return true;
-    // }
 
     front_it->second->remove_from_sram();
     this->evict_queue->erase(front_it);

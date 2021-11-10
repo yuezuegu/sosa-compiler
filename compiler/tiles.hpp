@@ -8,6 +8,9 @@
 #include "helper.hpp"
 #include "serialize_tuple.h"
 
+#include <boost/log/trivial.hpp>
+
+
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/list.hpp>
 #include <boost/archive/text_oarchive.hpp>
@@ -22,6 +25,8 @@ class Tile{
     public:
         string layer_name;
         data_type type;
+
+        string tag;
 
         tuple<int, int> dims;
         int precision; //In terms of number of bytes

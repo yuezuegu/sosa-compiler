@@ -21,6 +21,8 @@ X_Tile::X_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int 
     this->input_of = new list<Op*>();
 
     this->is_spawn_ = false;
+
+    this->tag = "" + this->layer_name + ":" + to_string(get<0>(this->id)) + "-" + to_string(get<1>(this->id));
 }
 
 W_Tile::W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int precision, int memory_size){
@@ -39,6 +41,8 @@ W_Tile::W_Tile(string layer_name, tuple<int, int> id, tuple<int, int> dims, int 
     this->input_of = new list<Op*>();
 
     this->is_spawn_ = false;
+
+    this->tag = "" + this->layer_name + ":" + to_string(get<0>(this->id)) + "-" + to_string(get<1>(this->id));
 }
 
 P_Tile::P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims, int precision, int memory_size){
@@ -57,6 +61,7 @@ P_Tile::P_Tile(string layer_name, tuple<int, int, int> id, tuple<int, int> dims,
     this->input_of = new list<Op*>();
 
     this->is_spawn_ = false;
+    this->tag = "" + this->layer_name + ":" + to_string(get<0>(this->id)) + "-" + to_string(get<1>(this->id)) + "-" + to_string(get<2>(this->id));
 }
 
 void Tile::assign_bank(Bank* bank){
@@ -67,7 +72,7 @@ void Tile::assign_bank(Bank* bank){
 void Tile::remove_from_sram(){
     this->is_allocated_on_sram = false;
     this->bytes_fetched_from_memory = 0;
-    //this->bank->free_tile(this);
+    BOOST_LOG_TRIVIAL(info) << "Tile " << this->tag <<" is removed from sram";
 }
 
 float Tile::write_to_memory(float bytes){
@@ -97,16 +102,13 @@ float Tile::fetch_from_memory(int curr_round, int target_round, float bytes){
                 return 0;
             }
         }
-        // if (!this->bank->alloc_tile(this)){
-        //     return 0; 
-        // }
     }
 
     if (this->bytes_fetched_from_memory+bytes>=this->memory_size){
         usage = this->memory_size - this->bytes_fetched_from_memory;
         this->bytes_fetched_from_memory = this->memory_size;
         this->is_allocated_on_sram = true;
-        //this->bank->push_evict_queue(target_round, this);
+
         return usage;
     }
     else{
@@ -122,13 +124,9 @@ bool Tile::allocate_on_sram(int curr_round, int target_round){
             return false;
         }
     }
-    // if (!this->bank->alloc_tile(this)){
-    //     return false; 
-    // }
 
     this->is_allocated_on_sram = true;
-    
-    //this->bank->push_evict_queue(target_round, this);
+    BOOST_LOG_TRIVIAL(info) << "Tile " << this->tag <<" is allocated on sram";
     return true;
 }
 
@@ -143,11 +141,6 @@ int Tile::get_mem_width(){
 bool Tile::is_allocated(){
     return this->is_allocated_on_sram;
 }
-
-
-
-
-
 
 
 
