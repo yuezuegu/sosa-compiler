@@ -21,6 +21,11 @@ using namespace std;
 
 typedef map<tuple<int, int>, tuple<int, int>> tile_dim_map;
 
+
+
+
+
+
 class Layer {
     public:
         string layer_name;
@@ -62,23 +67,46 @@ class Layer {
         
 };
 
-class Layers{
+
+class Model {
     public:
+        string model_name;
+        int no_repeat;
+        
         list<Layer>::iterator begin() noexcept { return layer_list->begin(); }
         list<Layer>::iterator end() { return layer_list->end(); }
 
-        Layers();
-        ~Layers();
+        Model(string model_name, json j){
+            this->model_name = model_name;
+            this->layer_list = new list<Layer>();
+
+            this->import_layers(j);
+
+        };
+        ~Model(){delete this->layer_list;};
 
         void import_layers(json j);
         bool all_layers_scheduled();
         Layer* get_layer_by_name(string layer_name);
-        friend ostream& operator<<(ostream& os, const Layers& layers);
+        friend ostream& operator<<(ostream& os, const Model& model);
         
         list<Layer>* layer_list;
 
-    private:
-        
+
 };
+
+
+
+// class Layers{
+//     public:
+
+//         Layers();
+//         ~Layers();
+
+
+
+//     private:
+        
+// };
 
 #endif /* LAYER_HPP */

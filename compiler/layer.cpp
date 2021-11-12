@@ -132,15 +132,7 @@ Layer Layer::create_copy(string suffix){
 
 Layer::~Layer(){}
 
-Layers::Layers(){
-    this->layer_list = new list<Layer>();
-}
-
-Layers::~Layers(){
-    delete this->layer_list;
-}
-
-void Layers::import_layers(json j){
+void Model::import_layers(json j){
     for (json::iterator it = j["order"].begin(); it != j["order"].end(); ++it) {
         string layer_name = it.value();
         auto deps = j["layers"][layer_name]["deps"];
@@ -179,7 +171,7 @@ void Layers::import_layers(json j){
         list<string>* dependencies = new list<string>();
         for(auto it_dep = deps.begin(); it_dep != deps.end(); it_dep++){
             string dep_name = it_dep->get<string>(); // remove 
-            dependencies->push_back(dep_name);
+            dependencies->push_back(model_name+":"+dep_name);
         }
 
         bool is_conv = false;
@@ -192,9 +184,14 @@ void Layers::import_layers(json j){
         }
 
         bool raw_input = j["layers"][layer_name]["raw_input"].get<int>();
-        Layer layer(layer_name, x_tile_dim, w_tile_dim, no_tiles, input_size, weight_size, raw_input, is_conv, conv_kernel_size, dependencies);
+        Layer layer(model_name+":"+layer_name, x_tile_dim, w_tile_dim, no_tiles, input_size, weight_size, raw_input, is_conv, conv_kernel_size, dependencies);
         this->layer_list->push_back(layer);
-    }
+    }        
+
+    this->no_repeat = j["no_repeat"].get<int>();
+
+    cout << "Layers for model" << this->model_name << " are successfully parsed" << endl;
+
 }
 
 void Layer::create_main_ops(){
@@ -370,7 +367,7 @@ AggrOp* Layer::get_postop_by_index(tuple<int, int, int> index, bool flip){
 }
 
 
-bool Layers::all_layers_scheduled(){
+bool Model::all_layers_scheduled(){
     for (auto it = this->begin(); it != this->end(); it++ ){
         if (!it->is_scheduled){
             return false;
@@ -380,7 +377,7 @@ bool Layers::all_layers_scheduled(){
     return true;
 }
 
-Layer* Layers::get_layer_by_name(string layer_name){
+Layer* Model::get_layer_by_name(string layer_name){
     for (auto it = this->begin(); it != this->end(); it++){
         if (it->layer_name.compare(layer_name) == 0){
             return &(*it);
@@ -390,9 +387,9 @@ Layer* Layers::get_layer_by_name(string layer_name){
     return nullptr;
 }
 
-ostream& operator<<(ostream& os, const Layers& layers)
+ostream& operator<<(ostream& os, const Model& model)
 {
-    for(auto it = layers.layer_list->begin(); it != layers.layer_list->end(); it++){
+    for(auto it = model.layer_list->begin(); it != model.layer_list->end(); it++){
         os << it->layer_name << endl;
     }
     return os;

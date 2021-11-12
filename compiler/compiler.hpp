@@ -43,7 +43,7 @@ class Compiler{
 
         Compiler(){};
         Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, PostProcessors* post_processors, Dram* dram);
-        void compile(Layers* layers);
+        void compile(Model* model);
         void compile_layer(Layer* layer, int init_round);
         void op_placement(int r, MultOp* op);
         void post_op_placement(int r, AggrOp* op);
@@ -54,7 +54,7 @@ class Compiler{
         bool is_all_data_ready(Arrays* arrays, PostProcessors* post_processors, int r);
         void check_if_livelock(list<P_Tile*>* p_tiles);
 
-        void duplicate_schedule(Layers* layers, int no_repeat);
+        void duplicate_schedule(Model* model, int no_repeat);
 
         friend class boost::serialization::access;
 

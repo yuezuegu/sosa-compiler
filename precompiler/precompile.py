@@ -118,17 +118,19 @@ def precompile_model(model, array_size, partition_size=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, required=False, default='bert_medium')
+    parser.add_argument('--extra_models', type=str, nargs='+', required=False, default=[])
     parser.add_argument('--batch_size', type=int, required=False, default=1, help='Batch size')
     parser.add_argument('--sentence_len', type=int, required=False, default=100, help='Sentence length for transformer model')
     parser.add_argument('--imsize', type=int, required=False, default=299)
     parser.add_argument('--array_size', type=int, nargs='+', required=False, default=[32,32], help='Array size')
     parser.add_argument('--out_dir', type=str, required=False, default="experiments/tmp")
     parser.add_argument('--partition_size', type=int, required=False, default=None)
-    parser.add_argument('--read_only', type=bool, required=False, default=True)
+    parser.add_argument('--read_only', type=int, required=False, default=1)
+    parser.add_argument('--enable_schedule_duplication', type=int, required=False, default=1)
+
 
     args = parser.parse_args()
 
-    model_name = args.model
     batch_size = args.batch_size
     sentence_len = args.sentence_len
     
@@ -138,19 +140,25 @@ def main():
     partition_size = args.partition_size
     out_dir = args.out_dir
 
-    bm = get_benchmarks(model_name, batch_size, imsize, sentence_len, args.read_only)
-    if bm.model_type == "BERT":
-        model = bm.get_keras_model(no_layers=1)
-        no_repeat = bm.no_layers
-    else:
-        model = bm.get_keras_model() 
-        no_repeat = 1
+    if len(args.extra_models) > 0:
+        assert args.enable_schedule_duplication == False, "Schedule duplication is supported only for a single BERT model"
 
-    layers = precompile_model(model, array_size=array_size, partition_size=partition_size)
+    json_out = {"args":args.__dict__}
+    for m in [args.model] + args.extra_models:
+        bm = get_benchmarks(m, batch_size, imsize, sentence_len, args.read_only)
+        if bm.model_type == "BERT" and args.enable_schedule_duplication:
+            keras_model = bm.get_keras_model(no_layers=1)
+            no_repeat = bm.no_layers
+        else:
+            keras_model = bm.get_keras_model() 
+            no_repeat = 1
 
+        layers = precompile_model(keras_model, array_size=array_size, partition_size=partition_size)
+        json_out[m] = {"order":list(layers.keys()), "layers":layers, "no_repeat":no_repeat, "no_ops":bm.no_ops}
+    
     os.makedirs(out_dir, exist_ok=True)
     with open(out_dir+"/precompiled_model.json", "w") as outfile:  
-        json.dump({"args":args.__dict__, "order":list(layers.keys()), "layers":layers, "no_repeat":no_repeat, "no_ops":bm.no_ops}, outfile)
+        json.dump(json_out, outfile)
 
     print("precompiled model is saved at: {}".format(out_dir))
 

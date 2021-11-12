@@ -22,13 +22,6 @@ string csim(string json_dump, int no_array, int no_rows, int no_cols, int bank_s
         return "";
     }
 
-    json jin = json::parse(json_dump);
-
-    Layers* layers = new Layers();
-    layers->import_layers(jin);
-
-    cout << "Input file is successfully parsed" << endl;
-
     Arrays* arrays = new Arrays(no_array, no_rows, no_cols);
     PostProcessors* post_processors = new PostProcessors(no_array);
     Banks* banks = new Banks(no_array, bank_size);
@@ -43,11 +36,25 @@ string csim(string json_dump, int no_array, int no_rows, int no_cols, int bank_s
 
     Compiler* compiler = new Compiler(arrays, banks, interconnects, post_processors, dram);
 
-    cout << layers;
-    compiler->compile(layers);
 
-    int no_repeat = jin["no_repeat"].get<int>();
-    compiler->duplicate_schedule(layers, no_repeat);
+    json jin = json::parse(json_dump);
+
+    for (json::iterator it = jin.begin(); it != jin.end(); ++it) {
+        string key = it.key();
+        if (key.compare("args")) continue;
+
+        string model_name (key);
+        json j = jin[model_name];
+
+        Model* model = new Model(model_name, j);
+
+        cout << model;
+        compiler->compile(model);
+
+        compiler->duplicate_schedule(model, model->no_repeat);
+
+        cout << model;
+    }
 
     compiler->run_cycle_model();
 
@@ -67,7 +74,7 @@ string csim(string json_dump, int no_array, int no_rows, int no_cols, int bank_s
     jout["total_sram_read_bytes"] = arrays->total_sram_read_bytes();
     jout["total_sram_write_bytes"] = arrays->total_sram_write_bytes();
 
-    delete layers;
+
     delete arrays;
     delete post_processors;
     delete banks;

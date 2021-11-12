@@ -82,11 +82,6 @@ int main(int ac, char* av[]){
     input_file >> jin;
     input_file.close();
 
-    Layers* layers = new Layers();
-    layers->import_layers(jin);
-
-    cout << "Input file " << ifname << " is successfully parsed" << endl;
-
     Arrays* arrays = new Arrays(no_array, no_rows, no_cols);
     PostProcessors* post_processors = new PostProcessors(no_array);
     Banks* banks = new Banks(no_array, bank_size);
@@ -106,11 +101,26 @@ int main(int ac, char* av[]){
     compiler->enable_multithreading(48);
     #endif
 
-    cout << layers;
-    compiler->compile(layers);
+    
 
-    int no_repeat = jin["no_repeat"].get<int>();
-    compiler->duplicate_schedule(layers, no_repeat);
+    for (json::iterator it = jin.begin(); it != jin.end(); ++it) {
+        string key = it.key();
+        if (!key.compare("args")) continue;
+
+        string model_name (key);
+        json j (jin[model_name]);
+
+        Model* model = new Model(model_name, j);
+
+        cout << model;
+        compiler->compile(model);
+
+        compiler->duplicate_schedule(model, model->no_repeat);
+    }
+
+    
+
+
 
     string ofname;
     // ofstream ofs;
@@ -147,12 +157,12 @@ int main(int ac, char* av[]){
     jout["no_main_rounds"] = compiler->no_main_rounds();
     jout["no_post_rounds"] = compiler->no_post_rounds();
     jout["interconnect_tdp"] = interconnects->tdp(no_cols);
-    jout["no_ops"] = jin["no_ops"].get<long>();
+    //jout["no_ops"] = jin["no_ops"].get<long>();
     jout["x_tiles_bw_usage"] = dram->x_tiles_bw_usage;
     jout["w_tiles_bw_usage"] = dram->w_tiles_bw_usage;
     jout["p_tiles_bw_usage"] = dram->p_tiles_bw_usage;
     jout["total_bw_usage"] = dram->x_tiles_bw_usage + dram->w_tiles_bw_usage + dram->p_tiles_bw_usage;
-    jout["total_no_ops"] = arrays->total_no_ops();
+    jout["no_ops"] = arrays->total_no_ops();
     jout["total_sram_read_bytes"] = arrays->total_sram_read_bytes();
     jout["total_sram_write_bytes"] = arrays->total_sram_write_bytes();
 
@@ -161,7 +171,6 @@ int main(int ac, char* av[]){
     output_file << jout.dump();
     output_file.close();
 
-    delete layers;
     delete arrays;
     delete post_processors;
     delete banks;

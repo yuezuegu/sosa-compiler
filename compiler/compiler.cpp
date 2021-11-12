@@ -97,15 +97,15 @@ Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, P
     this->pp_latency_offset = this->interconnects->pout_interconnect->data_write_latency();
 }
 
-void Compiler::compile(Layers* layers){
-    while (!layers->all_layers_scheduled()){
-        for(auto it = layers->begin(); it != layers->end(); it++){
+void Compiler::compile(Model* model){
+    while (!model->all_layers_scheduled()){
+        for(auto it = model->begin(); it != model->end(); it++){
             if (it->is_scheduled) continue;
 
             bool all_deps_scheduled = true;
             int init_round = 0;
             for(auto it_dep = it->dependencies->begin(); it_dep != it->dependencies->end(); it_dep++){
-                Layer* layer = layers->get_layer_by_name((*it_dep));
+                Layer* layer = model->get_layer_by_name((*it_dep));
                 if (!layer->is_scheduled){
                     all_deps_scheduled = false;
                     break;
@@ -508,8 +508,8 @@ int Compiler::no_post_rounds(){
 }
 
 
-void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
-    int no_layers = layers->layer_list->size();
+void Compiler::duplicate_schedule(Model* model, int no_repeat){
+    int no_layers = model->layer_list->size();
 
     int no_main_rounds = this->no_main_rounds();
     int no_post_rounds = this->no_post_rounds();
@@ -517,7 +517,7 @@ void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
 
     for (int i = 1; i < no_repeat; i++){
 
-        auto layer_it = layers->begin();
+        auto layer_it = model->begin();
         for(int l = 0; l < no_layers; l++){
             string suffix =  "_copy" + to_string(i);
             
@@ -559,7 +559,7 @@ void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
                 }
             }
 
-            layers->layer_list->push_back(new_layer);
+            model->layer_list->push_back(new_layer);
             layer_it++;
         }
     }
