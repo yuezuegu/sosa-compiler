@@ -1,6 +1,7 @@
 
 
 #include "post_processor.hpp"
+#include "dram.hpp"
 
 PostProcessor::PostProcessor(int id){
     this->id = id;
@@ -261,4 +262,52 @@ list<P_Tile*>* PostProcessors::get_pout_tiles(int r){
     }    
 
     return pout_tiles;
+}
+
+bool PostProcessors::is_pin1_ready(int r, Dram* dram){
+    bool is_ready = true;
+
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        AggrOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        if (!op->pin1_tile->is_allocated()){
+            dram->load_queue->push_front(make_pair(r, op->pin1_tile));
+            BOOST_LOG_TRIVIAL(info) << "Pin1 Tile: " << op->pin1_tile->tag << " is missed, placing it in front of the load queue";
+            is_ready = false;
+        }
+    }    
+
+    return is_ready;
+}
+
+bool PostProcessors::is_pin2_ready(int r, Dram* dram){
+    bool is_ready = true;
+
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        AggrOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        if (!op->pin2_tile->is_allocated()){
+            dram->load_queue->push_front(make_pair(r, op->pin2_tile));
+            BOOST_LOG_TRIVIAL(info) << "Pin2 Tile: " << op->pin2_tile->tag << " is missed, placing it in front of the load queue";
+            is_ready = false;
+        }
+    }    
+
+    return is_ready;
+}
+
+bool PostProcessors::is_pout_ready(int r, Dram* dram){
+    bool is_ready = true;
+
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        AggrOp* op = it->second->get_op(r);
+        if (op == nullptr) continue;
+        if (!op->pout_tile->is_allocated()){
+            dram->load_queue->push_front(make_pair(r, op->pout_tile));
+            BOOST_LOG_TRIVIAL(info) << "PP_pout Tile: " << op->pout_tile->tag << " is missed, placing it in front of the load queue";
+            is_ready = false;
+        }
+    }    
+
+    return is_ready;
 }

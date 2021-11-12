@@ -37,11 +37,11 @@ int main(int ac, char* av[]){
         ("no_rows,r", po::value<int>(&no_rows)->default_value(32), "number of rows in a systolic array")
         ("no_cols,c", po::value<int>(&no_cols)->default_value(32), "number of columns in a systolic array")
         ("no_array,N", po::value<int>(&no_array)->default_value(128), "number of systolic arrays")
-        ("memory_bw,M", po::value<float>(&bandwidth)->default_value(1000), "memory bandwidth in GB/s")
-        ("prefetch,P", po::value<int>(&prefetch_limit)->default_value(10), "No of rounds allowed for prefetching")
-        ("bank_size,S", po::value<int>(&bank_size)->default_value(1<<19), "SRAM bank size")
+        ("memory_bw,M", po::value<float>(&bandwidth)->default_value(1200), "memory bandwidth in GB/s")
+        ("prefetch,P", po::value<int>(&prefetch_limit)->default_value(100), "No of rounds allowed for prefetching")
+        ("bank_size,S", po::value<int>(&bank_size)->default_value(524288), "SRAM bank size")
         //crossbar, benes_copy, benes_vanilla, banyan_exp_0, banyan_exp_1, banyan_exp_2, banyan_exp_3, banyan_exp_4
-        ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::crossbar), "interconnect type (see enum members)")
+        ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::banyan_exp_1), "interconnect type (see enum members)")
         ("work_dir,d", po::value<string>(&work_dir)->default_value("../experiments/tmp"), "directory for input/output files")
         ("log_level,l", po::value<boost::log::trivial::severity_level>(&log_level)->default_value(boost::log::trivial::severity_level::error), "log level");
     po::variables_map vm;

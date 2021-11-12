@@ -30,6 +30,8 @@ class Layer {
         tuple<int, int> input_size;
         tuple<int, int> weight_size;
 
+        bool raw_input;
+
         bool is_conv;
         tuple<int, int> conv_kernel_size;
 
@@ -42,7 +44,7 @@ class Layer {
         int end_round;
         list<string>* dependencies;
 
-        Layer(string, tile_dim_map*, tile_dim_map*, tuple<int, int, int>, tuple<int, int>, tuple<int, int>, bool, tuple<int, int>, list<string>*);
+        Layer(string, tile_dim_map*, tile_dim_map*, tuple<int, int, int>, tuple<int, int>, tuple<int, int>, bool, bool, tuple<int, int>, list<string>*);
         ~Layer();
         
         void create_main_ops();

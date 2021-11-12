@@ -37,7 +37,7 @@ void Dram::update(list<Bank*>* p_banks, int r){
         if (front.first - r >= this->prefetch_limit) return;
         float bw_used_ = front.second->fetch_from_memory(r, front.first, this->bandwidth-bw_used);
         if (bw_used_ == 0){ //bank is full, continue with processing to free the banks
-            return;
+            break;
         }
 
         if (front.second->type == data_type::X){

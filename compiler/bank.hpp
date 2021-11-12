@@ -7,6 +7,7 @@
 #include <numeric>
 
 #include "helper.hpp"
+#include "ops.hpp"
 
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/map.hpp>
@@ -72,6 +73,8 @@ class Banks{
 
         void garbage_collect(int r);
         void spawn(int r);
+
+        bool is_write_back_empty();
 
         void print_usage();
 

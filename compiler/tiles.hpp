@@ -25,6 +25,8 @@ class Tile{
         string layer_name;
         data_type type;
 
+        string tag;
+
         tuple<int, int> dims;
         int precision; //In terms of number of bytes
         
@@ -33,11 +35,13 @@ class Tile{
         int memory_size; //In terms of number of bytes
 
         list<Op*>* input_of;
+        Op* output_of;
 
         Bank* bank;
 
         bool is_spawn_;
-
+        bool is_allocated_on_sram;
+        
         void assign_bank(Bank* bank);
         bool is_allocated();
         int get_mem_width();
@@ -62,8 +66,6 @@ class Tile{
             ar & this->is_allocated_on_sram;
         }
 
-    protected:
-        bool is_allocated_on_sram;
         
 };
 

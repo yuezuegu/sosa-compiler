@@ -532,7 +532,6 @@ void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
                 op_new->w_tile->assign_bank(op_old->w_tile->bank);
                 op_new->pout_tile->assign_bank(op_old->pout_tile->bank);
 
-                //TODO: This fails when N=1
                 int old_round = op_old->round_placed;
                 int new_round = old_round + i*(max_no_rounds+1) + 1;
                 op_old->array_placed->assign_op(new_round, op_new);
@@ -551,7 +550,7 @@ void Compiler::duplicate_schedule(Layers* layers, int no_repeat){
                     AggrOp* post_op_new = new_layer.get_postop_by_index(post_op_old->op_ind, post_op_old->flip);
 
                     int old_round = post_op_old->round_placed;
-                    int new_round = old_round + i*max_no_rounds + 1;
+                    int new_round = old_round + i*(max_no_rounds+1) + 1;
 
                     post_op_new->pout_tile->assign_bank(post_op_old->pout_tile->bank);
                     post_op_old->pp_placed->assign_op(new_round, post_op_new);
@@ -603,56 +602,20 @@ void Compiler::check_if_livelock(list<P_Tile*>* p_tiles){
     }
 }
 
-bool Compiler::check_if_data_ready(Arrays* arrays, PostProcessors* post_processors, int r){
-    return true;
-    
-    bool is_ready;
+bool Compiler::is_all_data_ready(Arrays* arrays, PostProcessors* post_processors, int r){
+    bool is_ready = true;
 
-    list<W_Tile*>* w_tiles = arrays->get_w_tiles(r+1);
-    is_ready = all_of(w_tiles->begin(), w_tiles->end(), [](W_Tile* w_tile){ return w_tile->is_allocated(); });
-    if (!is_ready) return false;
-    delete w_tiles;
+    if(!this->arrays->is_w_tiles_ready(r, this->dram)) is_ready = false;
+    if(!this->arrays->is_x_tiles_ready(r, this->dram)) is_ready = false;
+    if(!this->arrays->is_pout_tiles_ready(r, this->dram)) is_ready = false;
+    if(!this->arrays->is_pin_tiles_ready(r, this->dram)) is_ready = false;
+ 
+    if(!this->post_processors->is_pin1_ready(r, this->dram)) is_ready = false;
+    if(!this->post_processors->is_pin2_ready(r, this->dram)) is_ready = false;
+    if(!this->post_processors->is_pout_ready(r, this->dram)) is_ready = false;
 
-    list<X_Tile*>* x_tiles = arrays->get_x_tiles(r);
-    is_ready = all_of(x_tiles->begin(), x_tiles->end(), [](X_Tile* x_tile){ return x_tile->is_allocated(); });
-    if (!is_ready) return false;
-    delete x_tiles;
-
-    list<P_Tile*>* pout_tiles = arrays->get_pout_tiles(r);
-    is_ready = all_of(pout_tiles->begin(), pout_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); });
-    if (!is_ready){
-        this->check_if_livelock(pout_tiles);
-        return false;
-    }
-    delete pout_tiles;
-    
-    list<P_Tile*>* pin_tiles = arrays->get_pin_tiles(r);
-    is_ready = all_of(pin_tiles->begin(), pin_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); });
-    if (!is_ready) return false;
-    delete pin_tiles;
-
-    list<P_Tile*>* pp_pin1_tiles = post_processors->get_pin1_tiles(r);
-    is_ready = all_of(pp_pin1_tiles->begin(), pp_pin1_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); });
-    if (!is_ready) return false;
-    delete pp_pin1_tiles;
-    
-    list<P_Tile*>* pp_pin2_tiles = post_processors->get_pin2_tiles(r);
-    is_ready = all_of(pp_pin2_tiles->begin(), pp_pin2_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); });
-    if (!is_ready) return false;
-    delete pp_pin2_tiles;
-    
-    list<P_Tile*>* pp_pout_tiles = post_processors->get_pout_tiles(r);
-    is_ready = all_of(pp_pout_tiles->begin(), pp_pout_tiles->end(), [](P_Tile* p_tile){ return p_tile->is_allocated(); });
-    if (!is_ready){
-        this->check_if_livelock(pp_pout_tiles);
-        return false;
-    }
-    delete pp_pout_tiles;
-    
-    return true;
+    return is_ready;
 }
-
-
 
 void Compiler::create_memory_fifo(){
     int no_rounds = this->no_main_rounds();
@@ -714,6 +677,7 @@ void Compiler::run_cycle_model(){
         if( all_of(w_tiles->begin(), w_tiles->end(), [](W_Tile* w_tile){ return w_tile->is_allocated(); }) ){
             this->arrays->init_weight_buffering(r);
         }
+
         delete w_tiles;
 
         this->arrays->update();
@@ -723,7 +687,7 @@ void Compiler::run_cycle_model(){
 
     this->banks->spawn(r);
 
-    while(!check_if_data_ready(this->arrays, this->post_processors, r)){
+    while(!is_all_data_ready(this->arrays, this->post_processors, r)){
         this->dram->update(this->banks->get_p_banks(), r);
         arr_cycle++;
     }
@@ -731,10 +695,11 @@ void Compiler::run_cycle_model(){
     pp_cycle = arr_cycle + this->pp_latency_offset;
 
     int memory_stall = 0;
-    int max_mem_size;
+    //int max_mem_size;
 
     int round_clk = 0;
     bool new_round = true;
+    //while(r < max_rounds || !this->banks->is_write_back_empty()){
     while(r < max_rounds){
         if (new_round){
             // Round start
@@ -761,10 +726,9 @@ void Compiler::run_cycle_model(){
             this->post_processors->is_tile_op_done(r) && 
             round_clk >= this->sram_round_trip){
 
-            //this->dram->store(r+1);
             this->banks->spawn(r+1);
             
-            if(check_if_data_ready(this->arrays, this->post_processors, r+1)){
+            if(is_all_data_ready(this->arrays, this->post_processors, r+1)){
 
                 this->banks->garbage_collect(r);
 
@@ -779,8 +743,8 @@ void Compiler::run_cycle_model(){
 
                 BOOST_LOG_TRIVIAL(info) << "Memory stalling: " << memory_stall << " at r: " << r << " clk: " << arr_cycle;
 
-                max_mem_size = calc_max_required_memory(this->arrays, this->post_processors, r+1);
-                float memory_timeout = 100 * (float)max_mem_size / this->dram->bandwidth;
+                //max_mem_size = calc_max_required_memory(this->arrays, this->post_processors, r+1);
+                //float memory_timeout = 100 * (float)max_mem_size / this->dram->bandwidth;
 
                 // if (this->livelock_detected) {
                 //     cout << "Memory stalling: " << memory_stall << endl << "Livelock detected. Increase your sram size" << endl;
@@ -788,8 +752,9 @@ void Compiler::run_cycle_model(){
                 //     return;
                 // }
 
+                float memory_timeout = 100*(*this->arrays->array_map)[0]->no_rows;
                 if(memory_stall > memory_timeout){    
-                    cout << "Execution timed out. Probably not enough sram" << endl;
+                    cout << "Memory stall exceeds 10 rounds, not enough BW or bank size." << endl;
                     this->no_cycles = -1;
                     return;
                 }

@@ -96,26 +96,35 @@ def all_dependencies_scheduled(layer_name, graph, layer_schedules):
 
     return True
 
-def precompile_model(model, array_size=[512,512], partition_size=None):
+def precompile_model(model, array_size, partition_size=None):
     graph = convert_keras_to_graph(model)
+
+    raw_input = 1
 
     layers = OrderedDict()
     for layer_name in graph.get_layer_names():
         layer_node = graph.get_node(layer_name)
         gemm_op = partition_layer(layer_node, array_size, partition_size)
+
         dependencies = [s.layer_name for s in layer_node.src]
-        layers[layer_name] = {"gemm_op": gemm_op, "deps": dependencies, "layer_type": layer_node.layer_type}
+        
+        layers[layer_name] = {"gemm_op": gemm_op, "deps": dependencies, "raw_input":raw_input, "layer_type": layer_node.layer_type}
+
+        if gemm_op is not None: 
+            raw_input = 0 #toggle raw_input after the first layer with gemm ops
+
     return layers
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, required=False, default='inception')
+    parser.add_argument('--model', type=str, required=False, default='bert_medium')
     parser.add_argument('--batch_size', type=int, required=False, default=1, help='Batch size')
     parser.add_argument('--sentence_len', type=int, required=False, default=100, help='Sentence length for transformer model')
     parser.add_argument('--imsize', type=int, required=False, default=299)
     parser.add_argument('--array_size', type=int, nargs='+', required=False, default=[32,32], help='Array size')
     parser.add_argument('--out_dir', type=str, required=False, default="experiments/tmp")
     parser.add_argument('--partition_size', type=int, required=False, default=None)
+    parser.add_argument('--read_only', type=bool, required=False, default=True)
 
     args = parser.parse_args()
 
@@ -129,7 +138,7 @@ def main():
     partition_size = args.partition_size
     out_dir = args.out_dir
 
-    bm = get_benchmarks(model_name, batch_size, imsize, sentence_len)
+    bm = get_benchmarks(model_name, batch_size, imsize, sentence_len, args.read_only)
     if bm.model_type == "BERT":
         model = bm.get_keras_model(no_layers=1)
         no_repeat = bm.no_layers

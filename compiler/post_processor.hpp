@@ -6,6 +6,7 @@
 
 #include "ops.hpp"
 
+
 #include <boost/serialization/map.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -13,6 +14,7 @@
 using namespace std;
 
 class AggrOp;
+class Dram;
 
 enum class PP_STATE{
     idle,
@@ -44,6 +46,8 @@ class PostProcessor{
         bool is_tile_op_done(int r);
         bool is_idle();
         
+
+
         void update();
 
         friend class boost::serialization::access;
@@ -80,6 +84,10 @@ class PostProcessors{
         map<PostProcessor*, Bank*>* get_pin1_permute(int r);
         map<PostProcessor*, Bank*>* get_pin2_permute(int r);
         map<PostProcessor*, Bank*>* get_pout_permute(int r);
+
+        bool is_pin1_ready(int r, Dram* dram);
+        bool is_pin2_ready(int r, Dram* dram);
+        bool is_pout_ready(int r, Dram* dram);
 
         list<P_Tile*>* get_pin1_tiles(int r);
         list<P_Tile*>* get_pin2_tiles(int r);

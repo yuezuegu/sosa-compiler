@@ -9,6 +9,7 @@ Layer::Layer(string layer_name,
                 tuple<int, int, int> no_tiles, 
                 tuple<int, int> input_size, 
                 tuple<int, int> weight_size,
+                bool raw_input,
                 bool is_conv,
                 tuple<int, int> conv_kernel_size,
                 list<string>* dependencies){
@@ -24,6 +25,7 @@ Layer::Layer(string layer_name,
     this->dependencies = dependencies;
 
     this->is_conv = is_conv;
+    this->raw_input = raw_input;
     this->conv_kernel_size = conv_kernel_size;
     
     this->x_tiles = new map<tuple<int, int>, X_Tile*>();
@@ -40,7 +42,7 @@ Layer Layer::create_copy(string suffix){
         dependencies->push_back(dep_name);
     }
 
-    Layer new_layer(layer_name, this->x_tile_dims, this->w_tile_dims, this->no_tiles, this->input_size, this->weight_size, this->is_conv, this->conv_kernel_size, dependencies);
+    Layer new_layer(layer_name, this->x_tile_dims, this->w_tile_dims, this->no_tiles, this->input_size, this->weight_size, this->raw_input, this->is_conv, this->conv_kernel_size, dependencies);
 
     for(auto tile_it = this->x_tiles->begin(); tile_it != this->x_tiles->end(); tile_it++){
         tuple<int, int> ind = tile_it->first;
@@ -188,7 +190,9 @@ void Layers::import_layers(json j){
             is_conv = true;
             conv_kernel_size = make_tuple(gemm_op["kernel_size"][0].get<int>(), gemm_op["kernel_size"][1].get<int>());
         }
-        Layer layer(layer_name, x_tile_dim, w_tile_dim, no_tiles, input_size, weight_size, is_conv, conv_kernel_size, dependencies);
+
+        bool raw_input = j["layers"][layer_name]["raw_input"].get<int>();
+        Layer layer(layer_name, x_tile_dim, w_tile_dim, no_tiles, input_size, weight_size, raw_input, is_conv, conv_kernel_size, dependencies);
         this->layer_list->push_back(layer);
     }
 }
@@ -204,6 +208,12 @@ void Layer::create_main_ops(){
             }
 
             X_Tile* x_tile = new X_Tile(this->layer_name, make_tuple(i,j), dims, precision, memory_size);
+            
+            //TODO: Show which X tile is generated from which P tile
+            if(!this->raw_input){ //if x_tile is an intermediate value generated from before, we assume that it can be found in on-chip
+                x_tile->is_allocated_on_sram = true;
+            }
+
             (*this->x_tiles)[make_tuple(i,j)] = x_tile;
         }
     }
@@ -301,7 +311,8 @@ void Layer::create_post_ops(Arrays* arrays, Interconnects* interconnects){
                 auto dims = op1->pout_tile->dims;
                 int memory_size = get<0>(dims) * get<1>(dims) * 2;
                 P_Tile* pout_tile = new P_Tile(layer_name, op_id, dims, 2, memory_size);
-
+                pout_tile->is_allocated_on_sram = true;
+                
                 AggrOp* aggr_op1 = new AggrOp(this->layer_name, op_id, op1, op2, pout_tile, 0);
                 unconsumed_ops.push_back(aggr_op1);
                 post_op_list->push_back(aggr_op1);

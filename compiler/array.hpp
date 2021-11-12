@@ -9,9 +9,13 @@
 #include "interconnect.hpp"
 #include "bank.hpp"
 
+#include <boost/log/trivial.hpp>
+
 #include <boost/serialization/map.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+
+class Dram;
 
 using namespace std;
 
@@ -106,6 +110,11 @@ class Arrays{
         list<W_Tile*>* get_w_tiles(int r);
         list<P_Tile*>* get_pin_tiles(int r);
         list<P_Tile*>* get_pout_tiles(int r);
+
+        bool is_x_tiles_ready(int r, Dram* dram);
+        bool is_w_tiles_ready(int r, Dram* dram);
+        bool is_pout_tiles_ready(int r, Dram* dram);
+        bool is_pin_tiles_ready(int r, Dram* dram);
 
         map<Array*, Bank*>* get_x_permute(int r);
         map<Array*, Bank*>* get_w_permute(int r);
