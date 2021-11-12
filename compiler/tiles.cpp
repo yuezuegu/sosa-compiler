@@ -145,5 +145,13 @@ bool Tile::is_allocated(){
     return this->is_allocated_on_sram;
 }
 
-
+string P_Tile::get_id_str(){
+    string id_str; 
+    id_str += to_string(get<0>(this->id));
+    id_str += "-";
+    id_str += to_string(get<1>(this->id));
+    id_str += "-";
+    id_str += to_string(get<2>(this->id));
+    return id_str;
+}
 

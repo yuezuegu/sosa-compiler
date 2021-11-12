@@ -187,6 +187,11 @@ def main():
     experiments = load_experiments(EXP_DIR)
     print("Done.")
 
+    # we do not want to take bert_tiny and bert_small models into account
+    for k in list(experiments.keys()):
+        if k.model in ["bert_tiny", "bert_small"]:
+            del experiments[k]
+
     init_matplotlib()
 
     def task1():
@@ -337,10 +342,17 @@ def main():
             x_pos = np.arange(len(l_ict_type))
             y_pos = np.zeros(len(l_ict_type))
 
+            e_data = 4.1e-12 # J per byte
+            e_compute = 0.4e-12 # J per MAC
+            freq = 1e9
+
             for idx, ict in enumerate(l_ict_type):
                 results = filter_key(experiments, filter(ict))
                 for k, v in results.items():
-                    y_pos[idx] = v.interconnect_tdp
+                    sw_width = k.array_size[0] + 5 * k.array_size[1]
+                    p_compute = no_array * k.array_size[0] * k.array_size[1] * e_compute * freq
+                    p_data = k.no_array * sw_width * e_data * freq
+                    y_pos[idx] = v.interconnect_tdp / (p_data + p_compute + v.interconnect_tdp) * 100
                     break
 
             print("\t".join([ f"{x:.2f}" for x in y_pos ]))
@@ -350,12 +362,12 @@ def main():
             ax.bar(x_pos, y_pos, align="center", width=0.6, label="N = 128")
             ax.set_xticks(x_pos)
             ax.set_xticklabels(text_wrap(l_ict_type, 15), rotation=30)
-            ax.set_ylabel("Power [Watt]")
+            ax.set_ylabel("Interconnect Power / Total Power [Percentage]")
             ax.set_xlabel("Interconnect Type")
             ax.legend(loc="upper left")
 
-            fig.savefig("plots/plot_watt_byte.svg")
-            fig.savefig("plots/plot_watt_byte.png", dpi=100)
+            fig.savefig("plots/plot_ict_power_total_power.svg")
+            fig.savefig("plots/plot_ict_power_total_power.png", dpi=100)
         
         plot_perc_busy()
         plot_cycles_ops()
