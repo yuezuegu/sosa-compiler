@@ -1,4 +1,7 @@
 
+# import sys 
+# sys.path.append('.')
+
 import pickle
 import argparse
 import json 
@@ -11,6 +14,8 @@ import matplotlib.pyplot as plt
 
 from precompiler.benchmarks import benchmark, get_benchmarks
 
+#from helpers import calculate_peak_power
+
 e_data = 4.1e-12 #J per byte
 e_compute = 0.4e-12 #J per MAC
 I_0 = 2.875e-5 #W per byte
@@ -19,18 +24,15 @@ freq = 1e9 #Hz
 
 tdp = 250 #Watts
 
-r_range = np.arange(4, 512+1, 4)
-c_range = r_range
-
 def no_folds(m,n,k,r,c):
     return np.multiply.outer(np.ceil(m/r) * np.ceil(n/r), np.ceil(k/c))
 
-def calc_atpp(bm):
+def calc_atpp(bm, r_range, c_range):
     layer_dims = bm.layer_dims
     no_layers = len(layer_dims)
     assert no_layers>0, "Empty layer list"
     
-    N = find_no_systolic_arrays(freq, e_data, e_compute, I_0, tdp)
+    N = find_no_systolic_arrays(r_range, c_range, freq, e_data, e_compute, I_0, tdp)
 
     total_time = np.zeros((r_range.shape[0],c_range.shape[0]))
     for layer_name in layer_dims:
@@ -44,25 +46,18 @@ def calc_atpp(bm):
         folds = no_folds(m,n,k,r_range,c_range)
         total_time += np.multiply(np.ceil( np.divide(folds, N) ), w_stall)
 
-    p_peak, _, _, _ = calculate_peak_power(N, freq, e_data, e_compute, I_0)
+    p_peak, _, _, _ = calculate_peak_power(r_range, c_range, N, freq, e_data, e_compute, I_0)
     atpp = bm.no_ops / total_time / p_peak #ops/cycle/W
     return atpp
 
-def calculate_peak_power(N, freq, e_data, e_compute, I_0):
-    sram_read = np.add.outer(r_range, 5 * c_range)
-    p_data = sram_read * N * e_data * freq
-    p_compute = np.multiply.outer(r_range, c_range) * N * e_compute * freq
-    p_interconnect = I_0 * N * np.log2(N) * sram_read
 
-    p_total = p_data + p_compute + p_interconnect
-    return p_total, p_data, p_compute, p_interconnect
 
-def find_no_systolic_arrays(freq, e_data, e_compute, I_0, tdp):
+def find_no_systolic_arrays(r_range, c_range, freq, e_data, e_compute, I_0, tdp):
     no_arrays = np.ones((r_range.shape[0], c_range.shape[0]))
 
     N = 2
     while True:
-        p_peak, _, _, _ = calculate_peak_power(N, freq, e_data, e_compute, I_0)
+        p_peak, _, _, _ = calculate_peak_power(r_range, c_range, N, freq, e_data, e_compute, I_0)
         
         cond = p_peak <= tdp
         if(not np.any(cond)):
@@ -79,6 +74,9 @@ if __name__ == "__main__":
 
     batch_size = 1
     
+    r_range = np.arange(4, 512+1, 4)
+    c_range = r_range
+
     atpps = {}
     for model_name in ["bert_medium","bert_base","bert_large"]:
         atpps[model_name] = {}
@@ -88,7 +86,7 @@ if __name__ == "__main__":
 
             bm = get_benchmarks(model_name, batch_size, None, no_seq)
 
-            atpp_np = calc_atpp(bm)
+            atpp_np = calc_atpp(bm, r_range, c_range)
             atpps[model_name][no_seq] = atpp_np.tolist()
 
             elapsed = time.time() - start

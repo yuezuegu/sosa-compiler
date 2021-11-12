@@ -124,6 +124,7 @@ def main():
     parser.add_argument('--array_size', type=int, nargs='+', required=False, default=[32,32], help='Array size')
     parser.add_argument('--out_dir', type=str, required=False, default="experiments/tmp")
     parser.add_argument('--partition_size', type=int, required=False, default=None)
+    parser.add_argument('--read_only', type=bool, required=False, default=True)
 
     args = parser.parse_args()
 
@@ -137,7 +138,7 @@ def main():
     partition_size = args.partition_size
     out_dir = args.out_dir
 
-    bm = get_benchmarks(model_name, batch_size, imsize, sentence_len)
+    bm = get_benchmarks(model_name, batch_size, imsize, sentence_len, args.read_only)
     if bm.model_type == "BERT":
         model = bm.get_keras_model(no_layers=1)
         no_repeat = bm.no_layers

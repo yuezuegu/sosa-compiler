@@ -699,7 +699,8 @@ void Compiler::run_cycle_model(){
 
     int round_clk = 0;
     bool new_round = true;
-    while(r < max_rounds || !this->banks->is_write_back_empty()){
+    //while(r < max_rounds || !this->banks->is_write_back_empty()){
+    while(r < max_rounds){
         if (new_round){
             // Round start
             round_clk = 0;
@@ -710,9 +711,9 @@ void Compiler::run_cycle_model(){
 
             new_round = false;
 
-            if ( r % 10 == 0){
-                cout << "Round: " << r << " completed with at array clock cycle: " << arr_cycle << " pp clock cycle: " << pp_cycle << endl;
-            }
+            // if ( r % 10 == 0){
+            //     cout << "Round: " << r << " completed with at array clock cycle: " << arr_cycle << " pp clock cycle: " << pp_cycle << endl;
+            // }
         }
 
         //Propagate clock

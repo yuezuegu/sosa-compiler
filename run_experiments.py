@@ -71,10 +71,11 @@ def array_scale_experiment(exp_dir):
     running_procs = []
 
     array_size_list = []
-    array_size_list += [(32,32,N) for N in [32,64,128,180,256]]
-    array_size_list += [(128,128,N) for N in [8, 16, 24, 32, 48, 64]]
-    array_size_list += [(256,256,N) for N in [1, 2, 4, 8, 12, 16]]
-    array_size_list += [(400,400,1), (512,512,1), (800,800,1), (960,960,1)]
+    array_size_list += [(16,16,N) for N in [64,128,256,512]]
+    # array_size_list += [(32,32,N) for N in [16,32,64,128,256,512]]
+    # array_size_list += [(128,128,N) for N in [1, 2, 4, 8, 16, 24, 32, 48, 64]]
+    # array_size_list += [(256,256,N) for N in [1, 2, 4, 8, 12, 16]]
+    # array_size_list += [(400,400,1), (512,512,1), (800,800,1), (960,960,1), (1024,1024,1)]
 
     for r, c, N in array_size_list:
         for MODEL,SENTENCE_LEN in bert_models + cnn_models:

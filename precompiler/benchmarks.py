@@ -1,4 +1,8 @@
 
+import os 
+import sys 
+sys.path.append(os.path.dirname(__file__))
+
 from tensorflow.keras.applications.resnet import ResNet50
 from tensorflow.keras.applications.resnet import ResNet101
 from tensorflow.keras.applications.resnet import ResNet152
@@ -153,10 +157,8 @@ def create_benchmarks():
 
 	pickle.dump(benchmarks, open("benchmarks.pickle", 'wb'))
 
-def get_benchmarks(model_name, batch_size, image_size, seq_len):
-	with FileLock("benchmarks.pickle.lock"):
-		# print("Lock acquired for benchmarks.pickle")
-
+def get_benchmarks(model_name, batch_size, image_size, seq_len, read_only=False):
+	def try_get_benchmark():
 		try:
 			pickle_file = open('benchmarks.pickle', 'rb')
 		
@@ -188,8 +190,16 @@ def get_benchmarks(model_name, batch_size, image_size, seq_len):
 				bm = benchmark(model_name, "CNN", batch_size=batch_size, image_size=image_size)
 				benchmarks[model_name][batch_size][image_size] = bm
 
-		with open("benchmarks.pickle", 'wb') as pkl_file:
-			pickle.dump(benchmarks, pkl_file)
+		return bm, benchmarks
+
+	if read_only:
+		bm, _ = try_get_benchmark()
+	else:
+		with FileLock("benchmarks.pickle.lock"):
+			bm, benchmarks = try_get_benchmark()
+
+			with open("benchmarks.pickle", 'wb') as pkl_file:
+				pickle.dump(benchmarks, pkl_file)
 
 	return bm
 
