@@ -263,6 +263,9 @@ def main():
             IctType.crossbar,
             IctType.benes_copy
         ]
+        
+        # to store data for latex
+        ltx = [ [ f"\multrowR{{ { str(x) } }}", None, None, None ] for x in l_ict_type ]
 
         no_array = 128
 
@@ -295,8 +298,9 @@ def main():
                 results = filter_key(experiments, filter(ict))
                 perc_active = calculate_perc_active(no_array, results.values())
                 y_pos[idx] = perc_active
+                ltx[idx][1] = f"{perc_active:.2f}"
 
-            print("\t".join([ f"{x:.2f}" for x in y_pos ]))
+            # print("\t".join([ f"{x:.2f}" for x in y_pos ]))
             
             ax.grid()
             ax.set_axisbelow(True)
@@ -319,10 +323,11 @@ def main():
 
             for idx, ict in enumerate(l_ict_type):
                 results = filter_key(experiments, filter(ict))
-                perc_active = calculate_cyc_op(results.values())
-                y_pos[idx] = perc_active
+                cyc_op = calculate_cyc_op(results.values())
+                y_pos[idx] = cyc_op
+                ltx[idx][2] = f"{cyc_op:.2f}"
 
-            print("\t".join([ f"{x:.2f}" for x in y_pos ]))
+            # print("\t".join([ f"{x:.2f}" for x in y_pos ]))
             
             ax.grid()
             ax.set_axisbelow(True)
@@ -352,10 +357,11 @@ def main():
                     sw_width = k.array_size[0] + 5 * k.array_size[1]
                     p_compute = no_array * k.array_size[0] * k.array_size[1] * e_compute * freq
                     p_data = k.no_array * sw_width * e_data * freq
-                    y_pos[idx] = v.interconnect_tdp / (p_data + p_compute + v.interconnect_tdp) * 100
-                    break
+                    p = v.interconnect_tdp / (p_data + p_compute + v.interconnect_tdp) * 100
+                    y_pos[idx] = p
+                    ltx[idx][3] = f"{p:.2f}"
 
-            print("\t".join([ f"{x:.2f}" for x in y_pos ]))
+            # print("\t".join([ f"{x:.2f}" for x in y_pos ]))
             
             ax.grid()
             ax.set_axisbelow(True)
@@ -368,6 +374,8 @@ def main():
 
             fig.savefig("plots/plot_ict_power_total_power.svg")
             fig.savefig("plots/plot_ict_power_total_power.png", dpi=100)
+
+            print("\\\\\\hline\n\n".join([ " &\n".join(a) for a in ltx ]))
         
         plot_perc_busy()
         plot_cycles_ops()
