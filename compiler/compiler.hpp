@@ -39,6 +39,7 @@ class Compiler{
         int sram_round_trip;
         int pp_latency_offset;
         bool livelock_detected {false};
+        int memory_stall_cycles;
 
 
         Compiler(){};

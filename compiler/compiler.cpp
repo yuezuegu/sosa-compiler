@@ -95,6 +95,7 @@ Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, P
 
     this->sram_round_trip = this->interconnects->x_interconnect->data_req_latency() + this->interconnects->x_interconnect->data_read_latency();
     this->pp_latency_offset = this->interconnects->pout_interconnect->data_write_latency();
+    this->memory_stall_cycles = 0;
 }
 
 void Compiler::compile(Model* model){
@@ -354,17 +355,6 @@ void Compiler::op_placement(int r, MultOp* op){
     if(avail_pout_banks->empty()) return;
     
     unique_ptr< map<Array*, Bank*> > x_permute (this->arrays->get_x_permute(r));
-    BOOST_LOG_TRIVIAL(info) << "op_placement: x_permute = " << [&] {
-        std::vector<int> permute(banks->no_banks, -1);
-        for (auto it = x_permute->begin(); it != x_permute->end(); it++) {
-            permute[it->first->id] = it->second->id;
-        }
-        std::ostringstream oss;
-        for (auto &x: permute) {
-            oss << x << ", ";
-        }
-        return oss.str();
-    }();
 
     unique_ptr< list<Bank*> > avail_x_banks;
     if (op->x_tile->bank != nullptr){
@@ -405,8 +395,7 @@ void Compiler::op_placement(int r, MultOp* op){
     this->interconnects->x_interconnect->apply_permute(x_permute.get());    
     this->interconnects->w_interconnect->apply_permute(w_permute.get());    
 
-    //random_shuffle(avail_arrays.begin(), avail_arrays.end(), *this->random_generator);
-    
+
 #ifdef COMPILER_MULTITHREADING
     if (pls_) {
         for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
@@ -690,6 +679,7 @@ void Compiler::run_cycle_model(){
     while(!is_all_data_ready(this->arrays, this->post_processors, r)){
         this->dram->update(this->banks->get_p_banks(), r);
         arr_cycle++;
+        this->memory_stall_cycles++;
     }
 
     pp_cycle = arr_cycle + this->pp_latency_offset;
@@ -740,17 +730,9 @@ void Compiler::run_cycle_model(){
             }
             else{
                 memory_stall++;
+                this->memory_stall_cycles++;
 
                 BOOST_LOG_TRIVIAL(info) << "Memory stalling: " << memory_stall << " at r: " << r << " clk: " << arr_cycle;
-
-                //max_mem_size = calc_max_required_memory(this->arrays, this->post_processors, r+1);
-                //float memory_timeout = 100 * (float)max_mem_size / this->dram->bandwidth;
-
-                // if (this->livelock_detected) {
-                //     cout << "Memory stalling: " << memory_stall << endl << "Livelock detected. Increase your sram size" << endl;
-                //     this->no_cycles = -1;
-                //     return;
-                // }
 
                 float memory_timeout = 100*(*this->arrays->array_map)[0]->no_rows;
                 if(memory_stall > memory_timeout){    

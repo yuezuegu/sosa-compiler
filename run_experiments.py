@@ -5,7 +5,7 @@ import subprocess
 import itertools 
 import numpy as np
 
-NO_PROCS = 64
+NO_PROCS = 16
 
 def is_proc_ended(proc):
     retcode = proc.poll()
@@ -49,6 +49,63 @@ def date_millisecond():
     return datetime.now().strftime("%Y_%m_%d-%H_%M_%S_%f")[:-3]
 
 
+def multi_batch_experiment(exp_dir):
+    os.system("mkdir -p {}".format(exp_dir))
+
+    IMSIZE = 299
+
+    MEMORY_BW = 1200
+    BANK_SIZE = 524288    
+
+    INTERCONN = "banyan_exp_1"
+
+    ARRAY_SIZE = (32, 32)
+    NO_ARRAY = 128
+
+    MODELS = ["resnet152", "bert_medium", "resnet152"]
+    EXTRA_MODELS = ["None", "None", "bert_medium"]
+
+    SENTENCE_LEN = 100
+
+    out_dirs = []
+    running_procs = []
+
+    for BATCH_SIZE in [1,2,4,8]:
+        for ind, MODEL in enumerate(MODELS):
+            OUT_DIR = exp_dir + "/" + date_millisecond()
+            out_dirs.append(OUT_DIR)
+            os.mkdir(OUT_DIR)
+
+            cmd1 = f'python precompiler/precompile.py \
+                --model {MODEL} \
+                --batch_size {BATCH_SIZE} \
+                --sentence_len {SENTENCE_LEN} \
+                --imsize {IMSIZE} \
+                --array_size {ARRAY_SIZE[0]} {ARRAY_SIZE[1]} \
+                --extra_models {EXTRA_MODELS[ind]} \
+                --enable_schedule_duplication 0 \
+                --out_dir {OUT_DIR}' \
+                
+            cmd2 = f"./build-Release/compiler_st \
+                -r {ARRAY_SIZE[0]} \
+                -c {ARRAY_SIZE[1]} \
+                -N {NO_ARRAY} \
+                -M {MEMORY_BW} \
+                -S {BANK_SIZE} \
+                -I {INTERCONN} \
+                -d {OUT_DIR}"
+            
+            cmd = cmd1 + " && " + cmd2
+            p = subprocess.Popen(cmd, shell=True)
+            print("process: {} ".format(p.pid), cmd)
+
+            running_procs.append(p)
+
+            time.sleep(.1)
+            wait_for_proc_limit(running_procs)
+
+    wait_all_finish(running_procs)
+
 def array_scale_experiment(exp_dir):
     os.system("mkdir -p {}".format(exp_dir))
 
@@ -71,7 +128,7 @@ def array_scale_experiment(exp_dir):
     running_procs = []
 
     array_size_list = []
-    array_size_list += [(16,16,N) for N in [64,128,256,512]]
+    array_size_list += [(16,16,N) for N in [128,256,512,1024]]
     # array_size_list += [(32,32,N) for N in [16,32,64,128,256,512]]
     # array_size_list += [(128,128,N) for N in [1, 2, 4, 8, 16, 24, 32, 48, 64]]
     # array_size_list += [(256,256,N) for N in [1, 2, 4, 8, 12, 16]]
@@ -189,9 +246,9 @@ if __name__=="__main__":
 
     exp_dir = "experiments/run-{}".format(date_minute())
 
-    #partition_size_experiment()
-
+    #partition_size_experiment(exp_dir)
     array_scale_experiment(exp_dir)
+    #multi_batch_experiment(exp_dir)
 
     elapsed = time.time() - start
     os.system("echo Script is done in {} hours.".format(elapsed/60/60))

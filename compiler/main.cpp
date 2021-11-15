@@ -165,6 +165,7 @@ int main(int ac, char* av[]){
     jout["no_ops"] = arrays->total_no_ops();
     jout["total_sram_read_bytes"] = arrays->total_sram_read_bytes();
     jout["total_sram_write_bytes"] = arrays->total_sram_write_bytes();
+    jout["memory_stall_cycles"] = compiler->memory_stall_cycles;
 
     cout << jout.dump() << endl;
 
