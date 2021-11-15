@@ -168,14 +168,16 @@ def get_benchmarks(model_name, batch_size, image_size, seq_len, read_only=False)
 				if model_name in benchmarks:
 					if batch_size in benchmarks[model_name]:
 						if seq_len in benchmarks[model_name][batch_size]:
-							return benchmarks[model_name][batch_size][seq_len]
+							bm = benchmarks[model_name][batch_size][seq_len]
+							return bm, benchmarks
 				bm = benchmark(model_name, "BERT", seq_len=seq_len, batch_size=batch_size)
 				benchmarks[model_name][batch_size][seq_len] = bm
 			else:
 				if model_name in benchmarks:
 					if batch_size in benchmarks[model_name]:
 						if image_size in benchmarks[model_name][batch_size]:
-							return benchmarks[model_name][batch_size][image_size]
+							bm = benchmarks[model_name][batch_size][image_size]
+							return bm, benchmarks
 				bm = benchmark(model_name,"CNN",batch_size=batch_size, image_size=image_size)
 				benchmarks[model_name][batch_size][image_size] = bm
 
