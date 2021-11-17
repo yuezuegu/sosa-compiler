@@ -153,6 +153,8 @@ int main(int ac, char* av[]){
     json jout(jin["args"]);
     jout["no_array"] = no_array;
     jout["interconnect_type"] = interconnect_type; //TODO: Replace with string value
+    jout["bank_size"] = bank_size;
+    jout["bandwidth"] = bandwidth;
     jout["no_cycles"] = compiler->no_cycles;
     jout["no_main_rounds"] = compiler->no_main_rounds();
     jout["no_post_rounds"] = compiler->no_post_rounds();
