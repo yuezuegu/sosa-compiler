@@ -5,10 +5,8 @@ import subprocess
 import itertools 
 import numpy as np
 
-NO_PROCS = 64
+NO_PROCS = 32
 running_procs = []
-
-
 
 def is_proc_ended(proc):
     retcode = proc.poll()
@@ -57,7 +55,7 @@ def date_millisecond():
 def interconnect_experiment():
     start = time.time()
 
-    exp_dir = "experiments/run-{}".format(date_minute())
+    exp_dir = "experiments/run-{}".format(date_second())
     os.system("mkdir -p {}".format(exp_dir))
 
     BATCH_SIZE = 1
@@ -75,16 +73,11 @@ def interconnect_experiment():
     bert_models = list(itertools.product(bert_models, no_seqs))
 
     no_arrays = [32,64,128,256,512]
-    
-    out_dirs = []
-    running_procs = []
 
     for INTERCONN in ["banyan_exp_0", "banyan_exp_1", "banyan_exp_2", "banyan_exp_3", "benes_copy", "crossbar"]:
         for no_array in no_arrays:
             for MODEL,SENTENCE_LEN in bert_models + cnn_models:
-                
-                OUT_DIR = exp_dir + "/" + datetime.today().strftime('%Y-%m-%d-%H%M%S')
-                out_dirs.append(OUT_DIR)
+                OUT_DIR = exp_dir + "/" + date_millisecond()
                 os.mkdir(OUT_DIR)
 
                 cmd1 = f'python precompiler/precompile.py \
@@ -115,11 +108,12 @@ def interconnect_experiment():
 
     elapsed = time.time() - start
     print(f"All processes for {__name__} have been started after {elapsed/60/60} hours, results are in {exp_dir}")
+    time.sleep(1)
 
 def memory_experiment():
     start = time.time()
 
-    exp_dir = "experiments/run-{}".format(date_minute())
+    exp_dir = "experiments/run-{}".format(date_second())
     os.system("mkdir -p {}".format(exp_dir))
     IMSIZE = 299
 
@@ -166,11 +160,12 @@ def memory_experiment():
 
     elapsed = time.time() - start
     print(f"All processes for {__name__} have been started after {elapsed/60/60} hours, results are in {exp_dir}")
+    time.sleep(1)
 
 def multi_batch_experiment():
     start = time.time()
 
-    exp_dir = "experiments/run-{}".format(date_minute())
+    exp_dir = "experiments/run-{}".format(date_second())
     os.system("mkdir -p {}".format(exp_dir))
 
     IMSIZE = 299
@@ -223,12 +218,12 @@ def multi_batch_experiment():
 
     elapsed = time.time() - start
     print(f"All processes for {__name__} have been started after {elapsed/60/60} hours, results are in {exp_dir}")
-
+    time.sleep(1)
 
 def array_scale_experiment():
     start = time.time()
 
-    exp_dir = "experiments/run-{}".format(date_minute())
+    exp_dir = "experiments/run-{}".format(date_second())
     os.system("mkdir -p {}".format(exp_dir))
 
     BATCH_SIZE = 1
@@ -289,11 +284,12 @@ def array_scale_experiment():
 
     elapsed = time.time() - start
     print(f"All processes for {__name__} have been started after {elapsed/60/60} hours, results are in {exp_dir}")
+    time.sleep(1)
 
 def partition_size_experiment():
     start = time.time()
 
-    exp_dir = "experiments/run-{}".format(date_minute())
+    exp_dir = "experiments/run-{}".format(date_second())
     os.system("mkdir -p {}".format(exp_dir))
 
     BATCH_SIZE = 1
@@ -350,7 +346,7 @@ def partition_size_experiment():
 
     elapsed = time.time() - start
     print(f"All processes for {__name__} have been started after {elapsed/60/60} hours, results are in {exp_dir}")
-
+    time.sleep(1)
 
 if __name__=="__main__":
     start = time.time()
@@ -358,8 +354,8 @@ if __name__=="__main__":
     interconnect_experiment()
     partition_size_experiment()
     array_scale_experiment()
-    multi_batch_experiment()
     memory_experiment()
+    multi_batch_experiment()
     
     wait_all_finish(running_procs)
 
