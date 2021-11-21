@@ -26,6 +26,9 @@ class PostProcessor{
     public:
         int id;
         int last_no_round;
+        long no_add_ops;
+        long sram_read_bytes;
+        long sram_write_bytes;
 
         PP_STATE state;
         int exec_cnt;
@@ -46,8 +49,6 @@ class PostProcessor{
         bool is_tile_op_done(int r);
         bool is_idle();
         
-
-
         void update();
 
         friend class boost::serialization::access;
@@ -92,6 +93,10 @@ class PostProcessors{
         list<P_Tile*>* get_pin1_tiles(int r);
         list<P_Tile*>* get_pin2_tiles(int r);
         list<P_Tile*>* get_pout_tiles(int r);
+
+        long total_no_ops();
+        long total_sram_read_bytes();
+        long total_sram_write_bytes();
 
         void init_tile_op(int r);
         bool is_tile_op_done(int r);

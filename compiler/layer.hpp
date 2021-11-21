@@ -34,6 +34,7 @@ class Layer {
         tuple<int, int, int> no_tiles;
         tuple<int, int> input_size;
         tuple<int, int> weight_size;
+        int no_gemm_ops {0};
 
         bool raw_input;
 
@@ -76,6 +77,7 @@ class Model {
         list<Layer>::iterator begin() noexcept { return layer_list->begin(); }
         list<Layer>::iterator end() { return layer_list->end(); }
 
+        Model(){};
         Model(string model_name, json j){
             this->model_name = model_name;
             this->layer_list = new list<Layer>();
@@ -89,7 +91,9 @@ class Model {
         bool all_layers_scheduled();
         Layer* get_layer_by_name(string layer_name);
         friend ostream& operator<<(ostream& os, const Model& model);
-        
+        int total_no_gemm_ops();
+
+
         list<Layer>* layer_list;
 
 

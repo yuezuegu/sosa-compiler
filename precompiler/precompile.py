@@ -128,7 +128,6 @@ def main():
     parser.add_argument('--read_only', type=int, required=False, default=1)
     parser.add_argument('--enable_schedule_duplication', type=int, required=False, default=1)
 
-
     args = parser.parse_args()
 
     batch_size = args.batch_size
@@ -139,12 +138,14 @@ def main():
     imsize = args.imsize
     partition_size = args.partition_size
     out_dir = args.out_dir
-
-    if len(args.extra_models) > 0:
+    extra_models = args.extra_models
+    extra_models = [m for m in extra_models if m != "None"]
+ 
+    if len(extra_models) > 0:
         assert args.enable_schedule_duplication == False, "Schedule duplication is supported only for a single BERT model"
 
     json_out = {"args":args.__dict__}
-    for m in [args.model] + args.extra_models:
+    for m in [args.model] + extra_models:
         bm = get_benchmarks(m, batch_size, imsize, sentence_len, args.read_only)
         if bm.model_type == "BERT" and args.enable_schedule_duplication:
             keras_model = bm.get_keras_model(no_layers=1)

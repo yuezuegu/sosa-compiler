@@ -95,6 +95,7 @@ Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, P
 
     this->sram_round_trip = this->interconnects->x_interconnect->data_req_latency() + this->interconnects->x_interconnect->data_read_latency();
     this->pp_latency_offset = this->interconnects->pout_interconnect->data_write_latency();
+    this->memory_stall_cycles = 0;
 }
 
 void Compiler::compile(Model* model){
@@ -354,17 +355,6 @@ void Compiler::op_placement(int r, MultOp* op){
     if(avail_pout_banks->empty()) return;
     
     unique_ptr< map<Array*, Bank*> > x_permute (this->arrays->get_x_permute(r));
-    BOOST_LOG_TRIVIAL(info) << "op_placement: x_permute = " << [&] {
-        std::vector<int> permute(banks->no_banks, -1);
-        for (auto it = x_permute->begin(); it != x_permute->end(); it++) {
-            permute[it->first->id] = it->second->id;
-        }
-        std::ostringstream oss;
-        for (auto &x: permute) {
-            oss << x << ", ";
-        }
-        return oss.str();
-    }();
 
     unique_ptr< list<Bank*> > avail_x_banks;
     if (op->x_tile->bank != nullptr){
@@ -405,8 +395,7 @@ void Compiler::op_placement(int r, MultOp* op){
     this->interconnects->x_interconnect->apply_permute(x_permute.get());    
     this->interconnects->w_interconnect->apply_permute(w_permute.get());    
 
-    //random_shuffle(avail_arrays.begin(), avail_arrays.end(), *this->random_generator);
-    
+
 #ifdef COMPILER_MULTITHREADING
     if (pls_) {
         for (std::size_t i = 0; i < pls_->num_workers(); ++i) {
@@ -539,6 +528,7 @@ void Compiler::duplicate_schedule(Model* model, int no_repeat){
                 if (op_old->pin_op != nullptr){
                     op_new->assign_pin(new_layer.main_ops[op_old->pin_op->op_ind]);
                 }
+                
             }
 
             for (auto list_it = layer_it->post_ops.begin(); list_it != layer_it->post_ops.end(); list_it++){
@@ -690,6 +680,7 @@ void Compiler::run_cycle_model(){
     while(!is_all_data_ready(this->arrays, this->post_processors, r)){
         this->dram->update(this->banks->get_p_banks(), r);
         arr_cycle++;
+        this->memory_stall_cycles++;
     }
 
     pp_cycle = arr_cycle + this->pp_latency_offset;
@@ -740,17 +731,9 @@ void Compiler::run_cycle_model(){
             }
             else{
                 memory_stall++;
+                this->memory_stall_cycles++;
 
                 BOOST_LOG_TRIVIAL(info) << "Memory stalling: " << memory_stall << " at r: " << r << " clk: " << arr_cycle;
-
-                //max_mem_size = calc_max_required_memory(this->arrays, this->post_processors, r+1);
-                //float memory_timeout = 100 * (float)max_mem_size / this->dram->bandwidth;
-
-                // if (this->livelock_detected) {
-                //     cout << "Memory stalling: " << memory_stall << endl << "Livelock detected. Increase your sram size" << endl;
-                //     this->no_cycles = -1;
-                //     return;
-                // }
 
                 float memory_timeout = 100*(*this->arrays->array_map)[0]->no_rows;
                 if(memory_stall > memory_timeout){    
@@ -768,6 +751,60 @@ void Compiler::run_cycle_model(){
 
     this->no_cycles = arr_cycle > pp_cycle ? arr_cycle : pp_cycle;
 }
+
+// void Compiler::run_cycle_model2(){
+//     int main_rounds = this->no_main_rounds();
+//     int post_rounds = this->no_post_rounds();
+
+//     int main_cycles = 0;
+
+//     for(int r = 0; r < main_rounds; r++){
+//         int round_cycles = 0;
+//         list<MultOp*>* sch = this->arrays->get_schedule(r);
+//         for (auto it = sch->begin(); it != sch->end(); it++){
+//             if (*it==nullptr) continue;
+//             int x0dim = get<0>((*it)->x_tile->dims);
+//             round_cycles = x0dim > round_cycles ? x0dim : round_cycles;
+//         }
+//         delete sch;
+
+//         sch = this->arrays->get_schedule(r+1);
+//         for (auto it = sch->begin(); it != sch->end(); it++){
+//             if (*it==nullptr) continue;
+//             int w0dim = get<0>((*it)->w_tile->dims);
+//             round_cycles = w0dim > round_cycles ? w0dim : round_cycles;
+//         }
+//         delete sch;
+
+//         int round_trip_latency = this->interconnects->x_interconnect->data_read_latency() + this->interconnects->pout_interconnect->data_write_latency();
+//         round_cycles = round_trip_latency > round_cycles ? round_trip_latency : round_cycles;
+
+//         main_cycles += round_cycles;
+//     }
+
+//     int post_cycles = main_cycles;
+//     for(int r = main_rounds; r < post_rounds; r++){
+//         int round_cycles = 0;
+//         list<AggrOp*>* sch = this->post_processors->get_schedule(r);
+//         for (auto it = sch->begin(); it != sch->end(); it++){
+//             if (*it==nullptr) continue;
+//             int p0dim = get<0>((*it)->pout_tile->dims);
+//             round_cycles = p0dim > round_cycles ? p0dim : round_cycles;
+//         }
+//         delete sch;
+
+//         int round_trip_latency = this->interconnects->pp_in1_interconnect->data_read_latency() + this->interconnects->pp_out_interconnect->data_write_latency();
+//         round_cycles = round_trip_latency > round_cycles ? round_trip_latency : round_cycles;
+
+//         post_cycles += round_cycles;
+//     }
+
+//     this->no_cycles = main_cycles > post_cycles ? main_cycles : post_cycles;
+// }
+
+
+
+
 
 #ifdef COMPILER_MULTITHREADING
 
