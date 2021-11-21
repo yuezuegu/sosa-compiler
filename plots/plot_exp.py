@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import dataclasses
 from common import from_dict, named_zip, filter_key
 from defs import IctType
 import json
@@ -84,10 +85,10 @@ class ExpCfg:
     array_size: Tuple[int, int]
     batch_size: int
     imsize: int
-    interconnect_type: IctType
     model: str
     no_array: int
     sentence_len: int
+    interconnect_type: IctType
 
 
 @from_dict
@@ -191,6 +192,14 @@ def main():
     for k in list(experiments.keys()):
         if k.model in ["bert_tiny", "bert_small"]:
             del experiments[k]
+    
+    def print_experiments_list():
+        for k in sorted(experiments.keys()):
+            print(k)
+            print(experiments[k])
+            print()
+    
+    # print_experiments_list()
 
     init_matplotlib()
 
@@ -378,11 +387,28 @@ def main():
             print("\\\\\\hline\n\n".join([ " &\n".join(a) for a in ltx ]))
         
         plot_perc_busy()
-        plot_cycles_ops()
-        plot_ict_power()
+        # plot_cycles_ops()
+        # plot_ict_power()
+
+    def task3():
+        cfgs: Dict[ExpCfg, Dict[IctType, ExpRes]] = {}
+        for cfg, res in experiments.items():
+            cfg_p = dataclasses.replace(cfg, interconnect_type=None)
+            if cfg_p not in cfgs:
+                cfgs[cfg_p] = {}
+            cfgs[cfg_p][cfg.interconnect_type] = res
+        
+        for cfg, t in cfgs.items():
+            if t[IctType.banyan_exp_2].no_main_rounds < t[IctType.crossbar].no_main_rounds:
+                print(cfg)
+                for ict in sorted(t.keys()):
+                    print(f"{ repr(ict) } --> { t[ict] }")
+                print()
+
 
     # task1()
     task2()
+    task3()
 
 
 if __name__ == "__main__":

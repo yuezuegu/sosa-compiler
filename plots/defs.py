@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import IntEnum
 from typing import Callable
 
-class IctType(Enum):
+class IctType(IntEnum):
     """
     Defines the interconnect type.
     """
