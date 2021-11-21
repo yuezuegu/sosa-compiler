@@ -49,4 +49,3 @@ def filter_key(d: Dict[U, T], pred: Callable[[U], bool]) -> Dict[U, T]:
     Filters the given dictionary with a predicate.
     """
     return { k: v for (k, v) in d.items() if pred(k) }
-
