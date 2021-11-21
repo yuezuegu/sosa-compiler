@@ -48,14 +48,6 @@ def main():
     for k in list(experiments.keys()):
         if k.model in ["bert_tiny", "bert_small"]:
             del experiments[k]
-    
-    def print_experiments_list():
-        for k in sorted(experiments.keys()):
-            print(k)
-            print(experiments[k])
-            print()
-    
-    # print_experiments_list()
 
     init_matplotlib()
 
@@ -243,8 +235,8 @@ def main():
             print("\\\\\\hline\n\n".join([ " &\n".join(a) for a in ltx ]))
         
         plot_perc_busy()
-        # plot_cycles_ops()
-        # plot_ict_power()
+        plot_cycles_ops()
+        plot_ict_power()
 
     def task3():
         cfgs: Dict[ExpCfg, Dict[IctType, ExpRes]] = {}
@@ -264,7 +256,7 @@ def main():
 
     # task1()
     task2()
-    task3()
+    # task3()
 
 
 if __name__ == "__main__":

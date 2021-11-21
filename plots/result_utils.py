@@ -49,14 +49,15 @@ class ExpCfg:
     """
     Experiment configuration.
     """
-    array_size: Tuple[int, int]
-    batch_size: int
-    imsize: int
-    model: str
-    no_array: int
-    sentence_len: int
-    interconnect_type: IctType
-
+    array_size: Tuple[int, int] = None
+    batch_size: int = None
+    imsize: int = None
+    model: str = None
+    no_array: int = None
+    sentence_len: int = None
+    interconnect_type: IctType = None
+    bandwidth: float = None
+    bank_size: int = None
 
 @from_dict
 @dataclass(frozen=True, order=True)
@@ -64,28 +65,37 @@ class ExpRes:
     """
     Experiment results.
     """
-    interconnect_tdp: float
-    no_cycles: int
-    no_main_rounds: int
-    no_ops: int
-    no_post_rounds: int
-    x_tiles_bw_usage: float
-    w_tiles_bw_usage: float
-    p_tiles_bw_usage: float
-    total_bw_usage: float
-    total_no_ops: float
-    total_sram_read_bytes: int
-    total_sram_write_bytes: int
-    no_tiles: int
+    interconnect_tdp: float = None
+    no_cycles: int = None
+    no_main_rounds: int = None
+    no_ops: int = None
+    no_post_rounds: int = None
+    x_tiles_bw_usage: float = None
+    w_tiles_bw_usage: float = None
+    p_tiles_bw_usage: float = None
+    total_bw_usage: float = None
+    total_no_ops: float = None
+    total_no_gemm_ops: int = None
+    total_sram_read_bytes: int = None
+    total_sram_write_bytes: int = None
+    no_tiles: int = None
+
 
     def rounds(self):
         return self.no_main_rounds + self.no_post_rounds
 
 
-def calculate_no_tiles(fpath: str) -> int:
+def _calculate_no_tiles(fpath: str) -> int:
+    """
+    For the given json file, calculate the `no_tiles`.
+    """
     with open(fpath, "r") as f:
         d = json.load(f)
         r = 0
+        
+        if "layers" not in d:
+            return None
+        
         for layer_name, layer_data in d["layers"].items():
             gemm_op = layer_data["gemm_op"]
             if gemm_op is None:
@@ -113,7 +123,8 @@ def load_experiments(dir_path: str, rebuild = False) -> Dict[ExpCfg, ExpRes]:
                 key = ExpCfg.from_dict(d)
                 if res.get(key) is not None:
                     raise RuntimeError("Repeated key: ", d)
-                d["no_tiles"] = calculate_no_tiles(f"{ dir_path }/{ fname }/precompiled_model.json")
+                d["no_tiles"] = _calculate_no_tiles(
+                    f"{ dir_path }/{ fname }/precompiled_model.json")
                 res[key] = ExpRes.from_dict(d)
         return res
     
@@ -128,3 +139,14 @@ def load_experiments(dir_path: str, rebuild = False) -> Dict[ExpCfg, ExpRes]:
         print("Loading cache.")
         with open(cache_path, "rb") as f:
             return pickle.load(f)
+
+
+def print_experiments(experiments: Dict[ExpCfg, ExpRes], print=print) -> None:
+    """
+    Prints the experiments (good for debugging).
+    """
+
+    for k in sorted(experiments.keys()):
+        print(k)
+        print(experiments[k])
+        print()
