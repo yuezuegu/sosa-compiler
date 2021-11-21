@@ -52,6 +52,7 @@ class Compiler{
         int no_post_rounds();
         void create_memory_fifo();
         void run_cycle_model();
+        void run_cycle_model2();
         bool is_all_data_ready(Arrays* arrays, PostProcessors* post_processors, int r);
         void check_if_livelock(list<P_Tile*>* p_tiles);
 

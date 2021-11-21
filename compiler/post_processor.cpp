@@ -12,6 +12,9 @@ PostProcessor::PostProcessor(int id){
     this->pin2_tile = nullptr;
     this->pout_tile = nullptr;
     this->curr_op = nullptr;
+    this->no_add_ops = 0;
+    this->sram_read_bytes = 0;
+    this->sram_write_bytes = 0;
 }
 
 void PostProcessor::update(){
@@ -42,6 +45,11 @@ void PostProcessor::init_tile_op(int r){
     this->pin1_tile = this->curr_op->pin1_tile;
     this->pin2_tile = this->curr_op->pin2_tile;
     this->pout_tile = this->curr_op->pout_tile;
+
+    this->no_add_ops += get<0>(this->pout_tile->dims) * get<1>(this->pout_tile->dims);
+    this->sram_read_bytes += this->pin1_tile->memory_size;
+    this->sram_read_bytes += this->pin2_tile->memory_size;
+    this->sram_write_bytes += this->pout_tile->memory_size;
 }
 
 bool PostProcessor::is_tile_op_done(int r){
@@ -310,4 +318,29 @@ bool PostProcessors::is_pout_ready(int r, Dram* dram){
     }    
 
     return is_ready;
+}
+
+long PostProcessors::total_no_ops(){
+    long no_ops = 0;
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        no_ops += it->second->no_add_ops;
+    }
+    return no_ops;
+}
+
+
+long PostProcessors::total_sram_read_bytes(){
+    long sram_read_bytes = 0;
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        sram_read_bytes += it->second->sram_read_bytes;
+    }
+    return sram_read_bytes;
+}
+
+long PostProcessors::total_sram_write_bytes(){
+    long sram_write_bytes = 0;
+    for (auto it = this->pp_map->begin(); it != this->pp_map->end(); it++){
+        sram_write_bytes += it->second->sram_write_bytes;
+    }
+    return sram_write_bytes;
 }

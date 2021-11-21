@@ -43,6 +43,7 @@ Layer Layer::create_copy(string suffix){
     }
 
     Layer new_layer(layer_name, this->x_tile_dims, this->w_tile_dims, this->no_tiles, this->input_size, this->weight_size, this->raw_input, this->is_conv, this->conv_kernel_size, dependencies);
+    new_layer.no_gemm_ops = this->no_gemm_ops;
 
     for(auto tile_it = this->x_tiles->begin(); tile_it != this->x_tiles->end(); tile_it++){
         tuple<int, int> ind = tile_it->first;
@@ -247,6 +248,7 @@ void Layer::create_main_ops(){
 
                 MultOp* op = new MultOp(this->layer_name, op_ind, x_tile, w_tile, pout_tile);
                 this->main_ops[make_tuple(i,j,k)] = op;
+                this->no_gemm_ops++;
             }
         }
     }
@@ -393,4 +395,13 @@ ostream& operator<<(ostream& os, const Model& model)
         os << it->layer_name << endl;
     }
     return os;
+}
+
+
+int Model::total_no_gemm_ops(){
+    int total_no_gemm_ops = 0;
+    for (auto it = this->begin(); it != this->end(); it++){
+        total_no_gemm_ops += it->no_gemm_ops;
+    }    
+    return total_no_gemm_ops;
 }

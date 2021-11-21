@@ -68,7 +68,6 @@ int main(int ac, char* av[]){
         "bank size = " << bank_size << " " <<
         "prefetch = " << prefetch_limit << " " <<
         "interconnect_type = " << interconnect_type << " " <<
-        "log_level = " << log_level <<
         "\n";
 
     json jin;
@@ -101,8 +100,7 @@ int main(int ac, char* av[]){
     compiler->enable_multithreading(48);
     #endif
 
-    
-
+    Model* model = new Model();
     for (json::iterator it = jin.begin(); it != jin.end(); ++it) {
         string key = it.key();
         if (!key.compare("args")) continue;
@@ -110,17 +108,13 @@ int main(int ac, char* av[]){
         string model_name (key);
         json j (jin[model_name]);
 
-        Model* model = new Model(model_name, j);
+        model = new Model(model_name, j);
 
         cout << model;
         compiler->compile(model);
 
         compiler->duplicate_schedule(model, model->no_repeat);
     }
-
-    
-
-
 
     string ofname;
     // ofstream ofs;
@@ -134,13 +128,16 @@ int main(int ac, char* av[]){
     // oa << compiler;
     // ofs.close();
 
-    compiler->run_cycle_model();
 
     cout << "Finished succesfully" << endl;
     cout << "# of main rounds: " << compiler->no_main_rounds() << endl;
     cout << "# of post rounds: " << compiler->no_post_rounds() << endl;
 
-    cout << "Total no. of cycles: " << compiler->no_cycles << endl;
+    compiler->run_cycle_model();
+    cout << "Total no. of cycles 1: " << compiler->no_cycles << endl;
+    
+    // compiler->run_cycle_model2();
+    // cout << "Total no. of cycles 2: " << compiler->no_cycles << endl;
 
     ofstream output_file;
     ofname = work_dir + "/sim_results.json";
@@ -164,10 +161,15 @@ int main(int ac, char* av[]){
     jout["w_tiles_bw_usage"] = dram->w_tiles_bw_usage;
     jout["p_tiles_bw_usage"] = dram->p_tiles_bw_usage;
     jout["total_bw_usage"] = dram->x_tiles_bw_usage + dram->w_tiles_bw_usage + dram->p_tiles_bw_usage;
-    jout["no_ops"] = arrays->total_no_ops();
-    jout["total_sram_read_bytes"] = arrays->total_sram_read_bytes();
-    jout["total_sram_write_bytes"] = arrays->total_sram_write_bytes();
+    jout["no_post_ops"] = post_processors->total_no_ops(); //INT operation (elementwise)
+    jout["no_ops"] = arrays->total_no_ops(); //INT operation (elementwise)
+    jout["total_sram_read_bytes"] = arrays->total_sram_read_bytes() + post_processors->total_sram_read_bytes(); //Bytes
+    jout["total_sram_write_bytes"] = arrays->total_sram_write_bytes() + post_processors->total_sram_write_bytes(); //Bytes
     jout["memory_stall_cycles"] = compiler->memory_stall_cycles;
+    jout["no_layers"] = model->layer_list->size();
+    jout["total_no_gemm_ops"] = model->total_no_gemm_ops();
+
+    cout << "total_no_gemm_ops: " << model->total_no_gemm_ops() << endl;
 
     cout << jout.dump() << endl;
 

@@ -528,6 +528,7 @@ void Compiler::duplicate_schedule(Model* model, int no_repeat){
                 if (op_old->pin_op != nullptr){
                     op_new->assign_pin(new_layer.main_ops[op_old->pin_op->op_ind]);
                 }
+                
             }
 
             for (auto list_it = layer_it->post_ops.begin(); list_it != layer_it->post_ops.end(); list_it++){
@@ -750,6 +751,60 @@ void Compiler::run_cycle_model(){
 
     this->no_cycles = arr_cycle > pp_cycle ? arr_cycle : pp_cycle;
 }
+
+// void Compiler::run_cycle_model2(){
+//     int main_rounds = this->no_main_rounds();
+//     int post_rounds = this->no_post_rounds();
+
+//     int main_cycles = 0;
+
+//     for(int r = 0; r < main_rounds; r++){
+//         int round_cycles = 0;
+//         list<MultOp*>* sch = this->arrays->get_schedule(r);
+//         for (auto it = sch->begin(); it != sch->end(); it++){
+//             if (*it==nullptr) continue;
+//             int x0dim = get<0>((*it)->x_tile->dims);
+//             round_cycles = x0dim > round_cycles ? x0dim : round_cycles;
+//         }
+//         delete sch;
+
+//         sch = this->arrays->get_schedule(r+1);
+//         for (auto it = sch->begin(); it != sch->end(); it++){
+//             if (*it==nullptr) continue;
+//             int w0dim = get<0>((*it)->w_tile->dims);
+//             round_cycles = w0dim > round_cycles ? w0dim : round_cycles;
+//         }
+//         delete sch;
+
+//         int round_trip_latency = this->interconnects->x_interconnect->data_read_latency() + this->interconnects->pout_interconnect->data_write_latency();
+//         round_cycles = round_trip_latency > round_cycles ? round_trip_latency : round_cycles;
+
+//         main_cycles += round_cycles;
+//     }
+
+//     int post_cycles = main_cycles;
+//     for(int r = main_rounds; r < post_rounds; r++){
+//         int round_cycles = 0;
+//         list<AggrOp*>* sch = this->post_processors->get_schedule(r);
+//         for (auto it = sch->begin(); it != sch->end(); it++){
+//             if (*it==nullptr) continue;
+//             int p0dim = get<0>((*it)->pout_tile->dims);
+//             round_cycles = p0dim > round_cycles ? p0dim : round_cycles;
+//         }
+//         delete sch;
+
+//         int round_trip_latency = this->interconnects->pp_in1_interconnect->data_read_latency() + this->interconnects->pp_out_interconnect->data_write_latency();
+//         round_cycles = round_trip_latency > round_cycles ? round_trip_latency : round_cycles;
+
+//         post_cycles += round_cycles;
+//     }
+
+//     this->no_cycles = main_cycles > post_cycles ? main_cycles : post_cycles;
+// }
+
+
+
+
 
 #ifdef COMPILER_MULTITHREADING
 

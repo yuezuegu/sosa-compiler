@@ -16,22 +16,26 @@ import numpy as np
 markers = ["o", "P", "*", "v", "s", "p",  "X", "D", "d", "s", "p", "P"]
 lines = ['-',':', '-.', '--', '-.', ':','--', '-.', ':','--', '-.', ':']
 
-colors = ["tab:red","teal","steelblue","tab:gray","slategrey","mediumpurple"]
-
 #e_data = 4.1e-12 #J per byte
 e_data = 2.7e-12 #J per byte (256kB)
 #e_data = 1.6e-12 #J per byte (128kB)
 
 e_compute = 0.4e-12 #J per MAC
 I_0 = 2.875e-5 #W per byte
+#I_0 = 0
 freq = 1e9 #Hz
 tdp = 250
 
-model_names = ["Bert-medium", "Bert-base", "Bert-large", "Densenet121", "Densenet169", "Densenet201", "Inception", "Resnet50", "Resnet101", "Resnet152", "Harm. mean"]
 
+model_names = ["Bert-medium", "Bert-base", "Bert-large", "Densenet121", "Densenet169", "Densenet201", "Inception", "Resnet50", "Resnet101", "Resnet152", "Harm. mean"]
 cnn_models = ["densenet121", "densenet169", "densenet201", "inception", "resnet50",  "resnet101",  "resnet152"]
+#cnn_models = ["inception", "resnet50", "densenet121"]
+
 bert_models = ["bert_medium", "bert_base", "bert_large"]
-no_seqs = [10, 20, 40, 60, 80, 100, 200, 300, 400, 500]
+#bert_models = ["bert_small", "bert_base", "bert_large"]
+#no_seqs = [10, 20, 40, 60, 80, 100, 200, 300, 400, 500]
+no_seqs = [100]
+
 imsize = [299]
 batch_size = 1
 
@@ -76,7 +80,7 @@ def parse_out_jsons(exp_dirs):
     return out_jsons
 
 
-def draw_bar(ax, data, x_labels, group_labels, figsize=(16, 7)):
+def draw_bar(ax, data, x_labels, group_labels, figsize=(16, 7), colors=None):
     x = np.arange(len(x_labels))  # the label locations
 
     no_groups = len(group_labels)
@@ -86,7 +90,7 @@ def draw_bar(ax, data, x_labels, group_labels, figsize=(16, 7)):
 
     #['/', '\\','.', 'o', '|', '-', '+', 'x',  'O',  '*']
     hatches = ['-','.','/','o','\\']
-    #colors = ["tab:red","lightslategrey","lightsteelblue","powderblue","darkseagreen",]
+    
     for ind, y in enumerate(data):
         ax.bar(x - (1 - gap) / 2 + width*ind, y, width-0.05, label=group_labels[ind], hatch=hatches[ind], color=colors[ind])
 
@@ -100,12 +104,17 @@ def hmean_dict(d):
 
 def plot_array_scale(exp_dirs):
     baselines = {
-        "SOSA (32x32)": list(itertools.product([(32,32)], [32,64,128,256])),
+        "SOSA (32x32)": list(itertools.product([(32,32)], [32,64,128,256,512])),
         "16x16": list(itertools.product([(16,16)], [128,256,512])),
-        "128x128": list(itertools.product([(128,128)], [8,16,24,32])),
+        "128x128": list(itertools.product([(128,128)], [4,8,16,24,32])),
         "256x256": list(itertools.product([(256,256)], [1, 2, 4, 8])),
-        "Monolithic": list(itertools.product([(400,400),(512,512),(800,800)], [1]))
+        "Monolithic": list(itertools.product([(400,400),(512,512),(800,800)], [1])),
         }
+
+    # baselines = {
+    #     "SOSA (32x32)": list(itertools.product([(32,32)], [32, 64, 128, 256, 512])),
+    #     "128x128": list(itertools.product([(128,128)], [2, 4, 8, 16, 24, 32, 48, 64]))
+    #     }
 
     barchart_settings = {
         "SOSA (32x32)": ((32,32),128),
@@ -162,8 +171,9 @@ def plot_array_scale(exp_dirs):
             barchart_data[-1].append(T_normalized)
 
     rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size':16})
+    colors = ["tab:red", "teal","steelblue","tab:gray","slategrey","mediumpurple"]
     fig, ax = plt.subplots(figsize=(16, 5.5))
-    draw_bar(ax, barchart_data, model_names, list(baselines.keys()))
+    draw_bar(ax, barchart_data, model_names, list(baselines.keys()), colors=colors)
 
     plt.ylim()
     ax = plt.gca()
@@ -178,6 +188,7 @@ def plot_array_scale(exp_dirs):
 
     plt.figure(figsize=(7, 5))
     rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size':16})
+    colors = ["tab:red", "teal","steelblue","tab:gray","slategrey","mediumpurple"]
 
     for ind, label in enumerate(baselines):
         eff_vals = [hmean_dict(eff_throughputs[label][(array_size, no_array)]) for (array_size, no_array) in eff_throughputs[label]]
@@ -188,17 +199,54 @@ def plot_array_scale(exp_dirs):
     plt.ylabel('Effective Throughput (TeraOps/s)')
     plt.xlabel('TDP (Watts)')
     plt.xlim(left=0)
-    plt.ylim(bottom=0, top=200)
+    plt.ylim(bottom=0, top=300)
 
     ax = plt.gca()
     handles, labels = ax.get_legend_handles_labels()
-    legend_order = [0,1,2,3,4]
-    ax.legend([handles[o] for o in legend_order], [labels[o] for o in legend_order], fontsize='small', ncol=2, frameon=False,loc='upper left')
+    ax.legend(fontsize='small', ncol=2, frameon=False,loc='upper left')
 
+    #plt.title("Memory BW: 1.2 TeraOps/s")
+    plt.title("Memory BW: infinite")
     plt.tight_layout()
 
     plt.savefig("plots/array_scale.png")
     plt.savefig("plots/array_scale.pdf")
+
+    plt.figure(figsize=(7, 5))
+    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size':16})
+ 
+    array_size = (32,32)
+
+    colors = ["tab:gray","slategrey","darkgrey","mediumpurple","teal","steelblue","tab:gray","slategrey","teal","steelblue","mediumpurple"]
+
+    label = "SOSA (32x32)"
+    for ind, m in enumerate(bert_models+cnn_models):
+        eff_vals = [eff_throughputs[label][(array_size, no_array)][m] for (array_size, no_array) in eff_throughputs[label]]
+        plt.plot(peak_powers[label].values(), eff_vals, label=m,
+                    linewidth=3, linestyle=lines[ind], marker=markers[ind], markersize=10, color=colors[ind])
+
+    ax = plt.gca()
+    ax.legend(fontsize='small', ncol=2, frameon=False,loc='upper left')
+
+    plt.tight_layout()
+    plt.savefig("plots/array_scale_by_model.png")   
+
+    gemm_per_layer = {"densenet121": 364.5128205128205,
+    "densenet169": 312.72361809045225,
+    "densenet201": 336.033850493653,
+    "inception": 596.1373801916933,
+    "resnet50": 1364.2485875706216,
+    "resnet101": 1335.5158501440922,
+    "resnet152": 1321.4700193423598,
+    "bert_medium": 306.4347826086956,
+    "bert_base": 580.0,
+    "bert_large": 892.3870967741935,}
+
+
+
+
+    
+
 
 
 def plot_interconnect(exp_dirs):
@@ -366,7 +414,9 @@ def plot_multibatch(exp_dirs):
     baselines = ["1","2","4","8"]
 
     fig, ax = plt.subplots(figsize=(7, 5))
-    draw_bar(ax, throughputs, model_name, baselines)
+
+    colors = ["lightslategrey","lightsteelblue","powderblue","darkseagreen"]
+    draw_bar(ax, throughputs, model_name, baselines, colors = colors)
 
     ax = plt.gca()
     ax.set_axisbelow(True)
@@ -378,8 +428,7 @@ def plot_multibatch(exp_dirs):
     plt.savefig('plots/multibatch.png')
     plt.savefig('plots/multibatch.pdf')
 
-
-def plot_memory(exp_dirs):
+def plot_bank_size(exp_dirs):
     out_jsons = parse_out_jsons(exp_dirs)
 
     plt.figure(figsize=(7, 5))
@@ -454,15 +503,28 @@ def plot_memory(exp_dirs):
     plt.savefig("plots/memory.png")
     plt.savefig("plots/memory.pdf")
 
+def plot_memory(exp_dirs):
+    out_jsons = parse_out_jsons(exp_dirs)
+
+    for m in cnn_models+bert_models:
+        args = {"model":m}
+        total_no_gemm_ops = get_result("total_no_gemm_ops", args, out_jsons)  
+        no_layers = get_result("no_layers", args, out_jsons)        
+        print("{}: {}".format(m, total_no_gemm_ops/no_layers))
+
 if __name__=="__main__":
     interconnect_dirs = ["experiments/run-2021_11_17-17_59"]
     partition_size_dirs = ["experiments/run-2021_11_17-19_45"]
     array_scale_dirs = ["experiments/run-2021_11_17-20_24", "experiments/run-2021_11_15-13_45"]
+    #array_scale_dirs = ["experiments/run-2021_11_20-10_47_21"]
+
     multibatch_dirs = ["experiments/run-2021_11_17-21_12"]
-    memory_dirs = ["experiments/run-2021_11_17-21_13"]
-    
-    plot_interconnect(interconnect_dirs)
-    plot_partition_size(partition_size_dirs)
-    plot_array_scale(array_scale_dirs)
-    plot_multibatch(multibatch_dirs)
+    bank_size_dirs = ["experiments/run-2021_11_17-21_13"]
+    memory_dirs = ["experiments/run-2021_11_21-13_07_55"]
+
     plot_memory(memory_dirs)
+    # plot_interconnect(interconnect_dirs)
+    # plot_partition_size(partition_size_dirs)
+    plot_array_scale(array_scale_dirs)
+    # plot_multibatch(multibatch_dirs)
+    # plot_bank_size(bank_size_dirs)

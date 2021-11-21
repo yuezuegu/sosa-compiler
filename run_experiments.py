@@ -5,7 +5,7 @@ import subprocess
 import itertools 
 import numpy as np
 
-NO_PROCS = 32
+NO_PROCS = 64
 running_procs = []
 
 def is_proc_ended(proc):
@@ -49,7 +49,65 @@ def date_second():
 def date_millisecond():
     return datetime.now().strftime("%Y_%m_%d-%H_%M_%S_%f")[:-3]
 
+def memory_experiment():
+    start = time.time()
 
+    exp_dir = "experiments/run-{}".format(date_second())
+    os.system("mkdir -p {}".format(exp_dir))
+
+    BATCH_SIZE = 1
+    IMSIZE = 299
+    ARRAY_SIZE = (32, 32)
+    NO_ARRAY = 128
+
+    BANK_SIZE = 262144
+
+    cnn_models = ["inception", "resnet50",  "resnet101",  "resnet152", "densenet121", "densenet169", "densenet201"]
+    cnn_models = list(itertools.product(cnn_models, [1]))
+
+    bert_models = ["bert_tiny", "bert_small", "bert_medium", "bert_base", "bert_large"]
+    no_seqs = [100]
+    bert_models = list(itertools.product(bert_models, no_seqs))
+
+    INTERCONN = "banyan_exp_1"
+
+    #for MEMORY_BW in [400, 800, 1200, 1600, 2000]:
+    for MEMORY_BW in [1200]:
+        for MODEL,SENTENCE_LEN in cnn_models + bert_models:    
+                OUT_DIR = exp_dir + "/" + date_millisecond()
+
+                os.mkdir(OUT_DIR)
+
+                cmd1 = f'python precompiler/precompile.py \
+                    --model {MODEL} \
+                    --batch_size {BATCH_SIZE} \
+                    --sentence_len {SENTENCE_LEN} \
+                    --imsize {IMSIZE} \
+                    --array_size {ARRAY_SIZE[0]} {ARRAY_SIZE[1]} \
+                    --out_dir {OUT_DIR}' \
+                    
+                cmd2 = f"./build-Release/compiler_st \
+                    -r {ARRAY_SIZE[0]} \
+                    -c {ARRAY_SIZE[1]} \
+                    -N {NO_ARRAY} \
+                    -M {MEMORY_BW} \
+                    -S {BANK_SIZE} \
+                    -I {INTERCONN} \
+                    -d {OUT_DIR}"
+                
+                cmd = cmd1 + " && " + cmd2
+                p = subprocess.Popen(cmd, shell=True)
+                print("process: {} ".format(p.pid), cmd)
+
+                running_procs.append(p)
+
+                time.sleep(.1)
+                wait_for_proc_limit(running_procs)
+
+    elapsed = time.time() - start
+    print(f"All processes for {__name__} have been started after {elapsed/60/60} hours, results are in {exp_dir}")
+    time.sleep(1)
+            
 
 
 def interconnect_experiment():
@@ -110,7 +168,7 @@ def interconnect_experiment():
     print(f"All processes for {__name__} have been started after {elapsed/60/60} hours, results are in {exp_dir}")
     time.sleep(1)
 
-def memory_experiment():
+def bank_size_experiment():
     start = time.time()
 
     exp_dir = "experiments/run-{}".format(date_second())
@@ -243,10 +301,12 @@ def array_scale_experiment():
 
     array_size_list = []
     # array_size_list += [(16,16,N) for N in [128,256,512,1024]]
-    array_size_list += [(32,32,N) for N in [8,16,32,64,128,256,512]]
-    array_size_list += [(128,128,N) for N in [1, 2, 4, 8, 16, 24, 32, 48, 64]]
-    array_size_list += [(256,256,N) for N in [1, 2, 4, 8, 12, 16]]
-    array_size_list += [(400,400,1), (512,512,1), (800,800,1), (960,960,1), (1024,1024,1)]
+    #array_size_list += [(32,32,N) for N in [8,16,32,64,128,256,512]]
+    array_size_list += [(32,32,N) for N in [32,64,128,256,512]]
+    #array_size_list += [(128,128,N) for N in [1, 2, 4, 8, 16, 24, 32, 48, 64]]
+    array_size_list += [(128,128,N) for N in [2,4,8,16,24,32,48,64]]
+    #array_size_list += [(256,256,N) for N in [1, 2, 4, 8, 12, 16]]
+    #array_size_list += [(400,400,1), (512,512,1), (800,800,1), (960,960,1), (1024,1024,1)]
 
     for r, c, N in array_size_list:
         for MODEL,SENTENCE_LEN in bert_models + cnn_models:
@@ -285,6 +345,7 @@ def array_scale_experiment():
     elapsed = time.time() - start
     print(f"All processes for {__name__} have been started after {elapsed/60/60} hours, results are in {exp_dir}")
     time.sleep(1)
+
 
 def partition_size_experiment():
     start = time.time()
@@ -351,11 +412,12 @@ def partition_size_experiment():
 if __name__=="__main__":
     start = time.time()
 
-    interconnect_experiment()
-    partition_size_experiment()
-    array_scale_experiment()
     memory_experiment()
-    multi_batch_experiment()
+    #interconnect_experiment()
+    #partition_size_experiment()
+    #array_scale_experiment()
+    #bank_size_experiment()
+    #multi_batch_experiment()
     
     wait_all_finish(running_procs)
 
