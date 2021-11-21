@@ -2,9 +2,9 @@
 
 r=32
 c=32
-N=32
-model="bert_small"
-interconn="banyan" # benes_vanilla or so
+N=512
+model="bert_tiny"
+interconn="crossbar" # benes_vanilla or so
 mem_bw=1200 # memory bandwidth
 bank_sz=524288 # bank size
 
@@ -122,7 +122,9 @@ else
     echo "Skipping precompiler."
 fi
 
-${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d "$DIR" -M "$mem_bw" -S "$bank_sz" -l info || fail_msg "compile failed."
+command="${COMPILER} -r ${r} -c ${c} -N ${N} -I ${interconn} -d \"$DIR\" -M \"$mem_bw\" -S \"$bank_sz\" -l info"
+echo $command
+eval $command || fail_msg "compile failed."
 
 end_time=$(date +%s)
 elapsed=$(( end_time - start_time ))
