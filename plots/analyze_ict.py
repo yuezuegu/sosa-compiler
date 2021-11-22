@@ -1,166 +1,23 @@
-from dataclasses import dataclass
-from common import from_dict, named_zip, filter_key
-from defs import IctType
-import json
-import os
-from typing import Dict, List, Tuple
-from functools import reduce
-import pickle
+"""
+This file generates following metrics for each interconnect type:
+
+    * Percentage of active pods
+    * Interconnect power consumption relative to all system
+    * Cycles a tile operation takes
+
+"""
+
+from common import filter_key
+import dataclasses
+from typing import Dict, List
 import scipy.stats
 import scipy
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.font_manager
-from matplotlib import rc
-from matplotlib.figure import Figure
-from matplotlib.axes import Axes
-from matplotlib.transforms import Bbox
-import textwrap
-
-# see please:
-# https://stackoverflow.com/questions/44970010/axes-class-set-explicitly-size-width-height-of-axes-in-given-units
-
-def init_matplotlib():
-    # Global font parameters
-    rc("font", **{ "family": "sans-serif", "sans-serif": [ "Helvetica" ], "size": 16 })
-
-    # Save figure parameters
-    # rc("savefig", **{ "pad_inches": 0.5, "bbox": "tight", "dpi": 200 })
-
-# Defines the plot styles
-plot_styles = named_zip(
-    color=[
-        "pink",
-        "tab:red",
-        "lightcoral",
-        "mistyrose",
-        "lightsteelblue",
-        "lightskyblue",
-        "gray",
-        "steelblue",
-        "tab:cyan",
-        "tab:blue",
-        "tab:orange",
-        "tab:olive"],
-    marker=["P", "o", "d", "v", "s", "p",  "X", "D", "d", "s", "p", "P"],
-    linestyle=['--', '-', '-.', ':', '-.', ':','--', '-.', ':','--', '-.', ':'],
-    linewidth=[3] * 12,
-    markersize=[10] * 12
-)
-
-
-def text_wrap(l: List[str], w=10) -> List[str]:
-    return [ "\n".join(textwrap.wrap(str(x), w)) for x in l ]
-
-def new_figure(
-    fig_w = 10,
-    fig_h = 8,
-    left_margin = 1,
-    right_margin = 1,
-    top_margin = 1,
-    bottom_margin = 1
-) -> Tuple[Figure, Axes]:
-    """
-    Creates a figure and with a pre-defined margin.
-    """
-    fig = plt.figure(figsize=(fig_w, fig_h))
-    ax = fig.add_axes((
-        left_margin / fig_w,
-        bottom_margin / fig_h,
-        (fig_w - (left_margin + right_margin)) / fig_w,
-        (fig_h - (top_margin + bottom_margin)) / fig_h
-    ))
-    return fig, ax
-
+from result_utils import *
+from plot_helpers import *
 
 EXP_DIR = "experiments/run-2021_11_02-16_20_50"
-
-@from_dict
-@dataclass(frozen=True, order=True)
-class ExpCfg:
-    """
-    Experiment configuration.
-    """
-    array_size: Tuple[int, int]
-    batch_size: int
-    imsize: int
-    interconnect_type: IctType
-    model: str
-    no_array: int
-    sentence_len: int
-
-
-@from_dict
-@dataclass(frozen=True, order=True)
-class ExpRes:
-    """
-    Experiment results.
-    """
-    interconnect_tdp: float
-    no_cycles: int
-    no_main_rounds: int
-    no_ops: int
-    no_post_rounds: int
-    x_tiles_bw_usage: float
-    w_tiles_bw_usage: float
-    p_tiles_bw_usage: float
-    total_bw_usage: float
-    total_no_ops: float
-    total_sram_read_bytes: int
-    total_sram_write_bytes: int
-    no_tiles: int
-
-    def rounds(self):
-        return self.no_main_rounds + self.no_post_rounds
-
-
-def calculate_no_tiles(fpath: str) -> int:
-    with open(fpath, "r") as f:
-        d = json.load(f)
-        r = 0
-        for layer_name, layer_data in d["layers"].items():
-            gemm_op = layer_data["gemm_op"]
-            if gemm_op is None:
-                continue
-            a, b, c = gemm_op["no_tiles"]
-            r = r + a * b * c
-            # print(a, b, c)
-        # print(r)
-        r = r * d["no_repeat"]
-        return r
-
-
-def load_experiments(dir_path: str, rebuild = False) -> Dict[ExpCfg, ExpRes]:
-    """
-    Loads the experiment results from the given path.
-    """
-
-    # performs actual loading
-    def load():
-        res = {}
-        files = os.listdir(dir_path)
-        for fname in files:
-            with open(f"{ dir_path }/{ fname }/sim_results.json", "r") as f:
-                d = json.load(f)
-                key = ExpCfg.from_dict(d)
-                if res.get(key) is not None:
-                    raise RuntimeError("Repeated key: ", d)
-                d["no_tiles"] = calculate_no_tiles(f"{ dir_path }/{ fname }/precompiled_model.json")
-                res[key] = ExpRes.from_dict(d)
-        return res
-    
-    cache_path = f"{ dir_path }/cache.pickle"
-    if rebuild or not os.path.exists(cache_path):
-        print("Rebuilding cache.")
-        data = load()
-        with open(cache_path, "wb") as f:
-            pickle.dump(data, f)
-        return data
-    else:
-        print("Loading cache.")
-        with open(cache_path, "rb") as f:
-            return pickle.load(f)
-
 
 def calculate_perc_active(no_array: int, results: List[ExpRes]) -> float:
     return scipy.stats.gmean(
@@ -263,6 +120,9 @@ def main():
             IctType.crossbar,
             IctType.benes_copy
         ]
+        
+        # to store data for latex
+        ltx = [ [ f"\multrowR{{ { str(x) } }}", None, None, None ] for x in l_ict_type ]
 
         no_array = 128
 
@@ -295,8 +155,9 @@ def main():
                 results = filter_key(experiments, filter(ict))
                 perc_active = calculate_perc_active(no_array, results.values())
                 y_pos[idx] = perc_active
+                ltx[idx][1] = f"{perc_active:.2f}"
 
-            print("\t".join([ f"{x:.2f}" for x in y_pos ]))
+            # print("\t".join([ f"{x:.2f}" for x in y_pos ]))
             
             ax.grid()
             ax.set_axisbelow(True)
@@ -319,10 +180,11 @@ def main():
 
             for idx, ict in enumerate(l_ict_type):
                 results = filter_key(experiments, filter(ict))
-                perc_active = calculate_cyc_op(results.values())
-                y_pos[idx] = perc_active
+                cyc_op = calculate_cyc_op(results.values())
+                y_pos[idx] = cyc_op
+                ltx[idx][2] = f"{cyc_op:.2f}"
 
-            print("\t".join([ f"{x:.2f}" for x in y_pos ]))
+            # print("\t".join([ f"{x:.2f}" for x in y_pos ]))
             
             ax.grid()
             ax.set_axisbelow(True)
@@ -352,10 +214,11 @@ def main():
                     sw_width = k.array_size[0] + 5 * k.array_size[1]
                     p_compute = no_array * k.array_size[0] * k.array_size[1] * e_compute * freq
                     p_data = k.no_array * sw_width * e_data * freq
-                    y_pos[idx] = v.interconnect_tdp / (p_data + p_compute + v.interconnect_tdp) * 100
-                    break
+                    p = v.interconnect_tdp / (p_data + p_compute + v.interconnect_tdp) * 100
+                    y_pos[idx] = p
+                    ltx[idx][3] = f"{p:.2f}"
 
-            print("\t".join([ f"{x:.2f}" for x in y_pos ]))
+            # print("\t".join([ f"{x:.2f}" for x in y_pos ]))
             
             ax.grid()
             ax.set_axisbelow(True)
@@ -368,13 +231,32 @@ def main():
 
             fig.savefig("plots/plot_ict_power_total_power.svg")
             fig.savefig("plots/plot_ict_power_total_power.png", dpi=100)
+
+            print("\\\\\\hline\n\n".join([ " &\n".join(a) for a in ltx ]))
         
         plot_perc_busy()
         plot_cycles_ops()
         plot_ict_power()
 
+    def task3():
+        cfgs: Dict[ExpCfg, Dict[IctType, ExpRes]] = {}
+        for cfg, res in experiments.items():
+            cfg_p = dataclasses.replace(cfg, interconnect_type=None)
+            if cfg_p not in cfgs:
+                cfgs[cfg_p] = {}
+            cfgs[cfg_p][cfg.interconnect_type] = res
+        
+        for cfg, t in cfgs.items():
+            if t[IctType.banyan_exp_2].no_main_rounds < t[IctType.crossbar].no_main_rounds:
+                print(cfg)
+                for ict in sorted(t.keys()):
+                    print(f"{ repr(ict) } --> { t[ict] }")
+                print()
+
+
     # task1()
     task2()
+    # task3()
 
 
 if __name__ == "__main__":

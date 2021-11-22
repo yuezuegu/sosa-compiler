@@ -12,6 +12,7 @@
 #include "post_processor.hpp"
 #include "logger_setup.hpp"
 #include "dram.hpp"
+// #include "dump_schedule.hpp"
 
 #include <boost/log/trivial.hpp>
 #include <boost/program_options.hpp>
@@ -112,9 +113,12 @@ int main(int ac, char* av[]){
 
         cout << model;
         compiler->compile(model);
-
+        
         compiler->duplicate_schedule(model, model->no_repeat);
     }
+    
+    // dump_schedule(std::cout, compiler);
+
 
     string ofname;
     // ofstream ofs;
