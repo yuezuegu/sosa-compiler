@@ -4,7 +4,8 @@
 
 import pickle
 import argparse
-import json 
+import json
+from matplotlib.markers import MarkerStyle 
 
 import numpy as np
 
@@ -31,7 +32,7 @@ I_0 = 2.875e-5 #W per byte
 freq = 1e9 #Hz
 
 #tdp = 250 #Watts
-tdp = 0
+tdp = 400
 
 def no_folds(m,n,k,r,c):
     return np.multiply.outer(np.ceil(m/r) * np.ceil(n/r), np.ceil(k/c))
@@ -77,18 +78,86 @@ def find_no_systolic_arrays(r_range, c_range, freq, e_data, e_compute, I_0, tdp)
         N += 1
         #N *= 2
 
-if __name__ == "__main__":
+
+bert_models = ["bert_medium","bert_base","bert_large"]
+cnn_models = ["inception","resnet50","resnet101","resnet152","densenet121","densenet169","densenet201"]
+seq_list = [10, 20, 40, 60, 80, 100, 200, 300, 400, 500]
+imsize_list = [224,256,299]
+batch_size = 1
+
+r_range = np.arange(1, 256+1, 1)
+c_range = r_range
+
+def plot_design_space(atpps):
+    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size':18})
+
+    ds = []
+    for model_name in bert_models:
+        ds_tmp = []
+        for no_seq in seq_list:
+            ds_tmp.append(np.array(atpps[model_name][str(no_seq)]))
+        ds.append(hmean(ds_tmp))
+
+    ds_bert = hmean(ds)
+
+    ds = []
+    for model_name in cnn_models:
+        ds_tmp = []
+        for imsize in imsize_list:
+            ds_tmp.append(np.array(atpps[model_name][str(imsize)]))
+        ds.append(hmean(ds_tmp))
+
+    ds_cnn = hmean(ds)
+
+    ds_mix = hmean([ds_cnn, ds_bert])
+
+    ds_bert = ds_bert / 1e12 * freq #convert ops/cycle/W to Teraops/s/W
+    ds_cnn = ds_cnn / 1e12 * freq #convert ops/cycle/W to Teraops/s/W
+    ds_mix = ds_mix / 1e12 * freq #convert ops/cycle/W to Teraops/s/W
+
+    baselines = [(128,128), (256,256), (32,32), (8,8)]
+
+    names = ["Bert", "CNN", "Mix"]
+
+    ds = ds_mix
+    i,j=np.unravel_index(np.argmax(ds), ds.shape)
+    r_peak = r_range[i]
+    c_peak = c_range[j]
+    print("Peak at {}x{}".format(r_peak, c_peak))
+
+    T = {}
+    for r,c in baselines+[(r_peak,c_peak)]+[(16,16), (32,32), (64,64), ]:
+        i = np.where(r_range == r)[0][0]
+        j = np.where(r_range == c)[0][0]
+        T[(r,c)] = ds[i,j]
+        print("{}x{}: {}".format(r,c,T[(r,c)]))
+
+    plt.figure(figsize=(6.5, 5))
+    plt.pcolormesh(r_range, c_range, ds, cmap=cm.get_cmap('coolwarm'), shading='auto')
+
+    cb = plt.colorbar()
+
+    points = []
+    markers = ['D','o','s','p','*',]
+    labels = ["128x128","256x256","32x32","8x8"]
+    for i, k in enumerate(baselines):
+        p = plt.scatter(k[1], k[0], s=100, marker=markers[i], color='white', edgecolors='black', label=labels[i])
+        points.append(p)
+        cb.ax.plot(0.7, T[k], marker=markers[i], markersize=8, color='white', markeredgecolor='black')
+
+    plt.legend(handles=[points[i] for i in [3,2,0,1]], fontsize='small',frameon=False, loc='lower center', bbox_to_anchor=(0.5, 1.), ncol=2)
+
+    plt.ylabel("# of rows")
+    plt.xlabel("# of colums")
+    plt.xticks([64,128,192,256])
+    plt.yticks([64,128,192,256])
+    plt.tight_layout()
+    plt.savefig("plots/design_space.png")
+    plt.savefig("plots/design_space.pdf")
+
+def run_design_space():    
     with open('benchmarks.pickle', 'rb') as pickle_file:
         benchmarks = pickle.load(pickle_file)
-
-    bert_models = ["bert_tiny","bert_small","bert_medium","bert_base","bert_large"]
-    cnn_models = ["inception","resnet50","resnet101","resnet152","densenet121","densenet169","densenet201"]
-    seq_list = [10, 20, 40, 60, 80, 100, 200, 300, 400, 500]
-    imsize_list = [224,256,299]
-    batch_size = 1
-    
-    r_range = np.arange(4, 512+1, 4)
-    c_range = r_range
 
     atpps = {}
     for model_name in bert_models:
@@ -119,60 +188,16 @@ if __name__ == "__main__":
             elapsed = time.time() - start
             print("Model: {} \t elapsed: {}".format(model_name ,elapsed))
 
-    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size':18})
+    with open("atpps.json", "w") as json_file:
+        json.dump(atpps, json_file)
 
-    ds = []
-    for model_name in bert_models:
-        ds_tmp = []
-        for no_seq in seq_list:
-            ds_tmp.append(np.array(atpps[model_name][no_seq]))
-        ds.append(hmean(ds_tmp))
 
-    ds_bert = hmean(ds)
 
-    ds = []
-    for model_name in cnn_models:
-        ds_tmp = []
-        for imsize in imsize_list:
-            ds_tmp.append(np.array(atpps[model_name][imsize]))
-        ds.append(hmean(ds_tmp))
 
-    ds_cnn = hmean(ds)
+if __name__ == "__main__":
+    #run_design_space()
 
-    ds_mix = hmean([ds_cnn, ds_bert])
+    with open("atpps.json", "r") as json_file:
+        atpps=json.load(json_file)
 
-    ds_bert = ds_bert / 1e12 * freq #convert ops/cycle/W to Teraops/s/W
-    ds_cnn = ds_cnn / 1e12 * freq #convert ops/cycle/W to Teraops/s/W
-    ds_mix = ds_mix / 1e12 * freq #convert ops/cycle/W to Teraops/s/W
-
-    baselines = [(128,128), (256,256), (512,512), (8,8)]
-
-    names = ["Bert", "CNN", "Mix"]
-    for ind, ds in enumerate([ds_bert, ds_cnn, ds_mix]):
-        i,j=np.unravel_index(np.argmax(ds), ds.shape)
-        r_peak = r_range[i]
-        c_peak = c_range[j]
-        print(names[ind])
-        print("Peak at {}x{}".format(r_peak, c_peak))
-
-        T = {}
-        for r,c in baselines+[(r_peak,c_peak)]+[(32,32), (68,32), (20,128), (20,32)]:
-            i = np.where(r_range == r)[0][0]
-            j = np.where(r_range == c)[0][0]
-            T[(r,c)] = ds[i,j]
-            print("{}x{}: {}".format(r,c,T[(r,c)]))
-
-        plt.figure(figsize=(6.5, 5))
-        plt.pcolormesh(r_range, c_range, ds, cmap=cm.get_cmap('coolwarm'), shading='auto')
-
-        cb = plt.colorbar()
-
-        for k in baselines+[(r_peak,c_peak)]:
-            plt.plot(k[1], k[0], 'w.')
-            cb.ax.plot(0.5, T[k], 'w.')
-
-        plt.ylabel("# of rows")
-        plt.xlabel("# of colums")
-        plt.xticks([100,200,300,400,500])
-        plt.tight_layout()
-        plt.savefig("plots/design_space_"+names[ind]+".png")
+    plot_design_space(atpps)

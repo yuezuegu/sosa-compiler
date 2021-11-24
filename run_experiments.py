@@ -178,7 +178,7 @@ def bank_size_experiment():
     INTERCONN = "banyan_exp_1"
 
     ARRAY_SIZE = (32, 32)
-    NO_ARRAY = 128
+    NO_ARRAY = 256
 
     cnn_models = ["resnet152"]
 
@@ -234,8 +234,9 @@ def multi_batch_experiment():
     INTERCONN = "banyan_exp_1"
 
     ARRAY_SIZE = (32, 32)
-    NO_ARRAY = 128
+    NO_ARRAY = 256
 
+    #MODELS = ["densenet121", "bert_medium", "densenet121"]
     MODELS = ["resnet152", "bert_medium", "resnet152"]
     EXTRA_MODELS = ["None", "None", "bert_medium"]
 
@@ -302,11 +303,14 @@ def array_scale_experiment():
     array_size_list = []
     # array_size_list += [(16,16,N) for N in [128,256,512,1024]]
     #array_size_list += [(32,32,N) for N in [8,16,32,64,128,256,512]]
-    array_size_list += [(32,32,N) for N in [32,64,128,256,512]]
+    #array_size_list += [(32,32,N) for N in [32,64,128,256,512]]
+    #array_size_list += [(64,64,N) for N in [16,32,64,128,196,256]]
+    
     #array_size_list += [(128,128,N) for N in [1, 2, 4, 8, 16, 24, 32, 48, 64]]
-    array_size_list += [(128,128,N) for N in [2,4,8,16,24,32,48,64]]
+    #array_size_list += [(128,128,N) for N in [2,4,8,16,24,32,48,64]]
     #array_size_list += [(256,256,N) for N in [1, 2, 4, 8, 12, 16]]
     #array_size_list += [(400,400,1), (512,512,1), (800,800,1), (960,960,1), (1024,1024,1)]
+    array_size_list += [(1024,1024,1)]
 
     for r, c, N in array_size_list:
         for MODEL,SENTENCE_LEN in bert_models + cnn_models:
@@ -365,11 +369,11 @@ def partition_size_experiment():
     CNN_MODELS = ["inception", "resnet50",  "resnet101",  "resnet152", "densenet121", "densenet169", "densenet201"]
     CNN_MODELS = list(itertools.product(CNN_MODELS, [1]))
 
-    BERT_MODELS = ["bert_tiny", "bert_small", "bert_medium", "bert_base", "bert_large"]
-    NO_SEQS = [10, 20, 40, 60, 80, 100, 200, 300, 400, 500]
+    BERT_MODELS = ["bert_medium", "bert_base", "bert_large"]
+    NO_SEQS = [100]
     BERT_MODELS = list(itertools.product(BERT_MODELS, NO_SEQS))
 
-    NO_ARRAY = 128
+    NO_ARRAY = 256
     INTERCONN = "banyan_exp_1"
 
     for PARTITION_SIZE in PARTITION_SIZES:
@@ -412,12 +416,12 @@ def partition_size_experiment():
 if __name__=="__main__":
     start = time.time()
 
-    memory_experiment()
+    #memory_experiment()
     #interconnect_experiment()
     #partition_size_experiment()
     #array_scale_experiment()
     #bank_size_experiment()
-    #multi_batch_experiment()
+    multi_batch_experiment()
     
     wait_all_finish(running_procs)
 
