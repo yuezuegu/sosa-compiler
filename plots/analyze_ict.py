@@ -13,6 +13,7 @@ from typing import Dict, List
 import scipy.stats
 import scipy
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 from result_utils import *
 from plot_helpers import *
@@ -199,6 +200,7 @@ def main():
             fig.savefig("plots/plot_perc_cycles_ops.png", dpi=100)
 
         def plot_ict_power():
+            # this one finds relative to the overall power consumption
             fig, ax = new_figure(**fig_params)
 
             x_pos = np.arange(len(l_ict_type))
@@ -231,12 +233,28 @@ def main():
 
             fig.savefig("plots/plot_ict_power_total_power.svg")
             fig.savefig("plots/plot_ict_power_total_power.png", dpi=100)
-
-            print("\\\\\\hline\n\n".join([ " &\n".join(a) for a in ltx ]))
         
+        def plot_ict_power_w_per_byte():
+            calc = {  } # for calculating the ICT power
+            # Usage: calc[ict_type](n) where n = log N
+            # Taken from the C++ code
+            calc[IctType.banyan_exp_0] = lambda n: 2.875e-5 * (math.pow(2, n)) * n
+            calc[IctType.banyan_exp_1] = lambda n: calc[IctType.banyan_exp_0](n + 1)
+            calc[IctType.banyan_exp_2] = lambda n: calc[IctType.banyan_exp_0](n + 2)
+            calc[IctType.banyan_exp_3] = lambda n: calc[IctType.banyan_exp_0](n + 3)
+            calc[IctType.benes_copy] = lambda n: 2.875e-5 * 4 * (math.pow(2, n)) * n
+            calc[IctType.crossbar] = lambda n: 2.875e-5 * (math.pow(2, n)) * (math.pow(2, n))
+
+            for idx, ict in enumerate(l_ict_type):
+                n = 8 # N = 256
+                p = calc[ict](n) / 256 * 1e3 # mW/byte
+                ltx[idx][3] = f"{p:.2f}"
+
         plot_perc_busy()
         plot_cycles_ops()
-        plot_ict_power()
+        plot_ict_power_w_per_byte()
+
+        print("\\\\\\hline\n\n".join([ " &\n".join(a) for a in ltx ]))
 
     def task3():
         cfgs: Dict[ExpCfg, Dict[IctType, ExpRes]] = {}
