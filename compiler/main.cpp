@@ -111,7 +111,6 @@ int main(int ac, char* av[]){
 
         model = new Model(model_name, j);
 
-        cout << model;
         compiler->compile(model);
         
         compiler->duplicate_schedule(model, model->no_repeat);

@@ -120,7 +120,7 @@ void Compiler::compile(Model* model){
             if (!all_deps_scheduled) continue;
 
             compile_layer(&(*it), init_round);
-            cout << it->layer_name << ": start round: " << it->start_round << " end round: " << it->end_round << endl;
+            // cout << it->layer_name << ": start round: " << it->start_round << " end round: " << it->end_round << endl;
         }
     }
 }

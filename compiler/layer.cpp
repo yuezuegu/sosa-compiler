@@ -191,7 +191,7 @@ void Model::import_layers(json j){
 
     this->no_repeat = j["no_repeat"].get<int>();
 
-    cout << "Layers for model" << this->model_name << " are successfully parsed" << endl;
+    //cout << "Layers for model" << this->model_name << " are successfully parsed" << endl;
 
 }
 
