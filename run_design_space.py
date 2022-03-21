@@ -119,41 +119,41 @@ def plot_design_space(atpps):
 
     names = ["Bert", "CNN", "Mix"]
 
-    ds = ds_mix
-    i,j=np.unravel_index(np.argmax(ds), ds.shape)
-    r_peak = r_range[i]
-    c_peak = c_range[j]
-    print("Peak at {}x{}".format(r_peak, c_peak))
+    for ind, ds in enumerate([ds_bert, ds_cnn, ds_mix]):
+        i,j=np.unravel_index(np.argmax(ds), ds.shape)
+        r_peak = r_range[i]
+        c_peak = c_range[j]
+        print("Peak at {}x{}".format(r_peak, c_peak))
 
-    T = {}
-    for r,c in baselines+[(r_peak,c_peak)]+[(16,16), (32,32), (64,64), ]:
-        i = np.where(r_range == r)[0][0]
-        j = np.where(r_range == c)[0][0]
-        T[(r,c)] = ds[i,j]
-        print("{}x{}: {}".format(r,c,T[(r,c)]))
+        T = {}
+        for r,c in baselines+[(r_peak,c_peak)]+[(16,16), (32,32), (64,64), ]:
+            i = np.where(r_range == r)[0][0]
+            j = np.where(r_range == c)[0][0]
+            T[(r,c)] = ds[i,j]
+            print("{}x{}: {}".format(r,c,T[(r,c)]))
 
-    plt.figure(figsize=(6.5, 5))
-    plt.pcolormesh(r_range, c_range, ds, cmap=cm.get_cmap('coolwarm'), shading='auto')
+        plt.figure(figsize=(6.5, 5))
+        plt.pcolormesh(r_range, c_range, ds, cmap=cm.get_cmap('coolwarm'), shading='auto')
 
-    cb = plt.colorbar()
+        cb = plt.colorbar()
 
-    points = []
-    markers = ['D','o','s','p','*',]
-    labels = ["128x128","256x256","32x32","8x8"]
-    for i, k in enumerate(baselines):
-        p = plt.scatter(k[1], k[0], s=100, marker=markers[i], color='white', edgecolors='black', label=labels[i])
-        points.append(p)
-        cb.ax.plot(0.7, T[k], marker=markers[i], markersize=8, color='white', markeredgecolor='black')
+        points = []
+        markers = ['D','o','s','p','*',]
+        labels = ["128x128","256x256","32x32","8x8"]
+        for i, k in enumerate(baselines):
+            p = plt.scatter(k[1], k[0], s=100, marker=markers[i], color='white', edgecolors='black', label=labels[i])
+            points.append(p)
+            cb.ax.plot(0.7, T[k], marker=markers[i], markersize=8, color='white', markeredgecolor='black')
 
-    plt.legend(handles=[points[i] for i in [3,2,0,1]], fontsize='small',frameon=False, loc='lower center', bbox_to_anchor=(0.5, 1.), ncol=2)
+        plt.legend(handles=[points[i] for i in [3,2,0,1]], fontsize='small',frameon=False, loc='lower center', bbox_to_anchor=(0.5, 1.), ncol=2)
 
-    plt.ylabel("# of rows")
-    plt.xlabel("# of colums")
-    plt.xticks([64,128,192,256])
-    plt.yticks([64,128,192,256])
-    plt.tight_layout()
-    plt.savefig("plots/design_space.png")
-    plt.savefig("plots/design_space.pdf")
+        plt.ylabel("# of rows")
+        plt.xlabel("# of colums")
+        plt.xticks([64,128,192,256])
+        plt.yticks([64,128,192,256])
+        plt.tight_layout()
+        plt.savefig("plots/design_space"+names[ind]+".png")
+        plt.savefig("plots/design_space"+names[ind]+".pdf")
 
 def run_design_space():    
     with open('benchmarks.pickle', 'rb') as pickle_file:
@@ -188,16 +188,13 @@ def run_design_space():
             elapsed = time.time() - start
             print("Model: {} \t elapsed: {}".format(model_name ,elapsed))
 
-    with open("atpps.json", "w") as json_file:
+    with open("experiments/atpps.json", "w") as json_file:
         json.dump(atpps, json_file)
 
-
-
-
 if __name__ == "__main__":
-    #run_design_space()
+    run_design_space()
 
-    with open("atpps.json", "r") as json_file:
+    with open("experiments/atpps.json", "r") as json_file:
         atpps=json.load(json_file)
 
     plot_design_space(atpps)

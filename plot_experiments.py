@@ -396,7 +396,7 @@ def plot_partition_size(exp_dirs):
 
     plt.ylabel("Effective Throughput (TeraOps/s)")
     plt.xlabel("Partition size of X's first dimension")
-    plt.ylim(bottom=0)
+    plt.ylim(bottom=0, top=300)
     #plt.xlim(right=750)
     plt.legend(fontsize='small',frameon=False)
 
@@ -518,7 +518,7 @@ def plot_bank_size(exp_dirs):
     plt.xticks([b/1024 for b in bank_sizes], rotation=45)
     plt.xlim(left=0)
 
-    plot1 = ax1.plot([b/1024 for b in bank_sizes], eff_throughputs/eff_throughputs[-1], label="Eff. Throughput", linewidth=3, marker=markers[1], linestyle=lines[0], markersize=10, color="steelblue")
+    plot1 = ax1.plot([b/1024 for b in bank_sizes], eff_throughputs, label="Eff. Throughput", linewidth=3, marker=markers[1], linestyle=lines[0], markersize=10, color="steelblue")
     ax1.set_ylabel("Normalized Eff. Throughput")
     ax1.set_ylim(bottom=0)
 
@@ -560,15 +560,14 @@ if __name__=="__main__":
     #multibatch_dirs = ["experiments/run-2021_11_23-10_38_49"]
     multibatch_dirs = ["experiments/run-2021_11_23-21_37_33"]
 
-
     bank_size_dirs = ["experiments/run-2021_11_17-21_13"]
     #bank_size_dirs = ["experiments/run-2021_11_23-10_38_49"]
     memory_dirs = ["experiments/run-2021_11_21-13_07_55"]
 
-    plot_memory(memory_dirs)
+    #plot_memory(memory_dirs)
     plot_interconnect(interconnect_dirs)
-    plot_partition_size(partition_size_dirs)
-    plot_main_results(array_scale_dirs)
-    plot_array_scale(array_scale_dirs)
-    plot_multibatch(multibatch_dirs)
+    # plot_partition_size(partition_size_dirs)
+    # plot_main_results(array_scale_dirs)
+    # plot_array_scale(array_scale_dirs)
+    # plot_multibatch(multibatch_dirs)
     #plot_bank_size(bank_size_dirs)

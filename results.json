@@ -1,1 +1,0 @@
-{"array_size":[32,32],"batch_size":1,"imsize":299,"model":"bert_tiny","no_cycles":16431,"no_main_rounds":522,"no_post_rounds":532,"out_dir":"experiments/tmp","partition_size":null,"sentence_len":100}
