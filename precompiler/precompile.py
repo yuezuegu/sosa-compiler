@@ -14,6 +14,10 @@ tf.config.threading.set_intra_op_parallelism_threads(1)
 import numpy as np
 np.random.seed(0)
 
+import sys 
+sys.path.append('./precompiler')
+
+import graph
 from graph import convert_keras_to_graph
 
 from benchmarks import benchmark, get_benchmarks
