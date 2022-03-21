@@ -49,10 +49,6 @@ bool Bank::alloc_tile(int target_round, Tile* tile){
     if (this->capacity_used + tile->memory_size <= this->capacity){
         this->capacity_used += tile->memory_size;
         
-        // if (tile->type != data_type::P){ //don't evict p tiles for now
-        //     this->push_evict_queue(target_round, tile);
-        // }
-        
         this->push_evict_queue(target_round, tile);
 
         tile->is_spawn_ = true;
@@ -88,8 +84,6 @@ bool Bank::evict(int r){
 void Bank::free_tile(Tile* tile){
     this->capacity_used -= tile->memory_size;
     
-    //assert(this->capacity_used == this->evict_queue_size());
-
     BOOST_LOG_TRIVIAL(info) << "Bank: " << this->id << " tile of type "<< PRINT_TYPE(tile->type) <<" is freed, usage: " << this->capacity_used; // << " evict_queue_size: " << this->evict_queue_size();
     if (this->capacity_used < 0){
         throw runtime_error("Usage cannot be negative, something is wrong!");
@@ -109,7 +103,6 @@ void Bank::push_evict_queue(int r, Tile* tile){
         }
     }
     this->evict_queue->push_back(make_pair(target_round, tile));
-    //assert(this->capacity_used == this->evict_queue_size());
 }
 
 Banks::Banks(int no_banks, int bank_size){
@@ -158,15 +151,6 @@ list<Bank*>* Banks::get_p_banks(){
 }
 
 void Banks::garbage_collect(int r){
-    // for (auto it = this->x_banks->begin(); it != this->x_banks->end(); it++){
-    //     (*it)->garbage_collect(r);
-    // }
-    // for (auto it = this->w_banks->begin(); it != this->w_banks->end(); it++){
-    //     (*it)->garbage_collect(r);
-    // }
-    // for (auto it = this->p_banks->begin(); it != this->p_banks->end(); it++){
-    //     (*it)->garbage_collect(r);
-    // }
 }
 
 Bank* Banks::get_bank_by_id(int id, data_type type){

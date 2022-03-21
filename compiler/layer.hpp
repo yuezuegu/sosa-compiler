@@ -21,11 +21,6 @@ using namespace std;
 
 typedef map<tuple<int, int>, tuple<int, int>> tile_dim_map;
 
-
-
-
-
-
 class Layer {
     public:
         string layer_name;
@@ -98,19 +93,5 @@ class Model {
 
 
 };
-
-
-
-// class Layers{
-//     public:
-
-//         Layers();
-//         ~Layers();
-
-
-
-//     private:
-        
-// };
 
 #endif /* LAYER_HPP */

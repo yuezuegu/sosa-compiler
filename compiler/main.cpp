@@ -12,7 +12,6 @@
 #include "post_processor.hpp"
 #include "logger_setup.hpp"
 #include "dram.hpp"
-// #include "dump_schedule.hpp"
 
 #include <boost/log/trivial.hpp>
 #include <boost/program_options.hpp>
@@ -41,16 +40,13 @@ int main(int ac, char* av[]){
         ("memory_bw,M", po::value<float>(&bandwidth)->default_value(1200), "memory bandwidth in GB/s")
         ("prefetch,P", po::value<int>(&prefetch_limit)->default_value(100), "No of rounds allowed for prefetching")
         ("bank_size,S", po::value<int>(&bank_size)->default_value(524288), "SRAM bank size")
-        //crossbar, benes_copy, benes_vanilla, banyan_exp_0, banyan_exp_1, banyan_exp_2, banyan_exp_3, banyan_exp_4
         ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::banyan_exp_1), "interconnect type (see enum members)")
+        //Possible options for ict_type: crossbar, benes_copy, benes_vanilla, banyan_exp_0, banyan_exp_1, banyan_exp_2, banyan_exp_3, banyan_exp_4
         ("work_dir,d", po::value<string>(&work_dir)->default_value("../experiments/tmp"), "directory for input/output files")
         ("log_level,l", po::value<boost::log::trivial::severity_level>(&log_level)->default_value(boost::log::trivial::severity_level::error), "log level");
     po::variables_map vm;
     po::store(po::parse_command_line(ac, av, desc), vm);
     po::notify(vm);
-
-    // TODO: Fix this
-    // assert((log_level > boost::log::trivial::severity_level::info) && "For some reason, logger corrupts Boost serialization file");
 
     if (vm.count("help")) {
         cout << desc << "\n";
@@ -71,6 +67,7 @@ int main(int ac, char* av[]){
         "interconnect_type = " << interconnect_type << " " <<
         "\n";
 
+    // Load the precompiled model in the JSON format. Precompiler must be invoked first to generate this file.
     json jin;
     ifstream input_file;
     string ifname = work_dir + "/precompiled_model.json";
@@ -85,11 +82,12 @@ int main(int ac, char* av[]){
     Arrays* arrays = new Arrays(no_array, no_rows, no_cols);
     PostProcessors* post_processors = new PostProcessors(no_array);
     Banks* banks = new Banks(no_array, bank_size);
-
     Interconnects* interconnects = new Interconnects(no_array, interconnect_type);
-    cout << "interconnects->x_interconnect->name() = " << interconnects->x_interconnect->name() << endl;
 
+    //TODO: Make this parametric
     float freq = 1e9;
+
+    //Convert GB/s to Bytes per cycle
     bandwidth = bandwidth * ((1 << 30) / freq);
 
     Dram* dram = new Dram(bandwidth, prefetch_limit);
@@ -101,6 +99,7 @@ int main(int ac, char* av[]){
     compiler->enable_multithreading(48);
     #endif
 
+    // Run the compilation for each DNN model provided
     Model* model = new Model();
     for (json::iterator it = jin.begin(); it != jin.end(); ++it) {
         string key = it.key();
@@ -116,32 +115,14 @@ int main(int ac, char* av[]){
         compiler->duplicate_schedule(model, model->no_repeat);
     }
     
-    // dump_schedule(std::cout, compiler);
-
-
-    string ofname;
-    // ofstream ofs;
-    // ofname = work_dir + "/schedule.dat";
-    // ofs.open(ofname, ofstream::out);
-    // if(!ofs.is_open()){
-    //     cout << "Output file " << ofname << " cannot be opened." << endl;
-    //     exit(1);
-    // }
-    // boost::archive::text_oarchive oa(ofs);
-    // oa << compiler;
-    // ofs.close();
-
-
     cout << "Finished succesfully" << endl;
     cout << "# of main rounds: " << compiler->no_main_rounds() << endl;
     cout << "# of post rounds: " << compiler->no_post_rounds() << endl;
 
     compiler->run_cycle_model();
-    cout << "Total no. of cycles 1: " << compiler->no_cycles << endl;
-    
-    // compiler->run_cycle_model2();
-    // cout << "Total no. of cycles 2: " << compiler->no_cycles << endl;
+    cout << "Total no. of cycles: " << compiler->no_cycles << endl;
 
+    // Save results in the JSON format
     ofstream output_file;
     ofname = work_dir + "/sim_results.json";
     output_file.open(ofname, ofstream::out);

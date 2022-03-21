@@ -16,7 +16,6 @@ int main(int ac, char* av[]){
     //That is because serialization of tile->input_of does not work correctly so setting op->retired = True does not change the op in input_of.
     //Fix this first before using this code.
 
-
     Compiler* compiler;
     {
         // create and open an archive for input

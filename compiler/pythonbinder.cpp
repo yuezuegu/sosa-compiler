@@ -27,7 +27,6 @@ string csim(string json_dump, int no_array, int no_rows, int no_cols, int bank_s
     Banks* banks = new Banks(no_array, bank_size);
 
     Interconnects* interconnects = new Interconnects(no_array, interconnect_type);
-    // cout << "interconnects->x_interconnect->name() = " << interconnects->x_interconnect->name() << endl;
 
     float freq = 1e9;
     bandwidth = bandwidth * ((1 << 30) / freq);
@@ -88,6 +87,6 @@ string csim(string json_dump, int no_array, int no_rows, int no_cols, int bank_s
 }
 
 PYBIND11_MODULE(pythonbinder, m) {
-    m.doc() = "pybind11 example plugin"; // optional module docstring
-    m.def("csim", &csim, "A function which adds two numbers");
+    m.doc() = "pybind11 plugin";
+    m.def("csim", &csim, "C-simulator for multi-pod systolic arrays");
 }

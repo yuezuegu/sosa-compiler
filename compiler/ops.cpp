@@ -48,13 +48,6 @@ MultOp::MultOp(const MultOp& mult_op){
 
 void MultOp::retire(){
     this->retired = true;
-    // if (this->pin_op != nullptr){
-    //     //this->pin_op->pout_tile->remove_from_sram();
-    // }
-    // if (this->is_finalop){
-    //     this->pout_tile->bank->write_back_queue->push_back(this->pout_tile);
-    //     //this->pout_tile->remove_from_sram();
-    // }
 }
 
 void MultOp::assign_pin(MultOp* pin_op){
@@ -122,14 +115,6 @@ Op* AggrOp::get_op2(){
 
 void AggrOp::retire(){
     this->retired = true;
-    // if (this->pair_op->retired){
-    //     //this->pin1_tile->remove_from_sram();
-    //     //this->pin2_tile->remove_from_sram();
-    //     if(this->is_finalop){
-    //         this->pout_tile->bank->write_back_queue->push_back(this->pout_tile);
-    //         //this->pout_tile->remove_from_sram();
-    //     }
-    // }
 }
 
 void AggrOp::assign_to_pp(int r, PostProcessor* pp){

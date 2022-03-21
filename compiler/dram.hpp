@@ -24,15 +24,12 @@ class Dram{
         float p_tiles_bw_usage;
 
         list<pair<int, Tile*>>* load_queue;
-        //list<pair<int, Tile*>>* store_queue;
 
         Dram(){};
         Dram(float bandwidth, int prefetch_limit);
         ~Dram(){};
 
         void update(list<Bank*>* p_banks, int r);
-        //void store(int r);
-        // void retire_requests(int r);
 
         friend class boost::serialization::access;
 

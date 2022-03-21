@@ -67,19 +67,3 @@ void Dram::update(list<Bank*>* p_banks, int r){
         }
     }
 } 
-
-
-// void Dram::store(int r){
-//     if (this->store_queue->empty()) return;
-
-//     pair<int,Tile*> front = this->store_queue->front();
-
-//     while (front.first <= r){
-//         if(!front.second->allocate_on_sram(front.first)){
-//             return;
-//         }
-
-//         this->store_queue->pop_front();
-//         front = this->store_queue->front();
-//     }
-// }

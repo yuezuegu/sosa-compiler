@@ -20,9 +20,6 @@ PostProcessor::PostProcessor(int id){
 void PostProcessor::update(){
     if (this->state == PP_STATE::processing){
         if (this->exec_cnt < get<0>(this->pout_tile->dims)){
-            //assert(this->pin1_tile->is_allocated() && "Pin1 is not on sram");
-            //assert(this->pin1_tile->is_allocated() && "Pin2 is not on sram");
-            //assert(this->pout_tile->is_allocated() && "Pout is not on sram");
             this->exec_cnt++;
         }
         else{
