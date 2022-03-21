@@ -416,11 +416,11 @@ def partition_size_experiment():
 if __name__=="__main__":
     start = time.time()
 
-    #memory_experiment()
-    #interconnect_experiment()
-    #partition_size_experiment()
-    #array_scale_experiment()
-    #bank_size_experiment()
+    memory_experiment()
+    interconnect_experiment()
+    partition_size_experiment()
+    array_scale_experiment()
+    bank_size_experiment()
     multi_batch_experiment()
     
     wait_all_finish(running_procs)

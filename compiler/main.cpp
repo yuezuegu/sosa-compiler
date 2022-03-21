@@ -42,7 +42,7 @@ int main(int ac, char* av[]){
         ("bank_size,S", po::value<int>(&bank_size)->default_value(524288), "SRAM bank size")
         ("ict_type,I", po::value<InterconnectType>(&interconnect_type)->default_value(InterconnectType::banyan_exp_1), "interconnect type (see enum members)")
         //Possible options for ict_type: crossbar, benes_copy, benes_vanilla, banyan_exp_0, banyan_exp_1, banyan_exp_2, banyan_exp_3, banyan_exp_4
-        ("work_dir,d", po::value<string>(&work_dir)->default_value("../experiments/tmp"), "directory for input/output files")
+        ("work_dir,d", po::value<string>(&work_dir)->default_value("experiments/tmp"), "directory for input/output files")
         ("log_level,l", po::value<boost::log::trivial::severity_level>(&log_level)->default_value(boost::log::trivial::severity_level::error), "log level");
     po::variables_map vm;
     po::store(po::parse_command_line(ac, av, desc), vm);
@@ -124,7 +124,7 @@ int main(int ac, char* av[]){
 
     // Save results in the JSON format
     ofstream output_file;
-    ofname = work_dir + "/sim_results.json";
+    string ofname = work_dir + "/sim_results.json";
     output_file.open(ofname, ofstream::out);
     if(!output_file.is_open()){
         cout << "Output file " << ofname << " cannot be opened." << endl;
