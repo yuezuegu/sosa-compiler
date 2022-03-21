@@ -1,6 +1,6 @@
 # Summary
 
-SOSA compiler repository.
+Repository for compilation and cycle-accurate simulator for scale-out systolic arrays.
 
 ## How to install prerequisites?
 
