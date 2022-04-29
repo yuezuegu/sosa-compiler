@@ -91,7 +91,7 @@ def draw_bar(ax, data, x_labels, group_labels, figsize=(16, 7), colors=None):
     width = (1. - gap) / no_groups  # the width of the bars
 
     #['/', '\\','.', 'o', '|', '-', '+', 'x',  'O',  '*']
-    hatches = ['-','.','/','o','\\','.']
+    hatches = ['-','.','/','o','\\','.','x','*']
     
     for ind, y in enumerate(data):
         ax.bar(x - (1 - gap) / 2 + width*ind, y, width-0.05, label=group_labels[ind], hatch=hatches[ind], color=colors[ind])
@@ -115,7 +115,15 @@ def plot_main_results(exp_dirs):
         "Monolithic": ((512,512),1),
         "SOSA (32x32)": ((32,32),256),
         }
-
+    # barchart_settings = {
+    #     "32x32": ((32,32),256),
+    #     "32x64": ((32,64),128),
+    #     "32x128": ((32,128),64),
+    #     "32x256": ((32,256),32),
+    #     "64x32": ((64,32),160),
+    #     "128x32": ((128,32),96),
+    #     "256x32": ((256,32),64),
+    # }
 
     print("Main results: ")
 
@@ -548,12 +556,117 @@ def plot_memory(exp_dirs):
         no_layers = get_result("no_layers", args, out_jsons)        
         print("{}: {}".format(m, total_no_gemm_ops/no_layers))
 
+
+
+
+def plot_asymmetric(exp_dirs):
+    model_names = ["Bert-medium", "Bert-base", "Bert-large", "Densenet121", "Densenet169", "Densenet201", "Inception", "Resnet50", "Resnet101", "Resnet152", "Harm. mean"]
+    cnn_models = ["densenet121", "densenet169", "densenet201", "inception", "resnet50",  "resnet101",  "resnet152"]
+    bert_models = ["bert_medium", "bert_base", "bert_large"]
+    no_seqs = [100]
+
+    barchart_settings = {
+        "32x32": ((32,32),256),
+        "20x32": ((20,32),479),
+        #"32x64": ((32,64),207),
+        "20x128": ((20,128),130),
+        #"32x256": ((32,256),32),
+        "66x32": ((66,32),256),
+        #"128x32": ((128,32),157),
+        #"256x32": ((256,32),64),
+    }
+
+    print("Main results: ")
+
+    out_jsons = parse_out_jsons(exp_dirs)
+
+    eff_throughputs = {}
+    peak_powers = {}
+    for ind, label in enumerate(barchart_settings):
+        array_size, no_array = barchart_settings[label]
+        eff_throughputs[label] = {}
+
+        for m in bert_models:
+            throughput_bert = []
+            for no_seq in no_seqs:
+                args = {"array_size":list(array_size), "no_array":no_array, "model":m, "sentence_len":no_seq}
+                no_cycles = get_result("no_cycles", args, out_jsons)
+                assert(no_cycles != -1)
+                no_ops = get_result("no_ops", args, out_jsons)
+
+                throughput_bert.append(no_ops / (no_cycles / freq) * 1e-12)
+
+            eff_throughputs[label][m] = scipy.stats.hmean(throughput_bert)
+
+        for m in cnn_models:
+            args = {"array_size":list(array_size), "no_array":no_array, "model":m}
+            no_cycles = get_result("no_cycles", args, out_jsons)
+            assert(no_cycles != -1)
+            no_ops = get_result("no_ops", args, out_jsons)
+
+            eff_throughputs[label][m] = no_ops / (no_cycles / freq) * 1e-12
+
+
+        eff_throughputs[label]["hmean_bert"] = scipy.stats.hmean([eff_throughputs[label][m] for m in bert_models])
+        eff_throughputs[label]["hmean_cnn"] = scipy.stats.hmean([eff_throughputs[label][m] for m in cnn_models])
+        #eff_throughputs[label]["hmean"] = scipy.stats.hmean([eff_throughputs[label][m] for m in bert_models+cnn_models])
+        eff_throughputs[label]["hmean"] = scipy.stats.hmean([eff_throughputs[label]["hmean_bert"], eff_throughputs[label]["hmean_cnn"]])
+
+
+        peak_powers[label],_,_,_ = calculate_peak_power(array_size[0], array_size[1], no_array, freq, e_data, e_compute, I_0)
+
+        eff_throughput_norm = eff_throughputs[label]["hmean"] / peak_powers[label] * tdp
+        peak_throughput = calculate_peak_throughput(array_size[0], array_size[1], no_array, freq)
+        peak_throughput_norm = peak_throughput / peak_powers[label] * tdp
+        util = eff_throughput_norm / peak_throughput_norm
+
+        # print("{}x{} - {}:\t peak power:{:.4}\t eff. thru:{:.4}\t norm. eff. bert thru:{:.4}\t  norm. eff. cnn thru:{:.4}\t  norm. eff. total thru:{:.4}\t peak thru:{:.4}\t norm. peak thru:{:.4}\t util:{:.4}".format(
+        #     array_size[0], array_size[1], no_array, peak_powers[label], eff_throughputs[label]["hmean_bert"], eff_throughputs[label]["hmean_cnn"], eff_throughputs[label]["hmean"], eff_throughput_norm, peak_throughput, peak_throughput_norm, util))
+
+        print("{}x{} - {}:\t norm. eff. bert thru:{:.4}\t  norm. eff. cnn thru:{:.4}\t  norm. eff. total thru:{:.4}\t".format(
+            array_size[0], array_size[1], no_array, eff_throughputs[label]["hmean_bert"], eff_throughputs[label]["hmean_cnn"], eff_throughputs[label]["hmean"]))
+
+
+    print("\nBarchart data:")
+
+    barchart_data = []
+    for ind, label in enumerate(barchart_settings):
+        barchart_data.append([])
+        for m in bert_models + cnn_models + ["hmean"]:
+            T_normalized = eff_throughputs[label][m] / peak_powers[label] * tdp 
+            barchart_data[-1].append(T_normalized)
+            
+            print(f"{label}:\t model:{m}\t - norm. eff. thru:{T_normalized}")
+
+    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size':16})
+    colors = ["teal","steelblue","tab:gray","slategrey","darkseagreen","tab:red","tab:orange"]
+    fig, ax = plt.subplots(figsize=(16, 5.5))
+    draw_bar(ax, barchart_data, model_names, list(barchart_settings.keys()), colors=colors)
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Effective Throughput (TeraOps/s)')
+    ax.set_xticklabels(model_names, rotation=30)
+
+    plt.ylim()
+    ax = plt.gca()
+    ax.set_axisbelow(True)
+    plt.grid(True, axis='y')
+    plt.legend(loc='lower center', bbox_to_anchor=(0.5, 1.), ncol=6, frameon=False)
+
+    plt.tight_layout()
+    plt.show()
+    plt.savefig('plots/results.png')
+    plt.savefig('plots/results.pdf')
+
+
 if __name__=="__main__":
     interconnect_dirs = ["experiments/run-2021_11_17-17_59"]
     #partition_size_dirs = ["experiments/run-2021_11_22-12_07_58"]
     partition_size_dirs = ["experiments/run-2021_11_23-10_37_46"]
     array_scale_dirs = ["experiments/run-2021_11_17-20_24", "experiments/run-2021_11_15-13_45", "experiments/run-2021_11_23-10_34_21", "experiments/run-2021_11_23-17_06_52"]
-    #array_scale_dirs = ["experiments/run-2021_11_20-10_47_21"]
+    # array_scale_dirs = ["experiments/run-2021_11_20-10_47_21"]
+    asymmetric_dirs = ["experiments/run-2022_04_05-11_54_36", "experiments/run-2022_04_05-16_04_49"]
+
 
     #multibatch_dirs = ["experiments/run-2021_11_17-21_12"]
     #multibatch_dirs = ["experiments/run-2021_11_22-12_10_22"]
@@ -565,9 +678,10 @@ if __name__=="__main__":
     memory_dirs = ["experiments/run-2021_11_21-13_07_55"]
 
     #plot_memory(memory_dirs)
-    plot_interconnect(interconnect_dirs)
+    # plot_interconnect(interconnect_dirs)
     # plot_partition_size(partition_size_dirs)
     # plot_main_results(array_scale_dirs)
+    plot_asymmetric(asymmetric_dirs)
     # plot_array_scale(array_scale_dirs)
     # plot_multibatch(multibatch_dirs)
     #plot_bank_size(bank_size_dirs)

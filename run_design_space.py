@@ -71,12 +71,15 @@ def find_no_systolic_arrays(r_range, c_range, freq, e_data, e_compute, I_0, tdp)
         
         cond = p_peak <= tdp
         if(not np.any(cond)):
+            
             return no_arrays
         
         no_arrays = np.where(cond, N, no_arrays) 
 
         N += 1
         #N *= 2
+
+    
 
 
 bert_models = ["bert_medium","bert_base","bert_large"]
