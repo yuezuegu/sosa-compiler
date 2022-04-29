@@ -30,11 +30,11 @@ You can use CMake and CMake Tools extensions of vscode to facilitate development
 
 ## How to run?
 
-1) Precompile a Keras model
+Precompile a Keras model
     
     python precompiler/precompile.py  # --help for information about optional arguments
 
-2) Run binaries
+Run binaries
 
     ./build-Release/compiler_st # --help for information about optional arguments
 
