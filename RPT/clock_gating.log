@@ -1,0 +1,24 @@
+ 
+****************************************
+Report : clock_gating
+Design : SystolicPod
+Version: P-2019.03-SP1
+Date   : Thu Sep 16 18:43:45 2021
+****************************************
+
+
+
+                             Clock Gating Summary
+          ------------------------------------------------------------
+          |    Number of Clock gating elements    |        0         |
+          |                                       |                  |
+          |    Number of Gated registers          |     0 (0.00%)    |
+          |                                       |                  |
+          |    Number of Ungated registers        | 43783 (100.00%)  |
+          |                                       |                  |
+          |    Total number of registers          |    43783         |
+          ------------------------------------------------------------
+
+
+
+1
