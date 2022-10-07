@@ -1,0 +1,5 @@
+Running PRESTO HDLC
+Compiling source file ./chisel3/systoliccfg-l_8-lpsum_16-nrows_32-ncols_32-locbcast_16-locfin_16-laddr_12-lsz_8-lq_20-dpx_1-dw_1-kmax_1/work/Top.v
+Presto compilation completed successfully.
+Loading db file '/opt/synopsys/syn/P-2019.03-SP1/libraries/syn/dw_foundation.sldb'
+1

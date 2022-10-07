@@ -1,0 +1,24 @@
+Information: Updating design information... (UID-85)
+Warning: Design 'SystolicPod' contains 1 high-fanout nets. A fanout number of 1000 will be used for delay calculations involving these nets. (TIM-134)
+ 
+****************************************
+Report : saif
+        -hierarchy
+        -rtl_saif
+Design : SystolicPod
+Version: P-2019.03-SP1
+Date   : Thu Sep 16 18:42:33 2021
+****************************************
+
+  
+
+--------------------------------------------------------------------------------
+              User              Default           Propagated
+Object type   Annotated (%)     Activity (%)      Activity (%)       Total
+--------------------------------------------------------------------------------
+  
+ Ports        1789(100.00%)     0(0.00%)          0(0.00%)           1789
+ Seq Cells    9722(22.20%)      0(0.00%)          34061(77.80%)      43783
+ Tri Cells    0(0.00%)          0(0.00%)          0(0.00%)           0
+--------------------------------------------------------------------------------
+1

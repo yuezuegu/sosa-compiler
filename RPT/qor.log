@@ -1,0 +1,83 @@
+ 
+****************************************
+Report : qor
+Design : SystolicPod
+Version: P-2019.03-SP1
+Date   : Thu Sep 16 18:43:46 2021
+****************************************
+
+
+  Timing Path Group 'global_clk'
+  -----------------------------------
+  Levels of Logic:              17.00
+  Critical Path Length:          0.95
+  Critical Path Slack:           0.00
+  Critical Path Clk Period:      1.00
+  Total Negative Slack:          0.00
+  No. of Violating Paths:        0.00
+  Worst Hold Violation:          0.00
+  Total Hold Violation:          0.00
+  No. of Hold Violations:        0.00
+  -----------------------------------
+
+
+  Cell Count
+  -----------------------------------
+  Hierarchical Cell Count:       1030
+  Hierarchical Port Count:      74424
+  Leaf Cell Count:             556683
+  Buf/Inv Cell Count:           59234
+  Buf Cell Count:                 984
+  Inv Cell Count:               58250
+  CT Buf/Inv Cell Count:            0
+  Combinational Cell Count:    512900
+  Sequential Cell Count:        43783
+  Macro Count:                      0
+  -----------------------------------
+
+
+  Area
+  -----------------------------------
+  Combinational Area:   410891.132786
+  Noncombinational Area: 81457.609243
+  Buf/Inv Area:          14814.616511
+  Total Buffer Area:           480.41
+  Total Inverter Area:       14334.21
+  Macro/Black Box Area:      0.000000
+  Net Area:                  0.000000
+  -----------------------------------
+  Cell Area:            492348.742029
+  Design Area:          492348.742029
+
+
+  Design Rules
+  -----------------------------------
+  Total Number of Nets:        613355
+  Nets With Violations:             0
+  Max Trans Violations:             0
+  Max Cap Violations:               0
+  -----------------------------------
+
+
+  Hostname: iccluster148
+
+  Compile CPU Statistics
+  -----------------------------------------
+  Resource Sharing:                   15.71
+  Logic Optimization:               5719.93
+  Mapping Optimization:             4466.85
+  -----------------------------------------
+  Overall Compile Time:            11851.85
+  Overall Compile Wall Clock Time:  3438.71
+
+  --------------------------------------------------------------------
+
+  Design  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0
+
+
+  Design (Hold)  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0
+
+  --------------------------------------------------------------------
+
+
+1
