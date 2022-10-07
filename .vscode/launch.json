@@ -17,7 +17,7 @@
             "name": "(gdb) compiler_st",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/compiler_st",
+            "program": "${workspaceFolder}/build-Debug/compiler_st",
             "args": [
                 "-N",
                 "128",

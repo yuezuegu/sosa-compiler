@@ -86,6 +86,20 @@ struct Compiler::PlacementClosure {
 
 #endif
 
+
+int no_unique_numbers(list<int> l){
+    set<int> unique_nums{};
+
+    for(auto it=l.begin(); it != l.end(); it++){
+        unique_nums.insert(*it);
+        cout << *it << " ";
+    }
+    cout << "\ttotal_no: " << l.size() << "\t unique nums: " << unique_nums.size() << endl;
+
+    return unique_nums.size();
+}
+
+
 Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, PostProcessors* post_processors, Dram* dram){
     this->arrays = arrays;
     this->banks = banks;
@@ -97,6 +111,102 @@ Compiler::Compiler(Arrays* arrays, Banks* banks, Interconnects* interconnects, P
     this->pp_latency_offset = this->interconnects->pout_interconnect->data_write_latency();
     this->memory_stall_cycles = 0;
 }
+
+float Compiler::interconn_total_mbytes(){
+    int no_rounds = this->no_main_rounds();
+
+    float total_interconn_bytes = 0; //in MB
+    
+    list<X_Tile*>* x_tiles;
+    list<W_Tile*>* w_tiles;
+    list<P_Tile*>* pin_tiles;
+    list<P_Tile*>* pout_tiles;
+
+    int r = 0;
+    while(r <= no_rounds){
+        x_tiles = this->arrays->get_x_tiles(r);
+        for (auto it=x_tiles->begin(); it!=x_tiles->end(); it++){
+            total_interconn_bytes += (*it)->memory_size / 1024.0 / 1024.0;
+        }
+        delete x_tiles;
+
+        w_tiles = this->arrays->get_w_tiles(r);
+        for(auto it=w_tiles->begin(); it != w_tiles->end(); it++){
+            total_interconn_bytes += (*it)->memory_size / 1024.0 / 1024.0;
+        }
+        delete w_tiles;
+
+        pin_tiles = this->arrays->get_pin_tiles(r);
+        for(auto it=pin_tiles->begin(); it != pin_tiles->end(); it++){
+            total_interconn_bytes += (*it)->memory_size / 1024.0 / 1024.0;
+        }
+        delete pin_tiles;
+
+        pout_tiles = this->arrays->get_pout_tiles(r);
+        for(auto it=pout_tiles->begin(); it != pout_tiles->end(); it++){
+            total_interconn_bytes += (*it)->memory_size / 1024.0 / 1024.0;
+        }
+        delete pout_tiles;
+
+        r++;
+    }
+    return total_interconn_bytes;
+}
+float Compiler::interconn_total_mbytes_with_multicast(){
+    int no_rounds = this->no_main_rounds();
+
+    float multicast_interconn_bytes = 0; //in MB
+    
+    list<X_Tile*>* x_tiles;
+    list<W_Tile*>* w_tiles;
+    list<P_Tile*>* pin_tiles;
+    list<P_Tile*>* pout_tiles;
+
+    int r = 0;
+    while(r <= no_rounds){
+        x_tiles = this->arrays->get_x_tiles(r);
+        set<X_Tile*> x_multi_casted{};
+        for (auto it=x_tiles->begin(); it!=x_tiles->end(); it++){
+            if (x_multi_casted.insert(*it).second){
+                multicast_interconn_bytes += (*it)->memory_size / 1024.0 / 1024.0;
+            }
+        }
+        delete x_tiles;
+
+        w_tiles = this->arrays->get_w_tiles(r);
+        set<W_Tile*> w_multi_casted{};
+        for(auto it=w_tiles->begin(); it != w_tiles->end(); it++){
+            if (w_multi_casted.insert(*it).second){
+                multicast_interconn_bytes += (*it)->memory_size / 1024.0 / 1024.0;
+            }
+        }
+        delete w_tiles;
+
+        pin_tiles = this->arrays->get_pin_tiles(r);
+        set<P_Tile*> pin_multi_casted{};
+        for(auto it=pin_tiles->begin(); it != pin_tiles->end(); it++){
+            if (pin_multi_casted.insert(*it).second){
+                multicast_interconn_bytes += (*it)->memory_size / 1024.0 / 1024.0;
+            }
+        }
+        delete pin_tiles;
+
+        pout_tiles = this->arrays->get_pout_tiles(r);
+        set<P_Tile*> pout_multi_casted{};
+        for(auto it=pout_tiles->begin(); it != pout_tiles->end(); it++){
+            if (pout_multi_casted.insert(*it).second){
+                multicast_interconn_bytes += (*it)->memory_size / 1024.0 / 1024.0;
+            }
+        }
+        delete pout_tiles;
+
+        r++;
+    }
+
+    return multicast_interconn_bytes;
+}
+
+
 
 void Compiler::compile(Model* model){
     while (!model->all_layers_scheduled()){
@@ -695,7 +805,7 @@ void Compiler::run_cycle_model(){
         if (new_round){
             // Round start
             round_clk = 0;
-
+            
             this->arrays->init_tile_op(r);
             this->arrays->init_weight_buffering(r+1);
             this->post_processors->init_tile_op(r);

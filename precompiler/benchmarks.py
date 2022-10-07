@@ -11,7 +11,7 @@ from tensorflow.keras.applications.densenet import DenseNet169
 from tensorflow.keras.applications.densenet import DenseNet201
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 from tensorflow.keras.layers import Input
-from keras_bert.bert import get_model,compile_model
+from keras_bert_custom.bert import get_model,compile_model
 from filelock import FileLock
 
 import pickle
@@ -195,7 +195,11 @@ def get_benchmarks(model_name, batch_size, image_size, seq_len, read_only=False)
 		return bm, benchmarks
 
 	if read_only:
-		bm, _ = try_get_benchmark()
+		if "bert" in model_name:
+			bm = benchmark(model_name, "BERT", seq_len=seq_len, batch_size=batch_size)
+		else:
+			bm = benchmark(model_name, "CNN", batch_size=batch_size, image_size=image_size)
+
 	else:
 		with FileLock("benchmarks.pickle.lock"):
 			bm, benchmarks = try_get_benchmark()

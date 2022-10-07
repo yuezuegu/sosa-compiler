@@ -153,6 +153,12 @@ int main(int ac, char* av[]){
     jout["no_layers"] = model->layer_list->size();
     jout["total_no_gemm_ops"] = model->total_no_gemm_ops();
 
+    cout << "Computing interconn_total_mbytes..." << endl;
+    jout["interconn_total_mbytes"] = compiler->interconn_total_mbytes();
+
+    cout << "Computing interconn_total_mbytes_with_multicast..." << endl;
+    jout["interconn_total_mbytes_with_multicast"] = compiler->interconn_total_mbytes_with_multicast();
+
     cout << "total_no_gemm_ops: " << model->total_no_gemm_ops() << endl;
 
     cout << jout.dump() << endl;

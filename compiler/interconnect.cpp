@@ -11,6 +11,7 @@ InterconnectBase *generate_interconnect(UnsignedInt n, InterconnectType type) {
     XYZ(benes_vanilla, Benes)
     XYZ(benes_copy, BenesWithCopy)
     XYZ(crossbar, Crossbar)
+    XYZ(bus, Bus)
 #undef XYZ
     if (((unsigned) type) & (unsigned) InterconnectType::banyan) {
         unsigned expansion = (unsigned) type & 0x0Fu;
@@ -90,6 +91,7 @@ std::istream &operator>>(std::istream &in, InterconnectType &interconnect_type) 
     XYZ(banyan_exp_3)
     XYZ(banyan_exp_4)
     XYZ(crossbar)
+    XYZ(bus)
     else {
         in.setstate(std::ios_base::failbit);
     }
@@ -104,6 +106,7 @@ std::ostream &operator<<(std::ostream &out, InterconnectType interconnect_type) 
     XYZ(benes_vanilla)
     XYZ(banyan)
     XYZ(crossbar)
+    XYZ(bus)
 #undef XYZ
     else if ((unsigned) interconnect_type & (unsigned) InterconnectType::banyan) {
         out << "banyan_exp_" << ((unsigned) interconnect_type & 0x0Fu);

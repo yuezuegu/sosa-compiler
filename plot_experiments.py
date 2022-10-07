@@ -113,8 +113,10 @@ def plot_main_results(exp_dirs):
         "128x128": ((128,128),32),
         "256x256": ((256,256),8),
         "Monolithic": ((512,512),1),
+        "20x32": ((20,32),256),
         "SOSA (32x32)": ((32,32),256),
-        }
+    }
+
     # barchart_settings = {
     #     "32x32": ((32,32),256),
     #     "32x64": ((32,64),128),
@@ -178,7 +180,7 @@ def plot_main_results(exp_dirs):
             print(f"{label}:\t model:{m}\t - norm. eff. thru:{T_normalized}")
 
     rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size':16})
-    colors = ["teal","steelblue","tab:gray","slategrey","darkseagreen","tab:red"]
+    colors = ["teal","steelblue","tab:gray","slategrey","darkseagreen","tab:red", "pink"]
     fig, ax = plt.subplots(figsize=(16, 5.5))
     draw_bar(ax, barchart_data, model_names, list(barchart_settings.keys()), colors=colors)
 
@@ -206,13 +208,24 @@ def plot_array_scale(exp_dirs):
     no_seqs = [100]
 
     baselines = {
-        "SOSA (32x32)": list(itertools.product([(32,32)], [32,64,128,256,512])),
-        "16x16": list(itertools.product([(16,16)], [128,256,512,1024])),
-        "64x64": list(itertools.product([(64,64)], [16,32,64,128,196])),
-        "128x128": list(itertools.product([(128,128)], [1,2,4,8,16,24,32,48,64])),
-        "256x256": list(itertools.product([(256,256)], [1, 2, 4, 8, 16])),
-        "Monolithic": list(itertools.product([(400,400),(512,512),(800,800),(1024,1024),], [1])),
+        "20x32": list(itertools.product([(20,32)], [128,256])),
+        "SOSA (32x32)": list(itertools.product([(32,32)], [128,256])),
+        #"16x16": list(itertools.product([(16,16)], [128,256,512,1024])),
+        "64x64": list(itertools.product([(64,64)], [32,64,128])),
+        # "128x128": list(itertools.product([(128,128)], [1,2,4,8,16,24,32,48,64])),
+        # "256x256": list(itertools.product([(256,256)], [1, 2, 4, 8, 16])),
+        # "Monolithic": list(itertools.product([(400,400),(512,512),(800,800),(1024,1024),], [1])),
         }
+
+    # baselines = {
+    #     "20x32": list(itertools.product([(20,32)], [32,64,128,256,512])),
+    #     "SOSA (32x32)": list(itertools.product([(32,32)], [32,64,128,256,512])),
+    #     #"16x16": list(itertools.product([(16,16)], [128,256,512,1024])),
+    #     "64x64": list(itertools.product([(64,64)], [16,32,64,128,196])),
+    #     "128x128": list(itertools.product([(128,128)], [1,2,4,8,16,24,32,48,64])),
+    #     "256x256": list(itertools.product([(256,256)], [1, 2, 4, 8, 16])),
+    #     "Monolithic": list(itertools.product([(400,400),(512,512),(800,800),(1024,1024),], [1])),
+    #     }
 
     out_jsons = parse_out_jsons(exp_dirs)
 
@@ -234,6 +247,7 @@ def plot_array_scale(exp_dirs):
                     throughput_bert.append(no_ops / (no_cycles / freq) * 1e-12)
 
                 eff_throughputs[label][(array_size, no_array)][m] = scipy.stats.hmean(throughput_bert)
+            hmean_bert = hmean_dict({m: eff_throughputs[label][(array_size, no_array)][m] for m in bert_models})
 
             for m in cnn_models:
                 args = {"array_size":list(array_size), "no_array":no_array, "model":m}
@@ -241,8 +255,10 @@ def plot_array_scale(exp_dirs):
                 no_ops = get_result("no_ops", args, out_jsons)
 
                 eff_throughputs[label][(array_size, no_array)][m] = no_ops / (no_cycles / freq) * 1e-12
+            hmean_cnn = hmean_dict({m: eff_throughputs[label][(array_size, no_array)][m] for m in cnn_models})
 
-            eff_throughputs[label][(array_size, no_array)]["hmean"] = hmean_dict(eff_throughputs[label][(array_size, no_array)])
+            #eff_throughputs[label][(array_size, no_array)]["hmean"] = hmean_dict(eff_throughputs[label][(array_size, no_array)])
+            eff_throughputs[label][(array_size, no_array)]["hmean"] = hmean_dict({"hmean_bert": hmean_bert, "hmean_cnn": hmean_cnn})
 
             peak_powers[label][(array_size, no_array)],_,_,_ = calculate_peak_power(array_size[0], array_size[1], no_array, freq, e_data, e_compute, I_0)
 
@@ -253,11 +269,12 @@ def plot_array_scale(exp_dirs):
 
     plt.figure(figsize=(7, 5))
     rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'size':16})
-    colors = ["tab:red", "teal","steelblue","tab:gray","slategrey","darkseagreen"]
+    colors = ["tab:red", "tab:pink", "teal","steelblue","tab:gray","slategrey","darkseagreen"]
 
     for ind, label in enumerate(baselines):
-        eff_vals = [hmean_dict(eff_throughputs[label][(array_size, no_array)]) for (array_size, no_array) in eff_throughputs[label]]
-
+        #eff_vals = [hmean_dict(eff_throughputs[label][(array_size, no_array)]) for (array_size, no_array) in eff_throughputs[label]]
+        eff_vals = [eff_throughputs[label][(array_size, no_array)]["hmean"] for (array_size, no_array) in eff_throughputs[label]]
+        
         plt.plot(peak_powers[label].values(), eff_vals, label=label,
                     linewidth=3, linestyle=lines[ind], marker=markers[ind], markersize=10, color=colors[ind])
 
@@ -291,11 +308,11 @@ def plot_interconnect(exp_dirs):
     markers = ["P", "o", "d", "v", "s", "p",  "X", "D", "d", "s", "p", "P"]
     lines = ['--', '-', '-.', ':', '-.', ':','--', '-.', ':','--', '-.', ':']
 
-    interconn_keys = [128, 129, 130, 131, 16, 32]
-    ict_types = {128:"banyan_exp_0", 129:"banyan_exp_1", 130:"banyan_exp_2", 131:"banyan_exp_3", 16:"crossbar", 32:"benes_copy"}
-    labels = ["Butterfly-1", "Butterfly-2", "Butterfly-4", "Butterfly-8", "Crossbar", "Benes"]
+    interconn_keys = [256, 128, 129, 130, 131, 16, 32]
+    ict_types = {256:"bus", 128:"banyan_exp_0", 129:"banyan_exp_1", 130:"banyan_exp_2", 131:"banyan_exp_3", 16:"crossbar", 32:"benes_copy"}
+    labels = ["Bus", "Butterfly-1", "Butterfly-2", "Butterfly-4", "Butterfly-8", "Crossbar", "Benes"]
 
-    no_arrays = [32, 64, 128, 256]
+    no_arrays = [32, 64, 128]
     array_size = [32, 32]
 
     total_power = {}
@@ -556,9 +573,6 @@ def plot_memory(exp_dirs):
         no_layers = get_result("no_layers", args, out_jsons)        
         print("{}: {}".format(m, total_no_gemm_ops/no_layers))
 
-
-
-
 def plot_asymmetric(exp_dirs):
     model_names = ["Bert-medium", "Bert-base", "Bert-large", "Densenet121", "Densenet169", "Densenet201", "Inception", "Resnet50", "Resnet101", "Resnet152", "Harm. mean"]
     cnn_models = ["densenet121", "densenet169", "densenet201", "inception", "resnet50",  "resnet101",  "resnet152"]
@@ -567,11 +581,12 @@ def plot_asymmetric(exp_dirs):
 
     barchart_settings = {
         "32x32": ((32,32),256),
-        "20x32": ((20,32),479),
+        "20x32": ((20,32),256),
+        #"20x32": ((20,32),400),
         #"32x64": ((32,64),207),
-        "20x128": ((20,128),130),
+        #"20x128": ((20,128),130),
         #"32x256": ((32,256),32),
-        "66x32": ((66,32),256),
+        #"66x32": ((66,32),256),
         #"128x32": ((128,32),157),
         #"256x32": ((256,32),64),
     }
@@ -620,11 +635,11 @@ def plot_asymmetric(exp_dirs):
         peak_throughput_norm = peak_throughput / peak_powers[label] * tdp
         util = eff_throughput_norm / peak_throughput_norm
 
-        # print("{}x{} - {}:\t peak power:{:.4}\t eff. thru:{:.4}\t norm. eff. bert thru:{:.4}\t  norm. eff. cnn thru:{:.4}\t  norm. eff. total thru:{:.4}\t peak thru:{:.4}\t norm. peak thru:{:.4}\t util:{:.4}".format(
-        #     array_size[0], array_size[1], no_array, peak_powers[label], eff_throughputs[label]["hmean_bert"], eff_throughputs[label]["hmean_cnn"], eff_throughputs[label]["hmean"], eff_throughput_norm, peak_throughput, peak_throughput_norm, util))
+        print("{}x{} - {}:\t peak power:{:.4}\t eff. thru:{:.4}\t norm. eff. bert thru:{:.4}\t  norm. eff. cnn thru:{:.4}\t  norm. eff. total thru:{:.4}\t peak thru:{:.4}\t norm. peak thru:{:.4}\t util:{:.4}".format(
+            array_size[0], array_size[1], no_array, peak_powers[label], eff_throughputs[label]["hmean_bert"], eff_throughputs[label]["hmean_cnn"], eff_throughputs[label]["hmean"], eff_throughput_norm, peak_throughput, peak_throughput_norm, util))
 
-        print("{}x{} - {}:\t norm. eff. bert thru:{:.4}\t  norm. eff. cnn thru:{:.4}\t  norm. eff. total thru:{:.4}\t".format(
-            array_size[0], array_size[1], no_array, eff_throughputs[label]["hmean_bert"], eff_throughputs[label]["hmean_cnn"], eff_throughputs[label]["hmean"]))
+        # print("{}x{} - {}:\t norm. eff. bert thru:{:.4}\t  norm. eff. cnn thru:{:.4}\t  norm. eff. total thru:{:.4}\t".format(
+        #     array_size[0], array_size[1], no_array, eff_throughputs[label]["hmean_bert"], eff_throughputs[label]["hmean_cnn"], eff_throughputs[label]["hmean"]))
 
 
     print("\nBarchart data:")
@@ -660,13 +675,15 @@ def plot_asymmetric(exp_dirs):
 
 
 if __name__=="__main__":
-    interconnect_dirs = ["experiments/run-2021_11_17-17_59"]
+    interconnect_dirs = ["experiments/run-2022_07_06-10_48_05", "experiments/run-2022_07_05-11_52_52"]
     #partition_size_dirs = ["experiments/run-2021_11_22-12_07_58"]
     partition_size_dirs = ["experiments/run-2021_11_23-10_37_46"]
-    array_scale_dirs = ["experiments/run-2021_11_17-20_24", "experiments/run-2021_11_15-13_45", "experiments/run-2021_11_23-10_34_21", "experiments/run-2021_11_23-17_06_52"]
-    # array_scale_dirs = ["experiments/run-2021_11_20-10_47_21"]
-    asymmetric_dirs = ["experiments/run-2022_04_05-11_54_36", "experiments/run-2022_04_05-16_04_49"]
+    #array_scale_dirs = ["experiments/run-2021_11_17-20_24", "experiments/run-2021_11_15-13_45", "experiments/run-2021_11_23-10_34_21", "experiments/run-2021_11_23-17_06_52", "experiments/run-2022_06_17-13_26_33"]
+    
+    # array_scale_dirs = ["experiments/run-2021_11_15-13_45", "experiments/run-2022_06_17-13_26_33", "experiments/run-2022_06_20-10_07_29"]
+    array_scale_dirs = ["experiments/run-2022_06_21-11_46_55"]
 
+    asymmetric_dirs = ["experiments/run-2022_06_17-09_47_40", "experiments/run-2022_06_17-11_15_42", "experiments/run-2022_06_17-11_32_47"]
 
     #multibatch_dirs = ["experiments/run-2021_11_17-21_12"]
     #multibatch_dirs = ["experiments/run-2021_11_22-12_10_22"]
@@ -677,11 +694,11 @@ if __name__=="__main__":
     #bank_size_dirs = ["experiments/run-2021_11_23-10_38_49"]
     memory_dirs = ["experiments/run-2021_11_21-13_07_55"]
 
-    #plot_memory(memory_dirs)
-    # plot_interconnect(interconnect_dirs)
+    # plot_memory(memory_dirs)
+    plot_interconnect(interconnect_dirs)
     # plot_partition_size(partition_size_dirs)
     # plot_main_results(array_scale_dirs)
-    plot_asymmetric(asymmetric_dirs)
+    # plot_asymmetric(asymmetric_dirs)
     # plot_array_scale(array_scale_dirs)
     # plot_multibatch(multibatch_dirs)
-    #plot_bank_size(bank_size_dirs)
+    # plot_bank_size(bank_size_dirs)

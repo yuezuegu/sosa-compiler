@@ -3,6 +3,7 @@
 
 
 #include <list>
+#include <set>
 #include <iostream>
 #include <algorithm>
 #include <memory>
@@ -55,6 +56,8 @@ class Compiler{
         void run_cycle_model2();
         bool is_all_data_ready(Arrays* arrays, PostProcessors* post_processors, int r);
         void check_if_livelock(list<P_Tile*>* p_tiles);
+        float interconn_total_mbytes();
+        float interconn_total_mbytes_with_multicast();
 
         void duplicate_schedule(Model* model, int no_repeat);
 

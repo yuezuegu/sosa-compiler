@@ -130,9 +130,11 @@ def interconnect_experiment():
     no_seqs = [10, 20, 40, 60, 80, 100, 200, 300, 400, 500]
     bert_models = list(itertools.product(bert_models, no_seqs))
 
-    no_arrays = [32,64,128,256,512]
+    #no_arrays = [32,64,128,256,512]
+    no_arrays = [32,64,128]
 
-    for INTERCONN in ["banyan_exp_0", "banyan_exp_1", "banyan_exp_2", "banyan_exp_3", "benes_copy", "crossbar"]:
+    #for INTERCONN in ["banyan_exp_0", "banyan_exp_1", "banyan_exp_2", "banyan_exp_3", "benes_copy", "crossbar"]:
+    for INTERCONN in ["bus"]:
         for no_array in no_arrays:
             for MODEL,SENTENCE_LEN in bert_models + cnn_models:
                 OUT_DIR = exp_dir + "/" + date_millisecond()
@@ -285,7 +287,7 @@ def array_scale_experiment():
     exp_dir = "experiments/run-{}".format(date_second())
     os.system("mkdir -p {}".format(exp_dir))
 
-    BATCH_SIZE = 1
+    BATCH_SIZE = 4
     IMSIZE = 299
 
     MEMORY_BW = 1200
@@ -301,20 +303,13 @@ def array_scale_experiment():
     INTERCONN = "banyan_exp_1"
 
     array_size_list = []
-    array_size_list += [(20,32,N) for N in [479]]
-    #array_size_list += [(32,64,N) for N in [207]]
-    array_size_list += [(20,128,N) for N in [130]]
-    #array_size_list += [(32,256,N) for N in [32]]
-    array_size_list += [(66,32,N) for N in [256]]
-    #array_size_list += [(128,32,N) for N in [157]]
-    #array_size_list += [(256,32,N) for N in [64]]
-
+    
+    array_size_list += [(20,32,N) for N in [128,256]]
     #array_size_list += [(32,32,N) for N in [8,16,32,64,128,256,512]]
 
     #array_size_list += [(16,16,N) for N in [128,256,512,1024]]
-    #array_size_list += [(32,32,N) for N in [8,16,32,64,128,256,512]]
-    #array_size_list += [(32,32,N) for N in [32,64,128,256,512]]
-    #array_size_list += [(64,64,N) for N in [16,32,64,128,196,256]]
+    array_size_list += [(32,32,N) for N in [128,256]]
+    array_size_list += [(64,64,N) for N in [32,64,128]]
     
     #array_size_list += [(128,128,N) for N in [1, 2, 4, 8, 16, 24, 32, 48, 64]]
     #array_size_list += [(128,128,N) for N in [2,4,8,16,24,32,48,64]]
@@ -427,9 +422,9 @@ if __name__=="__main__":
     start = time.time()
 
     #memory_experiment()
-    #interconnect_experiment()
+    interconnect_experiment()
     #partition_size_experiment()
-    array_scale_experiment()
+    #array_scale_experiment()
     #bank_size_experiment()
     #multi_batch_experiment()
     

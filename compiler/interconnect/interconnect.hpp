@@ -235,6 +235,78 @@ private:
   UnsignedInt n_;
 };
 
+struct Bus : InterconnectBase {
+  UnsignedInt n_;
+  Bus(UnsignedInt n) : n_{n}, current_inverse_mapping(1 << n, -1) {}
+
+  std::vector<Int> current_inverse_mapping;
+
+  float energy_spent = 0;
+
+  float power(int switch_width) const override {
+    float I_0 = 2.875e-5; //W per byte
+    return I_0 * switch_width;
+  }
+  
+  UnsignedInt latency() const override { return 1; }
+
+  const char *name() const override {
+    return "bus";
+  }
+
+  UnsignedInt num_ports() const override { return 1 << n_; }
+
+  void reset() override {
+    for (auto &x : current_inverse_mapping)
+      x = -1;
+  }
+
+  void propagate(Int const *, Int *, Int) const override {}
+
+  bool do_apply_permute(Int const *inverse_mapping) override { 
+    for (UnsignedInt i = 0; i < current_inverse_mapping.size(); ++i) {
+      current_inverse_mapping[i] = inverse_mapping[i];
+    }    
+    
+    int bus_taken_by = -1;
+    for (UnsignedInt i = 0; i < current_inverse_mapping.size(); ++i) {
+      if (current_inverse_mapping[i] != -1){
+        if (bus_taken_by == -1){
+          bus_taken_by = current_inverse_mapping[i];
+        }
+        else{
+          if (bus_taken_by != current_inverse_mapping[i]){
+            return false;
+          }
+        }
+      }
+    }
+
+    return true; 
+  }
+
+  bool do_is_route_free(UnsignedInt src, UnsignedInt dest) override {
+    for (UnsignedInt i = 0; i < current_inverse_mapping.size(); ++i) {
+      if (current_inverse_mapping[i] != -1 && current_inverse_mapping[i] != (Int)src){
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void copy_from(InterconnectBase *other) override {
+    if (this != (Bus *) other) {
+      *this = *((Bus *) other);
+    }
+  }
+
+  Bus *clone() const override { return new Bus(*this); }
+
+
+  
+};
+
+
 struct Crossbar : InterconnectBase {
   Crossbar(UnsignedInt n) : n_{n} {}
 

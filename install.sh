@@ -20,8 +20,8 @@ PROFILE_FILE="$HOME/.bashrc"
 # flags
 should_install_cmake=true
 should_install_boost=true
-should_install_conda=true
-should_install_condaenv=true
+should_install_conda=false
+should_install_condaenv=false
 should_update_profile=true
 
 function fail_msg() {

@@ -18,7 +18,8 @@ enum class InterconnectType : unsigned {
     banyan_exp_1 = banyan | 1, // 2 Banyan networks
     banyan_exp_2 = banyan | 2, // 4 Banyan networks
     banyan_exp_3 = banyan | 3, // 8 Banyan networks
-    banyan_exp_4 = banyan | 4  // 16 Banyan networks
+    banyan_exp_4 = banyan | 4,  // 16 Banyan networks,
+    bus = 16 << 4
 };
 
 std::istream &operator>>(std::istream &in, InterconnectType &interconnect_type);

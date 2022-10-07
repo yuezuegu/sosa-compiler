@@ -19,6 +19,8 @@ def calculate_peak_power(r_range, c_range, N, freq, e_data, e_compute, I_0, ict_
         p_interconnect = I_0 * 4 * N * np.log2(N) * sram_read
     elif ict_type == "crossbar":
         p_interconnect = I_0 * N * N * sram_read
+    elif ict_type == "bus":
+        p_interconnect = I_0 * 1 * sram_read
     else:
         raise NotImplementedError
 

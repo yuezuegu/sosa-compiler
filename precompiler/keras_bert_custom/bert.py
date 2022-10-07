@@ -122,9 +122,9 @@ def get_model(token_num,
         attention_activation=attention_activation,
         feed_forward_activation=feed_forward_activation,
         dropout_rate=dropout_rate,
-        use_adapter=use_adapter,
-        adapter_units=adapter_units,
-        adapter_activation=gelu,
+        #use_adapter=use_adapter,
+        #adapter_units=adapter_units,
+        #adapter_activation=gelu,
     )
     if training:
         mlm_dense_layer = keras.layers.Dense(
