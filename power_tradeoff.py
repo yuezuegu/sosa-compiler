@@ -61,6 +61,8 @@ lns1 = ax1.plot([k[0]*k[1] for k in power], [power[k]["total"] for k in power], 
 # plt.plot([k[0]*k[1] for k in power], [power[k]["compute"] for k in power], 'o-', label='Total', linewidth=3, markersize=10)
 
 plt.ylabel("Power Efficiency (TeraOps/s/Watt)")
+plt.xlabel('Array size')
+plt.ylim(bottom=0)
 
 ax2 = ax1.twinx()
 plt.sca(ax2)
@@ -69,16 +71,17 @@ lns2 = ax2.plot([k[0]*k[1] for k in util["inception"]], [util["inception"][k] fo
 
 plt.xscale('log')
 
-plt.xlabel('Systolic array size')
 plt.ylabel('Utilization (%)')
 
 # plt.xlim(left=64)
-# plt.ylim(top=5, bottom=0)
+plt.ylim(bottom=0)
 plt.xticks([8*8, 16*16, 32*32, 64*64, 128*128, 256*256],['8x8', '16x16', '32x32', '64x64', '128x128','256x256'])
 
 lns = lns1+lns2
 labs = [l.get_label() for l in lns]
 plt.legend(lns, labs, loc='center left', frameon=False)
+
+
 
 plt.tight_layout()
 plt.savefig('power_tradeoff.png')
